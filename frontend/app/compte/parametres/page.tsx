@@ -1,0 +1,178 @@
+﻿"use client";
+
+import Link from "next/link";
+import {
+  FiArrowLeft,
+  FiBell,
+  FiChevronRight,
+  FiKey,
+  FiMap,
+  FiMoon,
+  FiSmartphone,
+  FiZap,
+} from "react-icons/fi";
+import { motion } from "framer-motion";
+import { TopBar } from "@/components/TopBar";
+import { BottomNav } from "@/components/BottomNav";
+import { useAuthStore } from "@/stores/authStore";
+import {
+  getNotificationPrefs,
+  useNotificationStore,
+} from "@/stores/notificationStore";
+
+export default function ParametresPage() {
+  const bottomNav = <BottomNav />;
+  const user = useAuthStore((state) => state.user);
+  const prefsByUser = useNotificationStore((state) => state.prefsByUser);
+  const setOwnerPostNotifications = useNotificationStore(
+    (state) => state.setOwnerPostNotifications
+  );
+  const notificationsEnabled = getNotificationPrefs(prefsByUser, user?.id)
+    .ownerPostNotifications;
+
+  return (
+    <div className="min-h-screen bg-transparent">
+      <TopBar />
+      <main className="mx-auto max-w-2xl px-4 pb-28 pt-24">
+        <motion.section
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className="space-y-5"
+        >
+          <div className="flex items-center justify-between">
+            <Link
+              href="/compte"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-soft"
+            >
+              <FiArrowLeft />
+            </Link>
+            <div className="rounded-full border border-neutral-200 bg-white px-4 py-1 text-xs font-semibold text-neutral-600 shadow-soft">
+              1 / 1
+            </div>
+          </div>
+
+          <div>
+            <h1 className="text-2xl font-semibold text-neutral-900">Paramètres</h1>
+            <p className="mt-1 text-sm text-neutral-600">
+              Configuration de l&apos;application
+            </p>
+          </div>
+
+          <div className="h-2 w-full overflow-hidden rounded-full bg-blue-100">
+            <div className="h-full w-full rounded-full bg-blue-500" />
+          </div>
+
+          <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft">
+            <h3 className="text-sm font-semibold text-neutral-900">Sécurité</h3>
+            <div className="mt-4 flex items-center justify-between rounded-2xl border border-neutral-100 bg-neutral-50 px-4 py-3">
+              <span className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                  <FiKey />
+                </span>
+                <span>
+                  <p className="text-sm font-semibold text-neutral-900">
+                    Changer le mot de passe
+                  </p>
+                  <p className="text-xs text-neutral-500">
+                    Modifier votre mot de passe actuel
+                  </p>
+                </span>
+              </span>
+              <FiChevronRight className="text-neutral-400" />
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft">
+            <h3 className="text-sm font-semibold text-neutral-900">Préférences</h3>
+            <div className="mt-4 space-y-3">
+              <div className="flex items-center justify-between rounded-2xl border border-neutral-100 bg-neutral-50 px-4 py-3">
+                <span className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                    <FiBell />
+                  </span>
+                  <span>
+                    <p className="text-sm font-semibold text-neutral-900">Notifications</p>
+                    <p className="text-xs text-neutral-500">
+                      Recevoir les nouvelles annonces publiées par les propriétaires
+                    </p>
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={notificationsEnabled}
+                  onClick={() =>
+                    user?.id &&
+                    setOwnerPostNotifications(user.id, !notificationsEnabled)
+                  }
+                  className={`relative inline-flex h-8 w-14 items-center rounded-full transition ${
+                    notificationsEnabled ? "bg-blue-600" : "bg-neutral-300"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-6 w-6 transform rounded-full bg-white shadow transition ${
+                      notificationsEnabled ? "translate-x-7" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {[
+                {
+                  label: "Mode sombre",
+                  description: "Activer/désactiver le mode sombre",
+                  icon: FiMoon,
+                },
+                {
+                  label: "Appareil",
+                  description: "Informations sur l'appareil",
+                  icon: FiSmartphone,
+                },
+                {
+                  label: "Debug tracking",
+                  description: "Diagnostics GPS, queue & API",
+                  icon: FiZap,
+                },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="flex items-center justify-between rounded-2xl border border-neutral-100 bg-neutral-50 px-4 py-3"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                      <item.icon />
+                    </span>
+                    <span>
+                      <p className="text-sm font-semibold text-neutral-900">{item.label}</p>
+                      <p className="text-xs text-neutral-500">{item.description}</p>
+                    </span>
+                  </span>
+                  <FiChevronRight className="text-neutral-400" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                <FiMap />
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-neutral-900">Carte & Offline</p>
+                <p className="text-xs text-neutral-500">Zones téléchargées</p>
+              </div>
+            </div>
+            <p className="mt-3 text-xs text-neutral-500">
+              Aucune zone téléchargée
+            </p>
+          </div>
+        </motion.section>
+      </main>
+      {bottomNav}
+    </div>
+  );
+}
+
+

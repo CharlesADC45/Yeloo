@@ -1,0 +1,741 @@
+﻿"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import "leaflet/dist/leaflet.css";
+import gsap from "gsap";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import {
+  FiCheckCircle,
+  FiChevronLeft,
+  FiFileText,
+  FiHeart,
+  FiHome,
+  FiMapPin,
+  FiPhone,
+  FiPlay,
+  FiShare2,
+  FiShield,
+  FiStar,
+} from "react-icons/fi";
+import { BottomNav } from "@/components/BottomNav";
+import { PannellumViewer } from "@/components/PannellumViewer";
+import { DetailPageSkeleton } from "@/components/Skeleton";
+import { TopBar } from "@/components/TopBar";
+import { fetchPublicModules } from "@/lib/modules";
+import { useProperty } from "@/hooks/useProperties";
+import { ensureConversation } from "@/lib/messages";
+import { useAuthStore } from "@/stores/authStore";
+import { useFavoritesStore } from "@/stores/favoritesStore";
+
+type Props = {
+  id: string;
+};
+
+type MapProps = {
+  latitude?: number;
+  longitude?: number;
+  title: string;
+};
+
+function buildDetailLocationIcon() {
+  return `
+    <div class="imc-user-location">
+      <span class="imc-user-location__halo"></span>
+      <span class="imc-user-location__pin">
+        <span class="imc-user-location__dot"></span>
+      </span>
+      <span class="imc-user-location__stem"></span>
+    </div>
+  `;
+}
+
+function PropertyMap({ latitude, longitude, title }: MapProps) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<import("leaflet").Map | null>(null);
+  const markerRef = useRef<import("leaflet").Marker | null>(null);
+  const leafletRef = useRef<typeof import("leaflet") | null>(null);
+
+  useEffect(() => {
+    if (typeof latitude !== "number" || typeof longitude !== "number") return;
+    let isMounted = true;
+
+    const initMap = async () => {
+      if (!containerRef.current) return;
+      const leaflet = leafletRef.current ?? (await import("leaflet"));
+      if (!isMounted) return;
+      leafletRef.current = leaflet;
+
+      if (!mapRef.current) {
+        mapRef.current = leaflet
+          .map(containerRef.current, { zoomControl: true, attributionControl: false })
+          .setView([latitude, longitude], 13);
+
+        leaflet
+          .tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+          })
+          .addTo(mapRef.current);
+      } else {
+        mapRef.current.setView([latitude, longitude], 13);
+      }
+
+      requestAnimationFrame(() => {
+        mapRef.current?.invalidateSize();
+      });
+      const refreshMapSize = () => {
+        mapRef.current?.invalidateSize();
+      };
+      window.setTimeout(refreshMapSize, 100);
+      window.setTimeout(refreshMapSize, 260);
+
+      if (markerRef.current) {
+        markerRef.current.remove();
+      }
+
+      markerRef.current = leaflet
+        .marker([latitude, longitude], {
+          icon: leaflet.divIcon({
+            className: "imc-marker",
+            html: buildDetailLocationIcon(),
+            iconSize: [44, 56],
+            iconAnchor: [22, 46],
+          }),
+          interactive: true,
+        })
+        .addTo(mapRef.current);
+      markerRef.current.bindTooltip(
+        `<div class="imc-hover-card imc-hover-card--compact">
+          <div class="imc-hover-card__header">
+            <p class="imc-hover-card__title">${title}</p>
+            <span class="imc-hover-card__close">&times;</span>
+          </div>
+        </div>`,
+        {
+          direction: "top",
+          offset: leaflet.point(0, -18),
+          opacity: 1,
+          className: "imc-hover-tooltip",
+        }
+      );
+
+      let resizeObserver: ResizeObserver | null = null;
+      if (typeof ResizeObserver !== "undefined" && containerRef.current) {
+        resizeObserver = new ResizeObserver(() => {
+          mapRef.current?.invalidateSize();
+        });
+        resizeObserver.observe(containerRef.current);
+      }
+
+      return () => {
+        resizeObserver?.disconnect();
+      };
+    };
+
+    let cleanup: (() => void) | undefined;
+    void initMap().then((teardown) => {
+      cleanup = teardown;
+    });
+
+    return () => {
+      isMounted = false;
+      cleanup?.();
+    };
+  }, [latitude, longitude, title]);
+
+    return (
+      <div
+        ref={containerRef}
+        className="relative h-64 w-full overflow-hidden rounded-[1.6rem] border border-neutral-200 bg-neutral-100 sm:h-72"
+      />
+    );
+  }
+
+export function LogementClient({ id }: Props) {
+  const params = useParams<{ id?: string | string[] }>();
+  const resolvedId = useMemo(() => {
+    if (id) return id;
+    const paramId = params?.id;
+    return Array.isArray(paramId) ? paramId[0] : paramId;
+  }, [id, params]);
+  const { property, isLoading, error } = useProperty(resolvedId);
+  const router = useRouter();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const token = useAuthStore((s) => s.token);
+  const user = useAuthStore((s) => s.user);
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const favoriteIds = useFavoritesStore((s) => s.favoriteIds);
+  const sliderRef = useRef<HTMLDivElement | null>(null);
+  const detailRootRef = useRef<HTMLDivElement | null>(null);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [isOpeningChat, setIsOpeningChat] = useState(false);
+  const [isChatEnabled, setIsChatEnabled] = useState(true);
+
+  const gallery = useMemo(() => {
+    if (!property) return [];
+    if (property.photoUrls?.length) return property.photoUrls;
+    return [property.imageUrl];
+  }, [property]);
+  const [activeSlide, setActiveSlide] = useState(0);
+  const totalSlides = gallery.length || 1;
+  const isFavorite = resolvedId ? favoriteIds.includes(resolvedId) : false;
+  const locationLabel = [property?.neighborhood, property?.city].filter(Boolean).join(", ");
+  const parsedLatitude =
+    typeof property?.latitude === "number"
+      ? property.latitude
+      : property?.latitude != null
+        ? Number(property.latitude)
+        : undefined;
+  const parsedLongitude =
+    typeof property?.longitude === "number"
+      ? property.longitude
+      : property?.longitude != null
+        ? Number(property.longitude)
+        : undefined;
+
+  const tourImage = gallery[1] ?? gallery[0];
+  const videoImage = gallery[2] ?? gallery[0];
+  const tourUrl = property?.tour360Url;
+  const videoUrl = property?.videoUrl;
+  const isTourImage = Boolean(tourUrl && !/\.(mp4|webm|ogg|mov)$/i.test(tourUrl));
+  const isOwnerViewer = user?.role === "proprietaire" || user?.role === "admin";
+
+  const handleOpenChat = async () => {
+    if (!resolvedId) return;
+    if (!isAuthenticated || !token) {
+      router.push(`/connexion?next=/logements/${resolvedId}`);
+      return;
+    }
+    setIsOpeningChat(true);
+    setChatError(null);
+    try {
+      const conversation = await ensureConversation(token, resolvedId);
+      router.push(`/messages/${conversation.id}`);
+    } catch (err) {
+      setChatError(err instanceof Error ? err.message : "Impossible d'ouvrir la conversation.");
+    } finally {
+      setIsOpeningChat(false);
+    }
+  };
+
+  useEffect(() => {
+    let active = true;
+    const loadModules = async () => {
+      try {
+        const modules = await fetchPublicModules();
+        if (!active) return;
+        const chatModule = modules.find((item) => item.key === "listing_chat");
+        setIsChatEnabled(chatModule ? chatModule.is_enabled : true);
+      } catch {
+        if (active) {
+          setIsChatEnabled(true);
+        }
+      }
+    };
+
+    void loadModules();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    setActiveSlide(0);
+    sliderRef.current?.scrollTo({ left: 0, behavior: "smooth" });
+  }, [property?.id]);
+
+  useEffect(() => {
+    const slider = sliderRef.current;
+    if (!slider) return;
+    let frame: number | null = null;
+
+    const onScroll = () => {
+      if (frame) cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const index = Math.round(slider.scrollLeft / slider.clientWidth);
+        setActiveSlide(Math.max(0, Math.min(index, totalSlides - 1)));
+      });
+    };
+
+    slider.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      slider.removeEventListener("scroll", onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [totalSlides]);
+
+  useEffect(() => {
+    if (isLoading || !property) return;
+
+    const cleanupFns: Array<() => void> = [];
+    const context = gsap.context(() => {
+      const revealItems = gsap.utils.toArray<HTMLElement>("[data-detail-reveal]");
+      gsap.fromTo(
+        revealItems,
+        { opacity: 0, y: 22 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.55,
+          stagger: 0.08,
+          ease: "power3.out",
+          clearProps: "transform",
+        }
+      );
+
+      const liftItems = gsap.utils.toArray<HTMLElement>("[data-detail-lift]");
+      liftItems.forEach((item) => {
+        const onEnter = () => {
+          gsap.to(item, {
+            y: -6,
+            scale: 1.01,
+            boxShadow: "0 22px 40px rgba(37, 99, 235, 0.10)",
+            duration: 0.26,
+            ease: "power3.out",
+          });
+        };
+        const onLeave = () => {
+          gsap.to(item, {
+            y: 0,
+            scale: 1,
+            boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)",
+            duration: 0.28,
+            ease: "power2.out",
+          });
+        };
+
+        item.addEventListener("mouseenter", onEnter);
+        item.addEventListener("mouseleave", onLeave);
+        cleanupFns.push(() => {
+          item.removeEventListener("mouseenter", onEnter);
+          item.removeEventListener("mouseleave", onLeave);
+        });
+      });
+    }, detailRootRef);
+
+    return () => {
+      cleanupFns.forEach((cleanup) => cleanup());
+      context.revert();
+    };
+  }, [isLoading, property]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-transparent">
+        <TopBar />
+        <main className="mx-auto w-full max-w-[1400px] px-4 pb-32 pt-28 sm:px-8 lg:px-12">
+          <DetailPageSkeleton />
+        </main>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  if (!property || error) {
+    return (
+      <div className="min-h-screen bg-transparent">
+        <TopBar />
+        <main className="mx-auto max-w-3xl px-4 pb-32 pt-28 sm:px-8">
+          <div className="rounded-[2rem] bg-white p-6 shadow-soft">
+            <p className="text-sm text-neutral-700">
+              {error || "Ce logement n'existe pas ou n'est plus disponible."}
+            </p>
+            <Link href="/" className="mt-4 inline-flex text-sm font-semibold text-blue-600">
+              Retour à la recherche
+            </Link>
+          </div>
+        </main>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  return (
+    <div ref={detailRootRef} className="min-h-screen bg-transparent">
+      <TopBar />
+      <main className="mx-auto w-full max-w-[1450px] px-4 pb-32 pt-28 sm:px-8 lg:px-12">
+        <motion.section
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className="space-y-8"
+        >
+          <div data-detail-reveal="true" className="flex flex-wrap items-start justify-between gap-4">
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 shadow-soft"
+              >
+                <FiChevronLeft />
+                Retour
+              </button>
+              <div>
+                <h1 className="text-3xl font-semibold tracking-tight text-neutral-900 sm:text-[2.2rem]">
+                  {property.title}
+                </h1>
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-neutral-500">
+                  <span className="inline-flex items-center gap-1">
+                    <FiMapPin className="text-sm" />
+                    {locationLabel || property.city}
+                  </span>
+                  {property.isVerified && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-emerald-700">
+                      <FiCheckCircle className="text-sm" />
+                      Annonce vérifiée
+                    </span>
+                  )}
+                  {property.ownerIsVerified && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-blue-700">
+                      <FiCheckCircle className="text-sm" />
+                      Propriétaire vérifié
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-soft"
+                aria-label="Partager"
+              >
+                <FiShare2 />
+              </button>
+              <button
+                type="button"
+                onClick={() => resolvedId && toggleFavorite(resolvedId)}
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-soft"
+                aria-label="Ajouter aux favoris"
+              >
+                <FiHeart className={isFavorite ? "fill-blue-600 text-blue-600" : ""} />
+              </button>
+            </div>
+          </div>
+
+          <div
+            data-detail-reveal="true"
+            data-detail-lift="true"
+            className="relative overflow-hidden rounded-[2rem] border border-neutral-200 bg-neutral-100 shadow-soft"
+            style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+          >
+            <div
+              ref={sliderRef}
+              className="hide-scrollbar flex h-[300px] w-full snap-x snap-mandatory overflow-x-auto scroll-smooth sm:h-[420px] lg:h-[560px]"
+            >
+              {gallery.map((image, index) => (
+                <div key={`${image}-${index}`} className="h-full min-w-full snap-center">
+                  <img
+                    src={image}
+                    alt={`${property.title} ${index + 1}`}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="absolute bottom-5 right-5 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white">
+              {activeSlide + 1}/{totalSlides}
+            </div>
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_380px]">
+            <div className="space-y-6">
+              <section
+                data-detail-reveal="true"
+                data-detail-lift="true"
+                className="rounded-[2rem] bg-white p-6 shadow-soft"
+                style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+              >
+                <div className="grid gap-4 sm:grid-cols-4">
+                  <div className="rounded-[1.3rem] bg-neutral-50 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                      Prix
+                    </p>
+                    <p className="mt-2 text-2xl font-semibold text-neutral-900">
+                      {property.price.toLocaleString("fr-FR")} FCFA
+                    </p>
+                    <p className="text-sm text-neutral-500">/ {property.pricePeriod}</p>
+                  </div>
+                  <div className="rounded-[1.3rem] bg-neutral-50 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                      Pièces
+                    </p>
+                    <p className="mt-2 text-2xl font-semibold text-neutral-900">
+                      {property.rooms ?? "N/A"}
+                    </p>
+                  </div>
+                  <div className="rounded-[1.3rem] bg-neutral-50 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                      Bains
+                    </p>
+                    <p className="mt-2 text-2xl font-semibold text-neutral-900">
+                      {property.bathrooms ?? "N/A"}
+                    </p>
+                  </div>
+                  <div className="rounded-[1.3rem] bg-neutral-50 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                      Surface
+                    </p>
+                    <p className="mt-2 text-2xl font-semibold text-neutral-900">
+                      {property.surfaceM2 ?? "N/A"}
+                    </p>
+                    <p className="text-sm text-neutral-500">m²</p>
+                  </div>
+                  <div className="rounded-[1.3rem] bg-neutral-50 p-4 sm:col-span-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                      Caution
+                    </p>
+                    <p className="mt-2 text-xl font-semibold text-neutral-900">
+                      {property.depositMonths ? `${property.depositMonths} mois` : "Caution non renseignée"}
+                    </p>
+                  </div>
+                </div>
+              </section>
+
+               <section
+                 data-detail-reveal="true"
+                 data-detail-lift="true"
+                 className="rounded-[2rem] bg-white p-6 shadow-soft"
+                 style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+               >
+                <div className="flex items-center gap-2">
+                  <FiFileText className="text-blue-600" />
+                  <h2 className="text-xl font-semibold text-neutral-900">Description</h2>
+                </div>
+                <p className="mt-4 text-sm leading-7 text-neutral-700">
+                  {property.description ||
+                    "Cette annonce n'a pas encore de description détaillée. Utilisez le flow de demande pour échanger avec le propriétaire et confirmer les derniers détails."}
+                </p>
+              </section>
+
+               <section
+                 data-detail-reveal="true"
+                 data-detail-lift="true"
+                 className="rounded-[2rem] bg-white p-6 shadow-soft"
+                 style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+               >
+                <h2 className="text-xl font-semibold text-neutral-900">Caractéristiques</h2>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  {[
+                    ["Type", property.propertyType],
+                    ["Meublé", property.isFurnished ? "Oui" : "Non"],
+                    ["Ville", property.city],
+                    ["Quartier", property.neighborhood || "Non renseigné"],
+                    ["Adresse", property.address || "Communiquée après demande"],
+                    ["Statut", property.isVerified ? "Annonce vérifiée" : "Annonce en cours"],
+                  ].map(([label, value]) => (
+                    <div key={label} className="rounded-[1.2rem] border border-neutral-200 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                        {label}
+                      </p>
+                      <p className="mt-2 text-sm font-medium text-neutral-800">{value}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+               <section
+                 data-detail-reveal="true"
+                 data-detail-lift="true"
+                 className="rounded-[2rem] bg-white p-6 shadow-soft"
+                 style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+               >
+                <h2 className="text-xl font-semibold text-neutral-900">Localisation</h2>
+                <div className="mt-4 space-y-4">
+                  {Number.isFinite(parsedLatitude) && Number.isFinite(parsedLongitude) ? (
+                    <PropertyMap
+                      latitude={parsedLatitude}
+                      longitude={parsedLongitude}
+                      title={property.title}
+                    />
+                  ) : (
+                    <div className="rounded-[1.4rem] border border-dashed border-neutral-200 bg-neutral-50 p-6 text-sm text-neutral-500">
+                      Localisation indisponible pour ce logement.
+                    </div>
+                  )}
+                  <div className="rounded-[1.4rem] border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-600">
+                    Adresse: {property.address || "Adresse communiquée après contact"}
+                  </div>
+                </div>
+              </section>
+
+               <section data-detail-reveal="true" className="grid gap-6 lg:grid-cols-2">
+                 <div
+                   data-detail-lift="true"
+                   className="rounded-[2rem] bg-white p-5 shadow-soft"
+                   style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+                 >
+                  <h2 className="text-lg font-semibold text-neutral-900">Visite 360°</h2>
+                  <div className="relative mt-3 h-52 overflow-hidden rounded-[1.4rem] bg-neutral-100">
+                    {tourUrl && isTourImage ? (
+                      <PannellumViewer imageUrl={tourUrl} className="h-full w-full" />
+                    ) : (
+                      <>
+                        {tourImage && (
+                          <img
+                            src={tourImage}
+                            alt={`Visite 360 ${property.title}`}
+                            className="h-full w-full object-cover"
+                          />
+                        )}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="rounded-full bg-white/90 px-4 py-2 text-xs font-semibold text-neutral-700 shadow-soft">
+                            {tourUrl ? "Visite 360 disponible" : "Photo 360 bientôt disponible"}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+                 <div
+                   data-detail-lift="true"
+                   className="rounded-[2rem] bg-white p-5 shadow-soft"
+                   style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+                 >
+                  <h2 className="text-lg font-semibold text-neutral-900">Vidéo</h2>
+                  <div className="relative mt-3 h-52 overflow-hidden rounded-[1.4rem] bg-neutral-100">
+                    {videoUrl ? (
+                      <video
+                        controls
+                        playsInline
+                        preload="metadata"
+                        poster={videoImage}
+                        className="h-full w-full object-cover"
+                        src={videoUrl}
+                      />
+                    ) : (
+                      <>
+                        {videoImage && (
+                          <img
+                            src={videoImage}
+                            alt={`Vidéo ${property.title}`}
+                            className="h-full w-full object-cover"
+                          />
+                        )}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-xs font-semibold text-neutral-700 shadow-soft">
+                            <FiPlay />
+                            Vidéo de présentation bientôt disponible
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <aside className="space-y-5 xl:sticky xl:top-28 xl:self-start">
+               <div
+                 data-detail-reveal="true"
+                 data-detail-lift="true"
+                 className="rounded-[2rem] bg-white p-6 shadow-soft"
+                 style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+               >
+                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-neutral-500">
+                  Contact & décision
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold text-neutral-900">
+                  Intéressé par ce logement ?
+                </h2>
+                <p className="mt-3 text-sm text-neutral-600">
+                  Posez vos questions au propriétaire et gardez l’annonce en favori pendant votre prise de décision.
+                </p>
+
+                <div className="mt-5 space-y-3 text-sm text-neutral-700">
+                  {[
+                    "Discutez directement avec le propriétaire depuis cette annonce",
+                    "Vérifiez les médias, la localisation, la caution et les garanties du bien",
+                    "Gardez vos échanges au même endroit pour reprendre plus tard",
+                  ].map((step, index) => (
+                    <div key={step} className="flex gap-3">
+                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-xs font-semibold text-blue-700">
+                        {index + 1}
+                      </span>
+                      <p>{step}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-6 space-y-3">
+                  {!isOwnerViewer && isChatEnabled && (
+                    <button
+                      type="button"
+                      onClick={() => void handleOpenChat()}
+                      disabled={isOpeningChat}
+                      className="inline-flex w-full items-center justify-center rounded-full bg-teal-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:opacity-70"
+                    >
+                      {isOpeningChat ? "Ouverture..." : "Contacter le propriétaire"}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => resolvedId && toggleFavorite(resolvedId)}
+                    className="inline-flex w-full items-center justify-center rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+                  >
+                    {isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+                  </button>
+                  {!isAuthenticated && (
+                    <Link
+                      href={`/connexion?next=/logements/${property.id}`}
+                      className="inline-flex w-full items-center justify-center rounded-full border border-neutral-200 px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
+                    >
+                      Se connecter pour continuer
+                    </Link>
+                  )}
+                  <button
+                    type="button"
+                    className="inline-flex w-full items-center justify-center rounded-full border border-neutral-200 px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
+                  >
+                    <FiPhone className="mr-2" />
+                    Assistance Yeloo
+                  </button>
+                  {chatError && (
+                    <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
+                      {chatError}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+               <div
+                 data-detail-reveal="true"
+                 data-detail-lift="true"
+                 className="rounded-[2rem] bg-white p-6 shadow-soft"
+                 style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+               >
+                <div className="flex items-center gap-2 text-blue-700">
+                  <FiShield />
+                  <p className="text-sm font-semibold">Pourquoi ce flow rassure</p>
+                </div>
+                <div className="mt-4 space-y-4 text-sm text-neutral-600">
+                  <div className="flex gap-3">
+                    <FiCheckCircle className="mt-0.5 text-blue-600" />
+                    <p>Annonce et propriétaire peuvent être vérifiés avant engagement.</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <FiHome className="mt-0.5 text-blue-600" />
+                    <p>Les détails du bien restent accessibles avant toute prise de décision.</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <FiStar className="mt-0.5 text-blue-600" />
+                    <p>Une conversation par annonce vous aide à garder un échange simple et clair.</p>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          </div>
+
+          <div className="flex justify-between text-xs text-neutral-500">
+            <Link href="/" className="hover:text-neutral-700">
+              Retour aux annonces
+            </Link>
+            <span>ID annonce: {property.id}</span>
+          </div>
+        </motion.section>
+      </main>
+      <BottomNav />
+    </div>
+  );
+}

@@ -1,0 +1,401 @@
+﻿"use client";
+
+import "leaflet/dist/leaflet.css";
+import type {
+  DivIcon,
+  LatLngBounds,
+  Map as LeafletMap,
+  Marker as LeafletMarker,
+} from "leaflet";
+import { useEffect, useRef, useState } from "react";
+import type { Property } from "@/lib/properties";
+
+type Props = {
+  properties: Property[];
+  selectedId?: string | null;
+  onSelect?: (property: Property) => void;
+  locateSignal?: number;
+  fitBoundsSignal?: number;
+  onFitBounds?: () => void;
+  className?: string;
+};
+
+const DEFAULT_CENTER: [number, number] = [5.34, -3.99]; // Abidjan
+const CLUSTER_GRID_SIZE = 60;
+const CLUSTER_BREAK_ZOOM = 15;
+
+function buildUserLocationIcon() {
+  return `
+    <div class="imc-user-location">
+      <span class="imc-user-location__halo"></span>
+      <span class="imc-user-location__pin">
+        <span class="imc-user-location__dot"></span>
+      </span>
+      <span class="imc-user-location__stem"></span>
+    </div>
+  `;
+}
+
+function buildMarkerPreview(property: Property) {
+  const title = property.title.replace(/"/g, "&quot;");
+  const price = property.price.toLocaleString("fr-FR");
+  const rooms = typeof property.rooms === "number" ? property.rooms : "—";
+  const bathrooms = typeof property.bathrooms === "number" ? property.bathrooms : "—";
+  const surface = typeof property.surfaceM2 === "number" ? property.surfaceM2 : "—";
+  const location = (property.neighborhood || property.city || "Abidjan").replace(
+    /"/g,
+    "&quot;"
+  );
+  const verifiedBadge = property.ownerIsVerified
+    ? `<span class="imc-hover-card__badge">Vérifié</span>`
+    : "";
+
+  return `
+    <div class="imc-hover-card">
+      <div class="imc-hover-card__header">
+        <p class="imc-hover-card__title">${title}</p>
+        <span class="imc-hover-card__close">×</span>
+      </div>
+      <div class="imc-hover-card__body">
+        <img src="${property.imageUrl}" alt="${title}" class="imc-hover-card__image" />
+        <div class="imc-hover-card__content">
+          <p class="imc-hover-card__price">${price} FCFA</p>
+          <p class="imc-hover-card__location">${location}</p>
+          <div class="imc-hover-card__meta">
+            <span><strong>${rooms}</strong><small>Beds</small></span>
+            <span><strong>${bathrooms}</strong><small>Baths</small></span>
+            <span><strong>${surface}</strong><small>Sqm.</small></span>
+          </div>
+          ${verifiedBadge}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+export function MapboxMap({
+  properties,
+  selectedId,
+  onSelect,
+  locateSignal,
+  fitBoundsSignal,
+  onFitBounds,
+  className,
+}: Props) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
+  const markersRef = useRef<LeafletMarker[]>([]);
+  const userMarkerRef = useRef<LeafletMarker | null>(null);
+  const boundsRef = useRef<LatLngBounds | null>(null);
+  const leafletRef = useRef<typeof import("leaflet") | null>(null);
+  const renderMarkersRef = useRef<(() => void) | null>(null);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const initMap = async () => {
+      if (!containerRef.current || mapRef.current) return;
+      const leaflet = await import("leaflet");
+      if (!isMounted) return;
+      leafletRef.current = leaflet;
+
+      const map = leaflet.map(containerRef.current).setView(DEFAULT_CENTER, 12);
+      mapRef.current = map;
+
+      leaflet
+        .tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "&copy; OpenStreetMap contributors",
+          maxZoom: 19,
+        })
+        .addTo(map);
+
+      const handleViewportChange = () => {
+        renderMarkersRef.current?.();
+      };
+
+      const handleResize = () => {
+        map.invalidateSize();
+      };
+
+      const resizeObserver =
+        typeof ResizeObserver !== "undefined" && containerRef.current
+          ? new ResizeObserver(() => {
+              map.invalidateSize();
+            })
+          : null;
+
+      map.on("zoomend moveend", handleViewportChange);
+      window.addEventListener("resize", handleResize);
+      resizeObserver?.observe(containerRef.current);
+      const refreshMapSize = () => {
+        map.invalidateSize();
+        renderMarkersRef.current?.();
+      };
+
+      requestAnimationFrame(refreshMapSize);
+      window.setTimeout(refreshMapSize, 80);
+      window.setTimeout(refreshMapSize, 220);
+
+      return () => {
+        map.off("zoomend", handleViewportChange);
+        map.off("moveend", handleViewportChange);
+        window.removeEventListener("resize", handleResize);
+        resizeObserver?.disconnect();
+      };
+    };
+
+    let cleanup: (() => void) | undefined;
+    void initMap().then((teardown) => {
+      cleanup = teardown;
+    });
+
+    return () => {
+      isMounted = false;
+      cleanup?.();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation([position.coords.latitude, position.coords.longitude]);
+      },
+      () => undefined,
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, [locateSignal]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const leaflet = leafletRef.current;
+    if (!map || !leaflet || !userLocation) return;
+
+    const [lat, lng] = userLocation;
+    map.setView([lat, lng], 12);
+
+    if (userMarkerRef.current) {
+      userMarkerRef.current.remove();
+    }
+
+    userMarkerRef.current = leaflet
+      .marker([lat, lng], {
+        icon: leaflet.divIcon({
+          className: "imc-marker",
+          html: buildUserLocationIcon(),
+          iconSize: [44, 56],
+          iconAnchor: [22, 46],
+        }),
+        interactive: false,
+      })
+      .addTo(map);
+  }, [userLocation]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const leaflet = leafletRef.current;
+    if (!map || !leaflet) return;
+
+    renderMarkersRef.current = () => {
+      markersRef.current.forEach((m) => m.remove());
+      markersRef.current = [];
+
+      const valid = properties.filter(
+        (p) => typeof p.latitude === "number" && typeof p.longitude === "number"
+      );
+
+      if (valid.length === 0) {
+        boundsRef.current = null;
+        return;
+      }
+
+      const bounds = leaflet.latLngBounds([]);
+
+      const zoom = map.getZoom();
+      const shouldCluster = zoom < CLUSTER_BREAK_ZOOM;
+
+      if (!shouldCluster) {
+        valid.forEach((p) => {
+          const lat = p.latitude as number;
+          const lng = p.longitude as number;
+          const isSelected = selectedId && p.id === selectedId;
+
+          const marker = leaflet.marker([lat, lng], {
+            icon: leaflet.divIcon({
+              className: "imc-marker",
+              html: `<div class="imc-price-marker ${
+                isSelected ? "is-selected" : ""
+              }">
+              <span class="imc-price-value">${p.price.toLocaleString("fr-FR")}</span>
+              <span class="imc-price-suffix">FCFA</span>
+            </div>`,
+            }),
+          }).addTo(map);
+
+          marker.on("click", () => {
+            onSelect?.(p);
+          });
+
+          marker.bindTooltip(buildMarkerPreview(p), {
+            direction: "top",
+            offset: leaflet.point(0, -16),
+            opacity: 1,
+            className: "imc-hover-tooltip",
+          });
+
+          markersRef.current.push(marker);
+          bounds.extend([lat, lng]);
+        });
+      } else {
+        type ClusterBucket = {
+          key: string;
+          properties: Property[];
+          lat: number;
+          lng: number;
+        };
+
+        const buckets = new Map<string, ClusterBucket>();
+
+        valid.forEach((property) => {
+          const lat = property.latitude as number;
+          const lng = property.longitude as number;
+          const point = map.project([lat, lng], zoom);
+          const x = Math.floor(point.x / CLUSTER_GRID_SIZE);
+          const y = Math.floor(point.y / CLUSTER_GRID_SIZE);
+          const key = `${x}:${y}`;
+          const bucket = buckets.get(key);
+
+          if (bucket) {
+            bucket.properties.push(property);
+            bucket.lat =
+              (bucket.lat * (bucket.properties.length - 1) + lat) / bucket.properties.length;
+            bucket.lng =
+              (bucket.lng * (bucket.properties.length - 1) + lng) / bucket.properties.length;
+            return;
+          }
+
+          buckets.set(key, {
+            key,
+            properties: [property],
+            lat,
+            lng,
+          });
+        });
+
+        buckets.forEach((bucket) => {
+          const [first] = bucket.properties;
+          const isSingle = bucket.properties.length === 1;
+          const isSelected =
+            isSingle && selectedId ? first.id === selectedId : false;
+
+          let icon: DivIcon;
+
+          if (isSingle) {
+            icon = leaflet.divIcon({
+              className: "imc-marker",
+              html: `<div class="imc-price-marker ${
+                isSelected ? "is-selected" : ""
+              }">
+              <span class="imc-price-value">${first.price.toLocaleString("fr-FR")}</span>
+              <span class="imc-price-suffix">FCFA</span>
+            </div>`,
+            });
+          } else {
+            const clusterTone =
+              bucket.properties.length >= 6 ? "is-strong" : "is-soft";
+            icon = leaflet.divIcon({
+              className: "imc-marker",
+              html: `<div class="imc-cluster-marker ${clusterTone}">
+              <span class="imc-cluster-count">${bucket.properties.length}</span>
+            </div>`,
+            });
+          }
+
+          const marker = leaflet
+            .marker([bucket.lat, bucket.lng], { icon })
+            .addTo(map);
+
+          if (isSingle) {
+            marker.on("click", () => {
+              onSelect?.(first);
+            });
+
+            marker.bindTooltip(buildMarkerPreview(first), {
+              direction: "top",
+              offset: leaflet.point(0, -16),
+              opacity: 1,
+              className: "imc-hover-tooltip",
+            });
+          } else {
+            const clusterBounds = leaflet.latLngBounds(
+              bucket.properties.map((property) => [
+                property.latitude as number,
+                property.longitude as number,
+              ])
+            );
+
+            marker.on("click", () => {
+              map.fitBounds(clusterBounds.pad(0.35), {
+                maxZoom: Math.min(zoom + 2, 16),
+              });
+            });
+
+            marker.bindTooltip(
+              `<div class="imc-cluster-tooltip">
+              <strong>${bucket.properties.length} logements</strong>
+              <span>Zoomez pour voir les maisons disponibles.</span>
+            </div>`,
+              {
+                direction: "top",
+                offset: leaflet.point(0, -12),
+                opacity: 1,
+                className: "imc-hover-tooltip",
+              }
+            );
+          }
+
+          markersRef.current.push(marker);
+          bucket.properties.forEach((property) => {
+            bounds.extend([property.latitude as number, property.longitude as number]);
+          });
+        });
+      }
+
+      boundsRef.current = bounds.isValid() ? bounds : null;
+    };
+
+    renderMarkersRef.current();
+
+    return () => {
+      renderMarkersRef.current = null;
+    };
+  }, [properties, selectedId, onSelect, userLocation]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const bounds = boundsRef.current;
+    if (!map || userLocation || !bounds || !bounds.isValid()) return;
+    map.fitBounds(bounds.pad(0.2));
+  }, [properties, userLocation]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const leaflet = leafletRef.current;
+    const bounds = boundsRef.current;
+    if (!map || !leaflet || !bounds || !bounds.isValid()) return;
+    map.fitBounds(bounds.pad(0.2));
+    onFitBounds?.();
+  }, [fitBoundsSignal, onFitBounds]);
+
+  return (
+    <div
+      ref={containerRef}
+      style={{ width: "100%", minWidth: 0, maxWidth: "100%" }}
+      className={`relative z-0 block w-full min-w-0 max-w-full overflow-hidden bg-neutral-100 ${
+        className ?? "h-[62vh] min-h-[420px]"
+      }`}
+    />
+  );
+}
+
