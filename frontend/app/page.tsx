@@ -250,10 +250,7 @@ function HomePageContent() {
       />
 
       <main className="flex-1 px-6 pb-32 pt-[15.5rem] sm:px-10 sm:pt-[16.5rem] lg:px-16">
-        <section
-          ref={recentSectionRef}
-          className="mt-8 rounded-[2rem] border border-white/80 bg-white/80 px-5 py-6 shadow-soft backdrop-blur-sm"
-        >
+        <section ref={recentSectionRef} className="mt-8">
           {isLoading ? (
             <SectionHeaderSkeleton />
           ) : (
@@ -287,10 +284,7 @@ function HomePageContent() {
           {!isLoading && !error && renderCarousel(recentlyViewed)}
         </section>
 
-        <section
-          ref={popularSectionRef}
-          className="mt-10 rounded-[2rem] border border-white/80 bg-white/80 px-5 py-6 shadow-soft backdrop-blur-sm"
-        >
+        <section ref={popularSectionRef} className="mt-10">
           {isLoading ? (
             <SectionHeaderSkeleton />
           ) : (
@@ -317,10 +311,7 @@ function HomePageContent() {
         </section>
 
         {!isLoading && !error && popularLocations.length > 0 && (
-          <section
-            ref={locationsSectionRef}
-            className="mt-12 rounded-[2rem] border border-white/80 bg-white/80 px-5 py-6 shadow-soft backdrop-blur-sm"
-          >
+          <section ref={locationsSectionRef} className="mt-12">
             <div className="flex items-center justify-between gap-4">
               <h2 className="text-lg font-semibold sm:text-xl">Popular locations</h2>
               <Link

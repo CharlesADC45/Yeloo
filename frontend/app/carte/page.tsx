@@ -2,18 +2,18 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import {
+  FiArrowLeft,
   FiCheckCircle,
   FiChevronDown,
-  FiExternalLink,
   FiHeart,
   FiHome,
-  FiLayers,
   FiTarget,
   FiMapPin,
-  FiNavigation,
-  FiSettings,
+  FiSearch,
+  FiSliders,
 } from "react-icons/fi";
 import { BottomNav } from "@/components/BottomNav";
 import { MapResultsSkeleton, Skeleton } from "@/components/Skeleton";
@@ -33,6 +33,7 @@ const DEFAULT_FILTERS: PropertyFilters = {
 };
 
 function CartePageContent() {
+  const router = useRouter();
   const bottomNav = <BottomNav />;
   const [filters, setFilters] = useState<PropertyFilters>(DEFAULT_FILTERS);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -41,21 +42,28 @@ function CartePageContent() {
   const [locateSignal, setLocateSignal] = useState(0);
   const [fitBoundsSignal, setFitBoundsSignal] = useState(0);
   const resultsPanelRef = useRef<HTMLDivElement | null>(null);
-  const featuredCardRef = useRef<HTMLDivElement | null>(null);
   const secondaryGridRef = useRef<HTMLDivElement | null>(null);
   const paginationRef = useRef<HTMLDivElement | null>(null);
   const mapControlsRef = useRef<HTMLDivElement | null>(null);
   const quickLocationsRef = useRef<HTMLDivElement | null>(null);
+  const mobileSheetRef = useRef<HTMLDivElement | null>(null);
+  const mobileSheetHandleRef = useRef<HTMLDivElement | null>(null);
+  const mobileSheetDragStartRef = useRef(0);
+  const hasInitializedMobileSheetRef = useRef(false);
+  const mobileSheetContentRef = useRef<HTMLDivElement | null>(null);
+  const mobileSheetTopRef = useRef(0);
   const { properties, isLoading, error, refetch } = useProperties();
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
   const favoriteIds = useFavoritesStore((s) => s.favoriteIds);
+  const [viewportHeight, setViewportHeight] = useState(0);
+  const [mobileSheetTop, setMobileSheetTop] = useState(0);
+  const [isDraggingMobileSheet, setIsDraggingMobileSheet] = useState(false);
 
   const filtered = useMemo(
     () => applyPropertyFilters(properties, filters),
     [properties, filters]
   );
   const visibleProperties = useMemo(() => filtered, [filtered]);
-
   const selected = useMemo(() => {
     if (!selectedId) return null;
     return (
@@ -64,23 +72,15 @@ function CartePageContent() {
       null
     );
   }, [visibleProperties, properties, selectedId]);
-  const featuredProperty = selected ?? visibleProperties[0] ?? null;
-  const secondaryProperties = useMemo(
-    () =>
-      featuredProperty
-        ? visibleProperties.filter((property) => property.id !== featuredProperty.id)
-        : visibleProperties,
-    [featuredProperty, visibleProperties]
-  );
-  const secondaryPageSize = 4;
-  const totalSecondaryPages = Math.max(
+  const resultsPageSize = 6;
+  const totalResultsPages = Math.max(
     1,
-    Math.ceil(secondaryProperties.length / secondaryPageSize)
+    Math.ceil(visibleProperties.length / resultsPageSize)
   );
-  const paginatedSecondaryProperties = useMemo(() => {
-    const start = (resultsPage - 1) * secondaryPageSize;
-    return secondaryProperties.slice(start, start + secondaryPageSize);
-  }, [resultsPage, secondaryProperties]);
+  const paginatedResultProperties = useMemo(() => {
+    const start = (resultsPage - 1) * resultsPageSize;
+    return visibleProperties.slice(start, start + resultsPageSize);
+  }, [resultsPage, resultsPageSize, visibleProperties]);
   const quickLocations = useMemo(() => {
     const counts = new Map<string, number>();
     visibleProperties.forEach((property) => {
@@ -92,27 +92,262 @@ function CartePageContent() {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 6);
   }, [visibleProperties]);
-
-  const selectedCoords =
-    selected && typeof selected.latitude === "number" && typeof selected.longitude === "number"
-      ? {
-          lat: selected.latitude,
-          lng: selected.longitude,
-        }
-      : null;
-
-  const googleMapsUrl = selectedCoords
-    ? `https://www.google.com/maps?q=${selectedCoords.lat},${selectedCoords.lng}`
-    : null;
+  const resultsLabel = `${visibleProperties.length} logement${
+    visibleProperties.length > 1 ? "s" : ""
+  }`;
+  const mobileLocationLabel =
+    filters.city || filters.neighborhood || selected?.neighborhood || selected?.city || "Abidjan";
+  const mobileSearchTitle = `Logements dans la zone de ${mobileLocationLabel}`;
+  const mobileSearchMeta = `${resultsLabel} disponibles`;
   const mapControls = [
-    { key: "layers", icon: FiLayers, label: "Couches" },
     { key: "home", icon: FiHome, label: "Accueil" },
     { key: "locate", icon: FiTarget, label: "Position" },
-    { key: "settings", icon: FiSettings, label: "Paramètres" },
   ];
-  const navigationUrl = selectedCoords
-    ? `https://www.google.com/maps/dir/?api=1&destination=${selectedCoords.lat},${selectedCoords.lng}`
-    : null;
+  const mobileSheetBounds = useMemo(() => {
+    if (!viewportHeight) return null;
+
+    const full = 84;
+    const collapsed = Math.round(viewportHeight - 156);
+    const mid = Math.round(viewportHeight * 0.56);
+
+    return {
+      full,
+      mid: Math.max(full + 190, Math.min(mid, collapsed - 140)),
+      collapsed: Math.max(full + 320, collapsed),
+    };
+  }, [viewportHeight]);
+  const mobileSheetSnaps = useMemo(() => {
+    if (!mobileSheetBounds) return [];
+    return [mobileSheetBounds.full, mobileSheetBounds.mid, mobileSheetBounds.collapsed];
+  }, [mobileSheetBounds]);
+
+  const clampMobileSheetTop = (value: number) => {
+    if (!mobileSheetBounds) return value;
+    return Math.min(mobileSheetBounds.collapsed, Math.max(mobileSheetBounds.full, value));
+  };
+
+  const snapMobileSheet = (nextTop: number, velocityY = 0, dragOffset = 0) => {
+    if (!mobileSheetBounds || mobileSheetSnaps.length === 0) return;
+
+    if (dragOffset > 56) {
+      const lowerSnap = mobileSheetSnaps.find(
+        (snap) => snap > mobileSheetDragStartRef.current + 12
+      );
+      setMobileSheetTop(lowerSnap ?? mobileSheetBounds.collapsed);
+      return;
+    }
+
+    if (dragOffset < -56) {
+      const upperSnap = [...mobileSheetSnaps]
+        .reverse()
+        .find((snap) => snap < mobileSheetDragStartRef.current - 12);
+      setMobileSheetTop(upperSnap ?? mobileSheetBounds.full);
+      return;
+    }
+
+    if (velocityY > 520) {
+      const lowerSnap = mobileSheetSnaps.find((snap) => snap > nextTop);
+      setMobileSheetTop(lowerSnap ?? mobileSheetBounds.collapsed);
+      return;
+    }
+
+    if (velocityY < -520) {
+      const upperSnap = [...mobileSheetSnaps].reverse().find((snap) => snap < nextTop);
+      setMobileSheetTop(upperSnap ?? mobileSheetBounds.full);
+      return;
+    }
+
+    const nearest = mobileSheetSnaps.reduce((closest, current) =>
+      Math.abs(current - nextTop) < Math.abs(closest - nextTop) ? current : closest
+    );
+
+    setMobileSheetTop(nearest);
+  };
+
+  const handleShowMap = () => {
+    if (!mobileSheetBounds) return;
+    setMobileSheetTop(mobileSheetBounds.collapsed);
+  };
+
+  const renderExpandedFilters = (gridClassName: string) => (
+    <>
+      <div className={`mt-4 grid gap-3 ${gridClassName}`}>
+        <div>
+          <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500">
+            Ville
+          </label>
+          <input
+            className="mt-1 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70"
+            placeholder="Abidjan, Bouake..."
+            value={filters.city}
+            onChange={handleChange("city")}
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500">
+            Quartier
+          </label>
+          <input
+            className="mt-1 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70"
+            placeholder="Cocody, Marcory..."
+            value={filters.neighborhood}
+            onChange={handleChange("neighborhood")}
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500">
+            Min (F)
+          </label>
+          <input
+            type="number"
+            className="mt-1 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70"
+            value={filters.minPrice}
+            onChange={handleChange("minPrice")}
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500">
+            Max (F)
+          </label>
+          <input
+            type="number"
+            className="mt-1 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70"
+            value={filters.maxPrice}
+            onChange={handleChange("maxPrice")}
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500">
+            Type de bien
+          </label>
+          <select
+            className="mt-1 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70"
+            value={filters.propertyType}
+            onChange={handleChange("propertyType")}
+          >
+            <option value="">Tous</option>
+            <option value="studio">Studio</option>
+            <option value="appartement">Appartement</option>
+            <option value="maison">Maison</option>
+            <option value="villa">Villa</option>
+          </select>
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-neutral-500">
+        <span>{visibleProperties.length} logement(s) affiché(s)</span>
+        <button
+          type="button"
+          onClick={() => setFilters(DEFAULT_FILTERS)}
+          className="rounded-full border border-neutral-200 px-3 py-1 text-xs font-medium text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50"
+        >
+          Réinitialiser
+        </button>
+      </div>
+    </>
+  );
+
+  const renderMobilePropertyCard = (property: (typeof paginatedResultProperties)[number]) => (
+    <article
+      key={`mobile-${property.id}`}
+      onClick={() => setSelectedId(property.id)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          setSelectedId(property.id);
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      className="overflow-hidden rounded-[1.75rem] bg-white focus:outline-none"
+    >
+      <div className="relative h-72 overflow-hidden rounded-[1.75rem]">
+        <img
+          src={property.imageUrl}
+          alt={property.title}
+          className="h-full w-full object-cover"
+        />
+        <motion.button
+          type="button"
+          animate={
+            favoriteIds.includes(property.id)
+              ? { scale: [1, 1.16, 1], rotate: [0, -10, 8, 0] }
+              : { scale: 1, rotate: 0 }
+          }
+          transition={{ duration: 0.34, ease: "easeOut" }}
+          whileHover={{ scale: 1.06 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={(event) => {
+            event.stopPropagation();
+            toggleFavorite(property.id);
+          }}
+          className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur"
+          aria-label="Ajouter aux favoris"
+        >
+          <FiHeart
+            className={favoriteIds.includes(property.id) ? "fill-white text-white" : ""}
+          />
+        </motion.button>
+      </div>
+      <div className="space-y-3 px-1 pb-1 pt-4">
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-[1.15rem] font-semibold leading-tight text-neutral-950">
+            {property.title}
+          </p>
+          <span className="shrink-0 rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] font-semibold text-neutral-600">
+            {property.pricePeriod}
+          </span>
+        </div>
+        <p className="text-base text-neutral-600">{property.neighborhood || property.city}</p>
+        <p className="text-base text-neutral-600">
+          {property.rooms ?? "—"} chambres
+          {" · "}
+          {property.bathrooms ?? "—"} salles de bain
+          {" · "}
+          {property.surfaceM2 ?? "—"} m2
+        </p>
+        <p className="text-base text-neutral-900">
+          <span className="line-through text-neutral-400">
+            {(property.price * 1.12).toLocaleString("fr-FR")} F
+          </span>
+          {" "}
+          <span className="font-semibold">{property.price.toLocaleString("fr-FR")} F</span>
+          {" "}
+          <span className="text-neutral-500">pour 25 nuits</span>
+        </p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {selected?.id === property.id && (
+              <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] font-semibold text-neutral-700">
+                Sur la carte
+              </span>
+            )}
+            {property.ownerIsVerified && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] font-semibold text-neutral-700">
+                <FiCheckCircle className="text-xs" />
+                Vérifié
+              </span>
+            )}
+            {property.badgeLabel && (
+              <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] font-semibold text-neutral-600">
+                {property.badgeLabel}
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              setSelectedId(property.id);
+              handleShowMap();
+            }}
+            className="shrink-0 text-xs font-semibold text-neutral-900"
+          >
+            Voir sur map
+          </button>
+        </div>
+      </div>
+    </article>
+  );
 
   useEffect(() => {
     if (selectedId && !visibleProperties.some((p) => p.id === selectedId)) {
@@ -125,15 +360,22 @@ function CartePageContent() {
   }, [filters.city, filters.maxPrice, filters.minPrice, filters.neighborhood, filters.propertyType]);
 
   useEffect(() => {
-    if (resultsPage > totalSecondaryPages) {
-      setResultsPage(totalSecondaryPages);
+    if (resultsPage > totalResultsPages) {
+      setResultsPage(totalResultsPages);
     }
-  }, [resultsPage, totalSecondaryPages]);
+  }, [resultsPage, totalResultsPages]);
 
   useEffect(() => {
     if (!selectedId) return;
-    resultsPanelRef.current?.scrollTo({ top: 0, behavior: "auto" });
-  }, [selectedId]);
+
+    const selectedIndex = visibleProperties.findIndex((property) => property.id === selectedId);
+    if (selectedIndex === -1) return;
+
+    const nextPage = Math.floor(selectedIndex / resultsPageSize) + 1;
+    if (nextPage !== resultsPage) {
+      setResultsPage(nextPage);
+    }
+  }, [resultsPage, resultsPageSize, selectedId, visibleProperties]);
 
   useEffect(() => {
     if (!mapControlsRef.current) return;
@@ -178,31 +420,6 @@ function CartePageContent() {
   }, [quickLocations]);
 
   useEffect(() => {
-    if (!featuredCardRef.current) return;
-
-    const context = gsap.context(() => {
-      gsap.fromTo(
-        featuredCardRef.current,
-        {
-          y: 18,
-          opacity: 0.74,
-          scale: 0.985,
-        },
-        {
-          y: 0,
-          opacity: 1,
-          scale: 1,
-          duration: 0.42,
-          ease: "power3.out",
-          clearProps: "transform",
-        }
-      );
-    }, featuredCardRef);
-
-    return () => context.revert();
-  }, [featuredProperty?.id, selectedId]);
-
-  useEffect(() => {
     if (!secondaryGridRef.current) return;
 
     const cards = secondaryGridRef.current.querySelectorAll("[data-result-card='true']");
@@ -240,7 +457,196 @@ function CartePageContent() {
     }, secondaryGridRef);
 
     return () => context.revert();
-  }, [paginatedSecondaryProperties, resultsPage]);
+  }, [paginatedResultProperties, resultsPage]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const updateViewportHeight = () => {
+      setViewportHeight(window.innerHeight);
+    };
+
+    updateViewportHeight();
+    window.addEventListener("resize", updateViewportHeight);
+    return () => window.removeEventListener("resize", updateViewportHeight);
+  }, []);
+
+  useEffect(() => {
+    if (!mobileSheetBounds) return;
+
+    setMobileSheetTop((current) => {
+      if (!hasInitializedMobileSheetRef.current) {
+        hasInitializedMobileSheetRef.current = true;
+        return mobileSheetBounds.collapsed;
+      }
+
+      return clampMobileSheetTop(current);
+    });
+  }, [mobileSheetBounds]);
+
+  useEffect(() => {
+    mobileSheetTopRef.current = mobileSheetTop;
+  }, [mobileSheetTop]);
+
+  useEffect(() => {
+    const sheet = mobileSheetRef.current;
+    const container = mobileSheetContentRef.current;
+    const handle = mobileSheetHandleRef.current;
+    if (!sheet || !container || !mobileSheetBounds) return;
+
+    let startY: number | null = null;
+    let lastY: number | null = null;
+    let startTop = mobileSheetTopRef.current;
+    let draggingSheet = false;
+
+    const handleTouchStart = (event: TouchEvent) => {
+      if (handle?.contains(event.target as Node)) return;
+
+      const firstTouch = event.touches[0];
+      if (!firstTouch) return;
+
+      startY = firstTouch.clientY;
+      lastY = firstTouch.clientY;
+      startTop = mobileSheetTopRef.current;
+      draggingSheet = false;
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      if (handle?.contains(event.target as Node)) return;
+
+      const firstTouch = event.touches[0];
+      if (!firstTouch || startY === null) return;
+
+      const currentY = firstTouch.clientY;
+      const deltaY = currentY - startY;
+      const atTop = container.scrollTop <= 10;
+      lastY = currentY;
+
+      if (!draggingSheet) {
+        if (atTop && deltaY > 8) {
+          draggingSheet = true;
+          startTop = mobileSheetTopRef.current;
+          mobileSheetDragStartRef.current = startTop;
+          setIsDraggingMobileSheet(true);
+        } else {
+          return;
+        }
+      }
+
+      event.preventDefault();
+      container.scrollTop = 0;
+      setMobileSheetTop(clampMobileSheetTop(startTop + deltaY));
+    };
+
+    const handleTouchEnd = () => {
+      if (draggingSheet && startY !== null) {
+        const dragOffset = (lastY ?? startY) - startY;
+        const nextTop = clampMobileSheetTop(startTop + dragOffset);
+        snapMobileSheet(nextTop, 0, dragOffset);
+      }
+
+      startY = null;
+      lastY = null;
+      draggingSheet = false;
+      setIsDraggingMobileSheet(false);
+    };
+
+    sheet.addEventListener("touchstart", handleTouchStart, { passive: true, capture: true });
+    sheet.addEventListener("touchmove", handleTouchMove, { passive: false, capture: true });
+    sheet.addEventListener("touchend", handleTouchEnd, { capture: true });
+    sheet.addEventListener("touchcancel", handleTouchEnd, { capture: true });
+
+    return () => {
+      sheet.removeEventListener("touchstart", handleTouchStart, { capture: true });
+      sheet.removeEventListener("touchmove", handleTouchMove, { capture: true });
+      sheet.removeEventListener("touchend", handleTouchEnd, { capture: true });
+      sheet.removeEventListener("touchcancel", handleTouchEnd, { capture: true });
+    };
+  }, [mobileSheetBounds]);
+
+  useEffect(() => {
+    const handle = mobileSheetHandleRef.current;
+    if (!handle || !mobileSheetBounds) return;
+
+    let startY: number | null = null;
+    let lastY: number | null = null;
+    let startTop = mobileSheetTopRef.current;
+
+    const beginDrag = (clientY: number) => {
+      startY = clientY;
+      lastY = clientY;
+      startTop = mobileSheetTopRef.current;
+      mobileSheetDragStartRef.current = startTop;
+      setIsDraggingMobileSheet(true);
+    };
+
+    const updateDrag = (clientY: number) => {
+      if (startY === null) return;
+      lastY = clientY;
+      setMobileSheetTop(clampMobileSheetTop(startTop + (clientY - startY)));
+    };
+
+    const finishDrag = () => {
+      if (startY !== null) {
+        const dragOffset = (lastY ?? startY) - startY;
+        const nextTop = clampMobileSheetTop(startTop + dragOffset);
+        snapMobileSheet(nextTop, 0, dragOffset);
+      }
+
+      startY = null;
+      lastY = null;
+      setIsDraggingMobileSheet(false);
+    };
+
+    const onTouchStart = (event: TouchEvent) => {
+      const firstTouch = event.touches[0];
+      if (!firstTouch) return;
+      beginDrag(firstTouch.clientY);
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      const firstTouch = event.touches[0];
+      if (!firstTouch || startY === null) return;
+      event.preventDefault();
+      updateDrag(firstTouch.clientY);
+    };
+
+    const onPointerDown = (event: PointerEvent) => {
+      beginDrag(event.clientY);
+      handle.setPointerCapture?.(event.pointerId);
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      if (startY === null) return;
+      event.preventDefault();
+      updateDrag(event.clientY);
+    };
+
+    const onPointerUp = () => {
+      if (startY === null) return;
+      finishDrag();
+    };
+
+    handle.addEventListener("touchstart", onTouchStart, { passive: true });
+    handle.addEventListener("touchmove", onTouchMove, { passive: false });
+    handle.addEventListener("touchend", finishDrag);
+    handle.addEventListener("touchcancel", finishDrag);
+    handle.addEventListener("pointerdown", onPointerDown);
+    handle.addEventListener("pointermove", onPointerMove);
+    handle.addEventListener("pointerup", onPointerUp);
+    handle.addEventListener("pointercancel", onPointerUp);
+
+    return () => {
+      handle.removeEventListener("touchstart", onTouchStart);
+      handle.removeEventListener("touchmove", onTouchMove);
+      handle.removeEventListener("touchend", finishDrag);
+      handle.removeEventListener("touchcancel", finishDrag);
+      handle.removeEventListener("pointerdown", onPointerDown);
+      handle.removeEventListener("pointermove", onPointerMove);
+      handle.removeEventListener("pointerup", onPointerUp);
+      handle.removeEventListener("pointercancel", onPointerUp);
+    };
+  }, [mobileSheetBounds]);
 
   const handleChange =
     (field: keyof PropertyFilters) =>
@@ -253,29 +659,15 @@ function CartePageContent() {
     setFilters((prev) => ({ ...prev, city: value }));
   };
 
-  const animateListingHover = (target: EventTarget | null, active: boolean) => {
-    if (!(target instanceof HTMLElement)) return;
-
-    gsap.to(target, {
-      y: active ? -8 : 0,
-      scale: active ? 1.015 : 1,
-      boxShadow: active
-        ? "0 22px 48px rgba(37,99,235,0.16)"
-        : "0 10px 30px rgba(0,0,0,0.08)",
-      borderColor: active ? "#93c5fd" : "#e5e7eb",
-      duration: active ? 0.24 : 0.28,
-      ease: active ? "power2.out" : "power2.inOut",
-      overwrite: "auto",
-    });
-  };
-
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[linear-gradient(180deg,#f8fafc_0%,#f2f7ff_38%,#f8fafc_100%)]">
-      <TopBar />
+    <div className="min-h-screen overflow-x-hidden bg-[#f7f7f7]">
+      <div className="hidden xl:block">
+        <TopBar />
+      </div>
       <main
-        className="mx-auto w-full max-w-full overflow-x-hidden px-0 pb-44 pt-28 sm:px-6 sm:pb-32 sm:pt-32 lg:px-12"
+        className="mx-auto h-[100svh] w-full max-w-full overflow-hidden px-0 pb-0 pt-0 sm:px-6 xl:h-auto xl:overflow-x-hidden xl:pb-32 xl:pt-32 lg:px-12"
       >
-        <motion.div
+        {/* <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
@@ -286,135 +678,226 @@ function CartePageContent() {
             Filtre les logements FastAPI et clique sur un point pour voir un aperçu
             sur la carte.
           </p>
-        </motion.div>
+        </motion.div> */}
 
-        <section className="mt-6 max-w-full space-y-4 overflow-x-hidden px-2 sm:px-0">
-          <div className="rounded-3xl border border-white/80 bg-white/90 p-3 shadow-soft backdrop-blur-sm sm:p-5">
-            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-              <input
-                value={filters.city}
-                onChange={handleQuickSearch}
-                placeholder="Recherche quartier ou ville..."
-                className="w-full min-w-0 flex-1 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-              />
-              <button
-                type="button"
-                onClick={() => setShowFilters((prev) => !prev)}
-                className="w-full rounded-full border border-neutral-200 px-3 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 sm:w-auto"
-              >
-                {showFilters ? "Masquer filtres" : "Afficher filtres"}
-              </button>
+        <section className="h-full xl:hidden">
+          <div className="relative h-full overflow-hidden bg-white">
+            <div className="relative h-full w-full overflow-hidden bg-white">
+                <div className="absolute inset-x-4 top-4 z-20 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => router.back()}
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/95 text-neutral-800 shadow-[0_10px_24px_rgba(15,23,42,0.14)] ring-1 ring-black/5 backdrop-blur"
+                    aria-label="Retour"
+                  >
+                    <FiArrowLeft className="h-5 w-5" />
+                  </button>
+                  <div className="min-w-0 flex-1 rounded-[1.75rem] bg-white/95 px-4 py-3 shadow-[0_16px_36px_rgba(15,23,42,0.16)] ring-1 ring-black/5 backdrop-blur">
+                    <label className="flex items-center gap-3 rounded-[1.1rem] border border-neutral-200/80 bg-neutral-50/90 px-3 py-2.5">
+                      <FiSearch className="h-4.5 w-4.5 shrink-0 text-neutral-500" />
+                      <input
+                        value={filters.city}
+                        onChange={handleQuickSearch}
+                        placeholder={mobileSearchTitle}
+                        className="w-full min-w-0 bg-transparent text-sm font-semibold text-neutral-950 outline-none placeholder:font-semibold placeholder:text-neutral-500"
+                        aria-label="Recherche de logements"
+                      />
+                    </label>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowFilters((prev) => !prev)}
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/95 text-neutral-800 shadow-[0_10px_24px_rgba(15,23,42,0.14)] ring-1 ring-black/5 backdrop-blur"
+                    aria-label="Filtres"
+                  >
+                    <FiSliders className="h-4.5 w-4.5" />
+                  </button>
+                </div>
+
+              <AnimatePresence initial={false}>
+                {showFilters && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                    transition={{ duration: 0.22 }}
+                    className="absolute inset-x-4 top-[4.9rem] z-20 rounded-[1.75rem] bg-white/96 p-4 shadow-[0_18px_40px_rgba(15,23,42,0.18)] ring-1 ring-black/5 backdrop-blur"
+                  >
+                    {renderExpandedFilters("grid-cols-1")}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {isLoading ? (
+                <Skeleton className="h-full w-full" />
+              ) : (
+                <MapboxMap
+                  properties={visibleProperties}
+                  selectedId={selectedId}
+                  locateSignal={locateSignal}
+                  fitBoundsSignal={fitBoundsSignal}
+                  className="h-full min-h-[100svh]"
+                />
+              )}
+
+              <div className="absolute right-4 top-[5.5rem] z-10">
+                <button
+                  type="button"
+                  onClick={() => setFitBoundsSignal((value) => value + 1)}
+                  className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-neutral-700 shadow-[0_10px_24px_rgba(15,23,42,0.14)] ring-1 ring-black/5"
+                  aria-label="Accueil"
+                  title="Accueil"
+                >
+                  <FiHome className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="absolute right-4 top-[9rem] z-10">
+                <button
+                  type="button"
+                  onClick={() => setLocateSignal((value) => value + 1)}
+                  className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-neutral-700 shadow-[0_10px_24px_rgba(15,23,42,0.14)] ring-1 ring-black/5"
+                  aria-label="Position"
+                  title="Position"
+                >
+                  <FiTarget className="h-5 w-5" />
+                </button>
+              </div>
             </div>
 
-            <AnimatePresence initial={false}>
-              {showFilters && (
-                <motion.div
-                  key="carte-filters-panel"
-                  initial={{ height: 0, opacity: 0, y: -8 }}
-                  animate={{ height: "auto", opacity: 1, y: 0 }}
-                  exit={{ height: 0, opacity: 0, y: -8 }}
-                  transition={{ duration: 0.24, ease: "easeInOut" }}
-                  className="overflow-hidden"
-                >
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                    <div>
-                      <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500">
-                        Ville
-                      </label>
-                      <input
-                        className="mt-1 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-                        placeholder="Abidjan, Bouake..."
-                        value={filters.city}
-                        onChange={handleChange("city")}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500">
-                        Quartier
-                      </label>
-                      <input
-                        className="mt-1 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-                        placeholder="Cocody, Marcory..."
-                        value={filters.neighborhood}
-                        onChange={handleChange("neighborhood")}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500">
-                        Min (FCFA)
-                      </label>
-                      <input
-                        type="number"
-                        className="mt-1 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-                        value={filters.minPrice}
-                        onChange={handleChange("minPrice")}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500">
-                        Max (FCFA)
-                      </label>
-                      <input
-                        type="number"
-                        className="mt-1 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-                        value={filters.maxPrice}
-                        onChange={handleChange("maxPrice")}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500">
-                        Type de bien
-                      </label>
-                      <select
-                        className="mt-1 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-                        value={filters.propertyType}
-                        onChange={handleChange("propertyType")}
-                      >
-                        <option value="">Tous</option>
-                        <option value="studio">Studio</option>
-                        <option value="appartement">Appartement</option>
-                        <option value="maison">Maison</option>
-                        <option value="villa">Villa</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-neutral-500">
-                    <span>{visibleProperties.length} logement(s) affiché(s)</span>
+            <motion.div
+              ref={mobileSheetRef}
+              className="absolute inset-x-0 bottom-0 z-20 flex flex-col overflow-hidden rounded-t-[2rem] bg-[#f7f7f7] shadow-[0_-18px_40px_rgba(15,23,42,0.14)]"
+              style={{
+                top: mobileSheetTop ? `${mobileSheetTop}px` : undefined,
+                transition: isDraggingMobileSheet ? "none" : "top 260ms cubic-bezier(0.22, 1, 0.36, 1)",
+              }}
+            >
+              <div
+                ref={mobileSheetHandleRef}
+                className="absolute inset-x-0 top-0 z-30 flex h-11 touch-none items-start justify-center px-4 pt-3"
+              >
+                <div
+                  aria-hidden="true"
+                  className="h-1.5 w-14 rounded-full bg-neutral-300 shadow-[0_1px_0_rgba(255,255,255,0.55)]"
+                />
+              </div>
+
+              <div className="shrink-0 border-b border-neutral-200/80 bg-[#f7f7f7] px-4 pb-4 pt-8">
+                <div>
+                  <p className="text-[1.7rem] font-semibold tracking-tight text-neutral-950">
+                    {resultsLabel}
+                  </p>
+                  <p className="mt-1 text-sm text-neutral-500">Classement des resultats</p>
+                </div>
+              </div>
+
+              <div
+                ref={mobileSheetContentRef}
+                className="hide-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[7.75rem] pt-5"
+              >
+                <div className="space-y-5">
+
+                {isLoading && <MapResultsSkeleton />}
+                {!isLoading && error && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-red-700">
+                    <span>{error}</span>
                     <button
                       type="button"
-                      onClick={() => setFilters(DEFAULT_FILTERS)}
-                      className="rounded-full border border-neutral-200 px-3 py-1 text-xs font-medium text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50"
+                      onClick={() => refetch()}
+                      className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50"
                     >
-                      Réinitialiser
+                      Réessayer
                     </button>
                   </div>
-                </motion.div>
+                )}
+                {!isLoading && !error && visibleProperties.length === 0 && (
+                  <p className="text-sm text-neutral-600">
+                    Aucun logement ne correspond aux filtres actuels.
+                  </p>
+                )}
+
+                {!isLoading && !error && paginatedResultProperties.length > 0 && (
+                  <div className="space-y-6">
+                    {paginatedResultProperties.map((property) => renderMobilePropertyCard(property))}
+                  </div>
+                )}
+
+                {visibleProperties.length > resultsPageSize && (
+                  <div
+                    ref={paginationRef}
+                    className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <p className="text-xs text-neutral-500">
+                      Page {resultsPage} / {totalResultsPages}
+                    </p>
+                    <div className="flex w-full items-center gap-2 sm:w-auto sm:justify-end">
+                      <button
+                        type="button"
+                        disabled={resultsPage === 1}
+                        onClick={() => setResultsPage((page) => Math.max(1, page - 1))}
+                        className="min-w-0 flex-1 rounded-full border border-neutral-200 px-3 py-2 text-center text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
+                      >
+                        Précédent
+                      </button>
+                      <button
+                        type="button"
+                        disabled={resultsPage === totalResultsPages}
+                        onClick={() =>
+                          setResultsPage((page) => Math.min(totalResultsPages, page + 1))
+                        }
+                        className="min-w-0 flex-1 rounded-full bg-neutral-900 px-3 py-2 text-center text-xs font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300 sm:flex-none"
+                      >
+                        Suivant
+                      </button>
+                    </div>
+                  </div>
+                )}
+                </div>
+              </div>
+            </motion.div>
+
+            <AnimatePresence initial={false}>
+              {mobileSheetBounds && mobileSheetTop < mobileSheetBounds.collapsed - 20 && (
+                <motion.button
+                  type="button"
+                  onClick={handleShowMap}
+                  initial={{ opacity: 0, y: 14, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.96 }}
+                  transition={{ duration: 0.18 }}
+                  className="absolute bottom-[5.7rem] left-1/2 z-30 inline-flex -translate-x-1/2 items-center gap-2 rounded-full bg-neutral-950 px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(15,23,42,0.22)]"
+                >
+                  <span>Show map</span>
+                  <FiMapPin className="h-4 w-4" />
+                </motion.button>
               )}
             </AnimatePresence>
           </div>
+        </section>
 
-          <div className="grid w-full max-w-full gap-4 overflow-x-hidden xl:grid-cols-[minmax(0,1.45fr)_560px] xl:gap-5">
+        <section className="hidden max-w-full overflow-x-hidden px-0 xl:block xl:px-2 sm:xl:px-0">
+          <div className="grid w-full max-w-full gap-0 overflow-x-hidden xl:grid-cols-2 xl:items-stretch xl:gap-6">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25 }}
-              className="relative w-full min-w-0 max-w-[calc(100vw-1rem)] flex h-full min-h-[420px] flex-col overflow-hidden rounded-[1.6rem] border border-white/80 bg-white/90 shadow-soft backdrop-blur-sm sm:max-w-full sm:min-h-[660px] sm:rounded-[2rem] xl:sticky xl:top-32 xl:min-h-[860px]"
+              className="relative order-1 flex h-full min-h-[62vh] w-full min-w-0 max-w-full flex-col overflow-hidden bg-transparent xl:max-w-[calc(100vw-1rem)] xl:rounded-[1.6rem] xl:border xl:border-neutral-200 xl:bg-white xl:shadow-[0_14px_40px_rgba(15,23,42,0.08)] xl:sticky xl:top-32 xl:h-[calc(100vh-9rem)] xl:min-h-0"
             >
               {isLoading ? (
-                <Skeleton className="flex-1 min-h-[300px] rounded-b-none sm:min-h-[600px] xl:min-h-[760px]" />
+                <Skeleton className="min-h-[62vh] flex-1 xl:min-h-0" />
               ) : (
                 <MapboxMap
                   properties={visibleProperties}
-                  selectedId={selected?.id}
-                  onSelect={(property) => setSelectedId(property.id)}
+                  selectedId={selectedId}
                   locateSignal={locateSignal}
                   fitBoundsSignal={fitBoundsSignal}
-                  className="flex-1 min-h-[300px] sm:min-h-[600px] xl:min-h-[760px]"
+                  className="min-h-[62vh] flex-1 xl:h-full xl:min-h-0"
                 />
               )}
               <div
                 ref={mapControlsRef}
-                className="absolute left-3 top-20 z-10 flex flex-col gap-3 sm:left-4 sm:top-24"
+                className="absolute right-4 top-4 z-10 hidden flex-col gap-3 xl:flex"
               >
                 {mapControls.map((control) => {
                   const Icon = control.icon;
@@ -431,7 +914,7 @@ function CartePageContent() {
                       key={control.key}
                       type="button"
                       onClick={onClick}
-                      className="flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-neutral-700 shadow-lg ring-1 ring-neutral-200 transition hover:-translate-y-0.5 hover:text-blue-700"
+                      className="flex h-11 w-11 items-center justify-center rounded-full bg-white/96 text-neutral-700 shadow-lg ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:text-neutral-950"
                       aria-label={control.label}
                       title={control.label}
                     >
@@ -440,128 +923,161 @@ function CartePageContent() {
                   );
                 })}
               </div>
-              <div className="border-t border-neutral-100 px-3 py-4 sm:px-6">
-                {isLoading ? (
-                  <div className="space-y-3">
-                    <Skeleton className="h-4 w-56 rounded-lg" />
-                    <div className="flex gap-2">
-                      <Skeleton className="h-9 w-28 rounded-lg" />
-                      <Skeleton className="h-9 w-24 rounded-lg" />
-                    </div>
+              {!isLoading && selected && (
+                <div className="pointer-events-none absolute inset-x-4 bottom-28 z-10 xl:bottom-4">
+                  <div className="inline-flex max-w-full items-center gap-2 rounded-full bg-white/96 px-4 py-2 text-sm text-neutral-700 shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-black/5 backdrop-blur">
+                    <FiMapPin className="shrink-0 text-neutral-500" />
+                    <span className="truncate font-medium">
+                      {selected.neighborhood || selected.city || selected.title}
+                    </span>
                   </div>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-2 text-sm text-neutral-600">
-                      <FiMapPin className="text-neutral-400" />
-                      {selectedCoords ? (
-                        <span>
-                          {selectedCoords.lat.toFixed(6)}, {selectedCoords.lng.toFixed(6)}
-                        </span>
-                      ) : (
-                        <span>Sélectionnez un logement pour afficher les coordonnées.</span>
-                      )}
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {googleMapsUrl ? (
-                        <a
-                          href={googleMapsUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center gap-2 rounded-lg border border-neutral-200 px-3 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
-                        >
-                          <FiExternalLink />
-                          Google Maps
-                        </a>
-                      ) : (
-                        <button
-                          type="button"
-                          disabled
-                          className="inline-flex items-center justify-center gap-2 rounded-lg border border-neutral-200 px-3 py-2 text-xs font-semibold text-neutral-400"
-                        >
-                          <FiExternalLink />
-                          Google Maps
-                        </button>
-                      )}
-                      {navigationUrl ? (
-                        <a
-                          href={navigationUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
-                        >
-                          <FiNavigation />
-                          Itinéraire
-                        </a>
-                      ) : (
-                        <button
-                          type="button"
-                          disabled
-                          className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-200 px-3 py-2 text-xs font-semibold text-white"
-                        >
-                          <FiNavigation />
-                          Itinéraire
-                        </button>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
+                </div>
+              )}
             </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25, delay: 0.05 }}
-              ref={resultsPanelRef}
-              className="mb-24 w-full min-w-0 max-w-[calc(100vw-1rem)] overflow-x-hidden rounded-[1.6rem] border border-white/80 bg-white/90 p-3 shadow-soft backdrop-blur-sm sm:max-w-full sm:mb-0 sm:rounded-[2rem] sm:p-5 xl:max-h-[860px] xl:overflow-y-auto"
+              className="relative order-2 z-20 -mt-12 mb-24 w-full min-w-0 max-w-full overflow-x-hidden rounded-t-[2rem] bg-[#f7f7f7] px-4 pb-4 pt-4 shadow-[0_-18px_40px_rgba(15,23,42,0.14)] sm:mx-2 sm:max-w-[calc(100%-1rem)] sm:rounded-[2rem] xl:z-auto xl:mt-0 xl:mb-0 xl:h-[calc(100vh-9rem)] xl:max-w-[calc(100vw-1rem)] xl:min-h-0 xl:overflow-hidden xl:rounded-[1.6rem] xl:border xl:border-neutral-200 xl:bg-[#f7f7f7] xl:px-0 xl:pb-0 xl:pt-0 xl:shadow-[0_14px_40px_rgba(15,23,42,0.08)] xl:sticky xl:top-32"
             >
-              <div className="space-y-5">
-                <div>
-                  <h2 className="text-xl font-semibold tracking-tight text-neutral-950">
-                    Logements à Abidjan
-                  </h2>
-                  <p className="mt-1 text-sm text-neutral-500">
-                    Découvre les résultats synchronisés avec la carte.
-                  </p>
-                </div>
-
-                {quickLocations.length > 0 && (
-                  <div
-                    ref={quickLocationsRef}
-                    className="hide-scrollbar flex gap-2 overflow-x-auto pb-1"
-                  >
-                    {quickLocations.map(([label, count]) => (
+              <div
+                ref={resultsPanelRef}
+                className="hide-scrollbar xl:h-full xl:overflow-y-auto xl:px-5 xl:py-5"
+              >
+                <div className="space-y-5">
+                  <div className="space-y-4 xl:hidden">
+                    <div className="mx-auto h-1.5 w-14 rounded-full bg-neutral-300" />
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[1.7rem] font-semibold tracking-tight text-neutral-950">
+                          {resultsLabel}
+                        </p>
+                        <p className="mt-1 text-sm text-neutral-500">
+                          Classement des resultats
+                        </p>
+                      </div>
                       <button
-                        key={label}
                         type="button"
-                        onClick={() =>
-                          setFilters((prev) => ({
-                            ...prev,
-                            city: label,
-                            neighborhood: label,
-                          }))
-                        }
-                        className="shrink-0 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700"
+                        onClick={() => setShowFilters((prev) => !prev)}
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-sm"
+                        aria-label="Ouvrir les filtres"
                       >
-                        {label} ({count})
+                        <FiSliders className="h-4.5 w-4.5" />
                       </button>
-                    ))}
-                  </div>
-                )}
+                    </div>
 
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <button
-                      type="button"
-                      className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 sm:w-auto"
-                    >
-                      Save Search
-                    </button>
-                    <button
-                      type="button"
-                      className="inline-flex w-full items-center justify-end gap-2 text-sm font-medium text-blue-700 sm:w-auto"
-                    >
-                      Prix · croissant
-                      <FiChevronDown className="text-base" />
-                    </button>
+                    {quickLocations.length > 0 && (
+                      <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1">
+                        {quickLocations.map(([label, count]) => (
+                          <button
+                            key={`mobile-${label}`}
+                            type="button"
+                            onClick={() =>
+                              setFilters((prev) => ({
+                                ...prev,
+                                city: label,
+                                neighborhood: label,
+                              }))
+                            }
+                            className="shrink-0 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700"
+                          >
+                            {label} ({count})
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                <div className="hidden xl:block xl:sticky xl:top-0 xl:z-20 xl:bg-[#f7f7f7] xl:pb-5">
+                  <div className="space-y-5">
+                    <div className="rounded-[1.75rem] border border-neutral-200 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)] sm:p-5">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                        <input
+                          value={filters.city}
+                          onChange={handleQuickSearch}
+                          placeholder="Recherche quartier ou ville..."
+                          className="w-full min-w-0 flex-1 rounded-full border border-neutral-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowFilters((prev) => !prev)}
+                          className="w-full rounded-full border border-neutral-200 px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 sm:w-auto"
+                        >
+                          {showFilters ? "Masquer filtres" : "Afficher filtres"}
+                        </button>
+                      </div>
+
+                      <AnimatePresence initial={false}>
+                        {showFilters && (
+                          <motion.div
+                            key="carte-filters-panel"
+                            initial={{ height: 0, opacity: 0, y: -8 }}
+                            animate={{ height: "auto", opacity: 1, y: 0 }}
+                            exit={{ height: 0, opacity: 0, y: -8 }}
+                            transition={{ duration: 0.24, ease: "easeInOut" }}
+                            className="overflow-hidden"
+                          >
+                            {renderExpandedFilters("sm:grid-cols-2 xl:grid-cols-5")}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    <div className="flex flex-col gap-3 border-b border-neutral-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
+                          Recherche sur la carte
+                        </p>
+                        <h2 className="text-xl font-semibold tracking-tight text-neutral-950">
+                          {resultsLabel} a Abidjan
+                        </h2>
+                        <p className="mt-1 text-sm text-neutral-500">
+                          Meme logique que le design montre: les cartes defilent a droite, la carte reste fixe a gauche.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 sm:w-auto"
+                      >
+                        Prix · croissant
+                        <FiChevronDown className="text-base" />
+                      </button>
+                    </div>
+
+                    {quickLocations.length > 0 && (
+                      <div
+                        ref={quickLocationsRef}
+                        className="hide-scrollbar flex gap-2 overflow-x-auto pb-1"
+                      >
+                        {quickLocations.map(([label, count]) => (
+                          <button
+                            key={label}
+                            type="button"
+                            onClick={() =>
+                              setFilters((prev) => ({
+                                ...prev,
+                                city: label,
+                                neighborhood: label,
+                              }))
+                            }
+                            className="shrink-0 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700"
+                          >
+                            {label} ({count})
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <button
+                        type="button"
+                        className="w-full rounded-full border border-neutral-900 bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 sm:w-auto"
+                      >
+                        Save Search
+                      </button>
+                      <p className="text-sm text-neutral-500">{resultsLabel} affiches</p>
+                    </div>
+                  </div>
                 </div>
 
                 {isLoading && <MapResultsSkeleton />}
@@ -583,111 +1099,17 @@ function CartePageContent() {
                   </p>
                 )}
 
-                {!isLoading && !error && featuredProperty && (
-                  <motion.div
-                    key={`featured-${featuredProperty.id}`}
-                    ref={featuredCardRef}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{
-                      opacity: 1,
-                      y: 0,
-                      scale: selectedId === featuredProperty.id ? 1.01 : 1,
-                    }}
-                    transition={{ duration: 0.2 }}
-                    className={`overflow-hidden rounded-[1.6rem] border bg-white shadow-soft transition-all duration-200 ${
-                      selectedId === featuredProperty.id
-                        ? "border-blue-300 ring-2 ring-blue-200/70 shadow-[0_20px_48px_rgba(37,99,235,0.16)]"
-                        : "border-blue-200"
-                    }`}
-                  >
-                    <div className="relative h-60 overflow-hidden">
-                      <img
-                        src={featuredProperty.imageUrl}
-                        alt={featuredProperty.title}
-                        className="h-full w-full object-cover"
-                      />
-                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent p-4 text-white">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="text-2xl font-bold tracking-tight">
-                              {featuredProperty.price.toLocaleString("fr-FR")} FCFA
-                            </p>
-                            <p className="mt-1 line-clamp-2 text-sm font-medium text-white/90">
-                              {featuredProperty.title}
-                            </p>
-                          </div>
-                          <motion.button
-                            type="button"
-                            animate={
-                              favoriteIds.includes(featuredProperty.id)
-                                ? { scale: [1, 1.16, 1], rotate: [0, -10, 8, 0] }
-                                : { scale: 1, rotate: 0 }
-                            }
-                            transition={{ duration: 0.34, ease: "easeOut" }}
-                            whileHover={{ scale: 1.06 }}
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => toggleFavorite(featuredProperty.id)}
-                            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-neutral-700 shadow-sm"
-                            aria-label="Ajouter aux favoris"
-                          >
-                            <FiHeart
-                              className={
-                                favoriteIds.includes(featuredProperty.id)
-                                  ? "fill-blue-600 text-blue-600"
-                                  : ""
-                              }
-                            />
-                          </motion.button>
-                        </div>
-                        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-white/90">
-                          <span>{featuredProperty.rooms ?? "—"} Beds</span>
-                          <span>{featuredProperty.bathrooms ?? "—"} Baths</span>
-                          <span>{featuredProperty.surfaceM2 ?? "—"} Sqm.</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-start gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex flex-wrap items-center gap-2">
-                        {selectedId === featuredProperty.id && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white">
-                            Sur la carte
-                          </span>
-                        )}
-                        {featuredProperty.ownerIsVerified && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                            <FiCheckCircle className="text-sm" />
-                            Propriétaire vérifié
-                          </span>
-                        )}
-                        {featuredProperty.isVerified && (
-                          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                            Annonce vérifiée
-                          </span>
-                        )}
-                      </div>
-                      <Link
-                        href={`/logements/${featuredProperty.id}`}
-                        className="w-full rounded-full border border-neutral-200 px-3 py-2 text-center text-xs font-semibold text-neutral-700 hover:bg-neutral-50 sm:w-auto"
-                      >
-                        Voir la fiche
-                      </Link>
-                    </div>
-                  </motion.div>
-                )}
-
-                {!isLoading && !error && secondaryProperties.length > 0 && (
+                {!isLoading && !error && paginatedResultProperties.length > 0 && (
                   <>
                     <div
                       ref={secondaryGridRef}
-                      className="grid grid-cols-1 gap-4 md:grid-cols-2"
+                      className="grid grid-cols-1 gap-5 md:grid-cols-2"
                     >
-                    {paginatedSecondaryProperties.map((property) => (
+                    {paginatedResultProperties.map((property) => (
                       <article
                         key={property.id}
                         data-result-card="true"
                         onClick={() => setSelectedId(property.id)}
-                        onMouseEnter={(event) => animateListingHover(event.currentTarget, true)}
-                        onMouseLeave={(event) => animateListingHover(event.currentTarget, false)}
                         onKeyDown={(event) => {
                           if (event.key === "Enter" || event.key === " ") {
                             event.preventDefault();
@@ -696,42 +1118,25 @@ function CartePageContent() {
                         }}
                         role="button"
                         tabIndex={0}
-                        className={`group relative overflow-hidden rounded-[1.4rem] border text-left transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300/70 ${
+                        className={`group relative overflow-hidden rounded-[1.55rem] border bg-white text-left transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-neutral-300/70 ${
                           selected?.id === property.id
-                            ? "border-blue-400 bg-blue-50/50 shadow-[0_18px_45px_rgba(37,99,235,0.18)] ring-2 ring-blue-200/80 -translate-y-0.5"
-                            : "border-neutral-200 bg-white hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-soft"
+                            ? "border-neutral-900 ring-2 ring-neutral-200"
+                            : "border-neutral-200"
                         }`}
                       >
                         <div
                           className={`pointer-events-none absolute inset-x-0 top-0 h-1 transition-all duration-200 ${
                             selected?.id === property.id
-                              ? "bg-gradient-to-r from-blue-500 via-sky-400 to-blue-600 opacity-100"
+                              ? "bg-neutral-900 opacity-100"
                               : "bg-transparent opacity-0"
                           }`}
                         />
-                        <div className="relative h-56 overflow-hidden sm:h-52">
+                        <div className="relative h-64 overflow-hidden">
                           <img
                             src={property.imageUrl}
                             alt={property.title}
-                            className={`h-full w-full object-cover transition-transform duration-300 ${
-                              selected?.id === property.id ? "scale-[1.03]" : "group-hover:scale-[1.02]"
-                            }`}
+                            className="h-full w-full object-cover"
                           />
-                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent p-4 text-white">
-                            <div className="flex items-end justify-between gap-3">
-                              <div>
-                                <p className="text-2xl font-bold">
-                                  {property.price.toLocaleString("fr-FR")}
-                                </p>
-                                <p className="line-clamp-1 text-sm text-white/90">
-                                  {property.title}
-                                </p>
-                              </div>
-                              <span className="rounded-full bg-white/15 px-2 py-1 text-[11px] font-semibold">
-                                {property.pricePeriod}
-                              </span>
-                            </div>
-                          </div>
                           <motion.button
                             type="button"
                             animate={
@@ -746,7 +1151,7 @@ function CartePageContent() {
                               event.stopPropagation();
                               toggleFavorite(property.id);
                             }}
-                            className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-neutral-700 shadow-sm"
+                            className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/92 text-neutral-700 shadow-sm ring-1 ring-black/5 backdrop-blur"
                             aria-label="Ajouter aux favoris"
                           >
                             <FiHeart
@@ -759,18 +1164,41 @@ function CartePageContent() {
                           </motion.button>
                         </div>
                           <div className="space-y-3 p-4">
-                          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
-                            <p className="line-clamp-1 text-sm font-semibold text-neutral-900">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-lg font-semibold tracking-tight text-neutral-950">
+                                {property.price.toLocaleString("fr-FR")} F
+                              </p>
+                              <p className="mt-1 line-clamp-1 text-sm font-medium text-neutral-900">
+                                {property.title}
+                              </p>
+                            </div>
+                            <span className="shrink-0 rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] font-semibold text-neutral-600">
+                              {property.pricePeriod}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-neutral-500">
+                            <FiMapPin className="text-neutral-400" />
+                            <p className="line-clamp-1">
                               {property.neighborhood || property.city}
                             </p>
-                            <span className="text-xs text-neutral-500">
-                              {property.rooms ?? "—"} · {property.bathrooms ?? "—"} · {property.surfaceM2 ?? "—"}
-                            </span>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-500">
+                            <span>{property.rooms ?? "—"} chambres</span>
+                            <span>·</span>
+                            <span>{property.bathrooms ?? "—"} salles de bain</span>
+                            <span>·</span>
+                            <span>{property.surfaceM2 ?? "—"} m2</span>
                           </div>
                           <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex flex-wrap items-center gap-2">
+                              {selected?.id === property.id && (
+                                <span className="rounded-full bg-neutral-900 px-2.5 py-1 text-[11px] font-semibold text-white">
+                                  Sur la carte
+                                </span>
+                              )}
                               {property.ownerIsVerified && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] font-semibold text-neutral-700">
                                   <FiCheckCircle className="text-xs" />
                                   Vérifié
                                 </span>
@@ -786,8 +1214,8 @@ function CartePageContent() {
                               onClick={(event) => event.stopPropagation()}
                               className={`w-full break-words text-left text-xs font-semibold transition sm:w-auto sm:text-right ${
                                 selected?.id === property.id
-                                  ? "text-blue-800"
-                                  : "text-blue-700 hover:text-blue-800"
+                                  ? "text-neutral-950"
+                                  : "text-neutral-700 hover:text-neutral-950"
                               }`}
                             >
                               Voir les détails
@@ -798,13 +1226,13 @@ function CartePageContent() {
                     ))}
                     </div>
 
-                    {secondaryProperties.length > secondaryPageSize && (
+                    {visibleProperties.length > resultsPageSize && (
                       <div
                         ref={paginationRef}
                         className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between"
                       >
                         <p className="text-xs text-neutral-500">
-                          Page {resultsPage} / {totalSecondaryPages}
+                          Page {resultsPage} / {totalResultsPages}
                         </p>
                         <div className="flex w-full items-center gap-2 sm:w-auto sm:justify-end">
                           <button
@@ -817,13 +1245,13 @@ function CartePageContent() {
                           </button>
                           <button
                             type="button"
-                            disabled={resultsPage === totalSecondaryPages}
+                            disabled={resultsPage === totalResultsPages}
                             onClick={() =>
                               setResultsPage((page) =>
-                                Math.min(totalSecondaryPages, page + 1)
+                                Math.min(totalResultsPages, page + 1)
                               )
                             }
-                            className="min-w-0 flex-1 rounded-full bg-blue-600 px-3 py-2 text-center text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300 sm:flex-none"
+                            className="min-w-0 flex-1 rounded-full bg-neutral-900 px-3 py-2 text-center text-xs font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300 sm:flex-none"
                           >
                             Suivant
                           </button>
@@ -832,6 +1260,7 @@ function CartePageContent() {
                     )}
                   </>
                 )}
+                </div>
               </div>
             </motion.div>
           </div>
@@ -845,5 +1274,3 @@ function CartePageContent() {
 export default function CartePage() {
   return <CartePageContent />;
 }
-
-

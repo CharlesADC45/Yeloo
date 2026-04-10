@@ -1,8 +1,9 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { FiArrowLeft, FiSend } from "react-icons/fi";
 import { useParams } from "next/navigation";
 import { BottomNav } from "@/components/BottomNav";
 import { TopBar } from "@/components/TopBar";
@@ -12,6 +13,15 @@ import {
   type ConversationDetail,
 } from "@/lib/messages";
 import { useAuthStore } from "@/stores/authStore";
+
+function formatTime(value: string) {
+  return new Date(value).toLocaleString("fr-FR", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export default function MessageConversationPage() {
   const token = useAuthStore((s) => s.token);
@@ -26,6 +36,7 @@ export default function MessageConversationPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!token || !conversationId) {
@@ -53,6 +64,10 @@ export default function MessageConversationPage() {
     };
   }, [conversationId, token]);
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [conversation?.messages.length]);
+
   const handleSend = async () => {
     if (!token || !conversationId || !draft.trim()) return;
     setIsSending(true);
@@ -77,81 +92,117 @@ export default function MessageConversationPage() {
     }
   };
 
+  const counterpartInitials = (conversation?.counterpart_name || "Y")
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
   return (
     <div className="min-h-screen bg-transparent">
       <TopBar />
-      <main className="mx-auto max-w-5xl px-4 pb-28 pt-24 sm:px-8">
-        <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="space-y-5">
-          <Link href="/messages" className="inline-flex rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700">
+      <main className="mx-auto max-w-6xl px-4 pb-28 pt-24 sm:px-8">
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className="space-y-5"
+        >
+          <Link
+            href="/messages"
+            className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700"
+          >
+            <FiArrowLeft />
             Retour aux conversations
           </Link>
 
-          <section className="rounded-[2rem] border border-neutral-200 bg-white p-4 shadow-soft sm:p-6">
+          <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white">
             {isLoading ? (
-              <div className="space-y-3">
-                <div className="h-10 w-1/3 animate-pulse rounded-xl bg-neutral-100" />
-                <div className="h-64 animate-pulse rounded-[1.4rem] bg-neutral-100" />
+              <div className="space-y-3 p-5 sm:p-6">
+                <div className="h-14 w-1/2 animate-pulse rounded-2xl bg-neutral-100" />
+                <div className="h-[420px] animate-pulse rounded-[1.6rem] bg-neutral-100" />
               </div>
             ) : conversation ? (
               <>
-                <div className="border-b border-neutral-100 pb-4">
-                  <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
-                    {conversation.property_title}
-                  </h1>
-                  <p className="mt-2 text-sm text-neutral-600">
-                    Conversation avec {conversation.counterpart_name || "votre interlocuteur"} • {conversation.property_city}
-                  </p>
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-neutral-100 px-5 py-4 sm:px-6">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-sm font-semibold text-white">
+                      {counterpartInitials}
+                    </div>
+                    <div>
+                      <h1 className="text-lg font-semibold text-neutral-900 sm:text-xl">
+                        {conversation.counterpart_name || "Votre interlocuteur"}
+                      </h1>
+                      <p className="mt-0.5 text-sm text-neutral-500">
+                        {conversation.property_title} · {conversation.property_city}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="rounded-full bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700">
+                    Conversation active
+                  </div>
                 </div>
 
-                <div className="mt-5 space-y-3">
-                  {conversation.messages.map((message) => {
-                    const isMine = message.sender_id === user?.id;
-                    return (
-                      <div key={message.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
-                        <div className={`max-w-[85%] rounded-[1.4rem] px-4 py-3 text-sm ${
-                          isMine ? "bg-blue-600 text-white" : "bg-neutral-100 text-neutral-800"
-                        }`}>
-                          <p>{message.body}</p>
-                          <p className={`mt-2 text-[11px] ${isMine ? "text-white/70" : "text-neutral-400"}`}>
-                            {new Date(message.created_at).toLocaleString("fr-FR", {
-                              day: "2-digit",
-                              month: "short",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </p>
-                        </div>
+                <div className="bg-[radial-gradient(circle_at_top,_rgba(47,87,255,0.06),_transparent_42%),linear-gradient(180deg,#F8FBFF_0%,#FFFFFF_100%)] px-4 py-5 sm:px-6">
+                  <div className="space-y-3 rounded-[1.8rem] border border-neutral-200/80 bg-white/80 p-4 backdrop-blur-sm sm:p-5">
+                    {conversation.messages.length === 0 ? (
+                      <div className="rounded-[1.4rem] bg-neutral-50 px-4 py-6 text-sm text-neutral-600">
+                        Aucun message pour le moment. Lancez la conversation.
                       </div>
-                    );
-                  })}
+                    ) : (
+                      conversation.messages.map((message) => {
+                        const isMine = message.sender_id === user?.id;
+                        return (
+                          <div key={message.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
+                            <div
+                              className={`max-w-[88%] rounded-[1.45rem] px-4 py-3 text-sm shadow-[0_10px_24px_rgba(15,23,42,0.05)] sm:max-w-[72%] ${
+                                isMine
+                                  ? "rounded-br-md bg-blue-600 text-white"
+                                  : "rounded-bl-md border border-neutral-200 bg-white text-neutral-800"
+                              }`}
+                            >
+                              <p className="leading-6">{message.body}</p>
+                              <p className={`mt-2 text-[11px] ${isMine ? "text-white/70" : "text-neutral-400"}`}>
+                                {formatTime(message.created_at)}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
                 </div>
 
-                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                  <textarea
-                    rows={3}
-                    value={draft}
-                    onChange={(event) => setDraft(event.target.value)}
-                    placeholder="Écrire un message…"
-                    className="min-h-[90px] flex-1 rounded-[1.4rem] border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => void handleSend()}
-                    disabled={isSending || !draft.trim()}
-                    className="rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-70"
-                  >
-                    {isSending ? "Envoi..." : "Envoyer"}
-                  </button>
+                <div className="border-t border-neutral-100 px-4 py-4 sm:px-6">
+                  <div className="flex items-end gap-3 rounded-[1.6rem] border border-neutral-200 bg-white p-3">
+                    <textarea
+                      rows={1}
+                      value={draft}
+                      onChange={(event) => setDraft(event.target.value)}
+                      placeholder="Écrire un message..."
+                      className="min-h-[48px] flex-1 resize-none bg-transparent px-2 py-2 text-sm text-neutral-800 outline-none placeholder:text-neutral-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => void handleSend()}
+                      disabled={isSending || !draft.trim()}
+                      className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <FiSend className="text-lg" />
+                    </button>
+                  </div>
                 </div>
               </>
             ) : (
-              <div className="rounded-[1.4rem] bg-neutral-50 px-4 py-6 text-sm text-neutral-600">
+              <div className="m-5 rounded-[1.4rem] bg-neutral-50 px-4 py-6 text-sm text-neutral-600">
                 Conversation introuvable.
               </div>
             )}
 
             {error && (
-              <div className="mt-4 rounded-[1.2rem] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="m-5 rounded-[1.2rem] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {error}
               </div>
             )}

@@ -54,12 +54,11 @@ function buildMarkerPreview(property: Property) {
     <div class="imc-hover-card">
       <div class="imc-hover-card__header">
         <p class="imc-hover-card__title">${title}</p>
-        <span class="imc-hover-card__close">×</span>
       </div>
       <div class="imc-hover-card__body">
         <img src="${property.imageUrl}" alt="${title}" class="imc-hover-card__image" />
         <div class="imc-hover-card__content">
-          <p class="imc-hover-card__price">${price} FCFA</p>
+          <p class="imc-hover-card__price">${price}F</p>
           <p class="imc-hover-card__location">${location}</p>
           <div class="imc-hover-card__meta">
             <span><strong>${rooms}</strong><small>Beds</small></span>
@@ -85,11 +84,29 @@ export function MapboxMap({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const markersRef = useRef<LeafletMarker[]>([]);
+  const markerByPropertyIdRef = useRef<Map<string, LeafletMarker>>(new Map());
   const userMarkerRef = useRef<LeafletMarker | null>(null);
   const boundsRef = useRef<LatLngBounds | null>(null);
   const leafletRef = useRef<typeof import("leaflet") | null>(null);
   const renderMarkersRef = useRef<(() => void) | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+
+  const openMarkerPopup = (marker: LeafletMarker) => {
+    const map = mapRef.current;
+    if (!map || !marker.getPopup()) return;
+    if (!(marker as LeafletMarker & { _map?: LeafletMap | null })._map) return;
+
+    const safeOpen = () => {
+      try {
+        marker.openPopup();
+      } catch {
+        // Ignore transient Leaflet popup timing issues during map updates.
+      }
+    };
+
+    requestAnimationFrame(safeOpen);
+    window.setTimeout(safeOpen, 80);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -125,7 +142,7 @@ export function MapboxMap({
             })
           : null;
 
-      map.on("zoomend moveend", handleViewportChange);
+      map.on("zoomend", handleViewportChange);
       window.addEventListener("resize", handleResize);
       resizeObserver?.observe(containerRef.current);
       const refreshMapSize = () => {
@@ -139,7 +156,6 @@ export function MapboxMap({
 
       return () => {
         map.off("zoomend", handleViewportChange);
-        map.off("moveend", handleViewportChange);
         window.removeEventListener("resize", handleResize);
         resizeObserver?.disconnect();
       };
@@ -200,6 +216,7 @@ export function MapboxMap({
     renderMarkersRef.current = () => {
       markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
+      markerByPropertyIdRef.current = new Map();
 
       const valid = properties.filter(
         (p) => typeof p.latitude === "number" && typeof p.longitude === "number"
@@ -228,23 +245,25 @@ export function MapboxMap({
                 isSelected ? "is-selected" : ""
               }">
               <span class="imc-price-value">${p.price.toLocaleString("fr-FR")}</span>
-              <span class="imc-price-suffix">FCFA</span>
+              <span class="imc-price-suffix">F</span>
             </div>`,
             }),
           }).addTo(map);
 
           marker.on("click", () => {
+            openMarkerPopup(marker);
             onSelect?.(p);
           });
 
-          marker.bindTooltip(buildMarkerPreview(p), {
-            direction: "top",
+          marker.bindPopup(buildMarkerPreview(p), {
             offset: leaflet.point(0, -16),
-            opacity: 1,
-            className: "imc-hover-tooltip",
+            className: "imc-hover-tooltip imc-map-popup",
+            closeButton: false,
+            autoPan: true,
           });
 
           markersRef.current.push(marker);
+          markerByPropertyIdRef.current.set(p.id, marker);
           bounds.extend([lat, lng]);
         });
       } else {
@@ -298,7 +317,7 @@ export function MapboxMap({
                 isSelected ? "is-selected" : ""
               }">
               <span class="imc-price-value">${first.price.toLocaleString("fr-FR")}</span>
-              <span class="imc-price-suffix">FCFA</span>
+              <span class="imc-price-suffix">F</span>
             </div>`,
             });
           } else {
@@ -318,15 +337,18 @@ export function MapboxMap({
 
           if (isSingle) {
             marker.on("click", () => {
+              openMarkerPopup(marker);
               onSelect?.(first);
             });
 
-            marker.bindTooltip(buildMarkerPreview(first), {
-              direction: "top",
+            marker.bindPopup(buildMarkerPreview(first), {
               offset: leaflet.point(0, -16),
-              opacity: 1,
-              className: "imc-hover-tooltip",
+              className: "imc-hover-tooltip imc-map-popup",
+              closeButton: false,
+              autoPan: true,
             });
+
+            markerByPropertyIdRef.current.set(first.id, marker);
           } else {
             const clusterBounds = leaflet.latLngBounds(
               bucket.properties.map((property) => [
@@ -340,19 +362,6 @@ export function MapboxMap({
                 maxZoom: Math.min(zoom + 2, 16),
               });
             });
-
-            marker.bindTooltip(
-              `<div class="imc-cluster-tooltip">
-              <strong>${bucket.properties.length} logements</strong>
-              <span>Zoomez pour voir les maisons disponibles.</span>
-            </div>`,
-              {
-                direction: "top",
-                offset: leaflet.point(0, -12),
-                opacity: 1,
-                className: "imc-hover-tooltip",
-              }
-            );
           }
 
           markersRef.current.push(marker);
@@ -371,6 +380,38 @@ export function MapboxMap({
       renderMarkersRef.current = null;
     };
   }, [properties, selectedId, onSelect, userLocation]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (!selectedId) {
+      markerByPropertyIdRef.current.forEach((marker) => marker.closePopup());
+      return;
+    }
+
+    const marker = markerByPropertyIdRef.current.get(selectedId);
+    if (!marker) return;
+
+    const openSelectedPopup = () => {
+      if (mapRef.current !== map) return;
+      if (markerByPropertyIdRef.current.get(selectedId) !== marker) return;
+      if (!marker.getPopup()) return;
+      if (!(marker as LeafletMarker & { _map?: LeafletMap | null })._map) return;
+
+      openMarkerPopup(marker);
+    };
+
+    map.panTo(marker.getLatLng(), { animate: true, duration: 0.35 });
+    map.once("moveend", openSelectedPopup);
+
+    const fallbackTimer = window.setTimeout(openSelectedPopup, 120);
+
+    return () => {
+      window.clearTimeout(fallbackTimer);
+      map.off("moveend", openSelectedPopup);
+    };
+  }, [selectedId]);
 
   useEffect(() => {
     const map = mapRef.current;

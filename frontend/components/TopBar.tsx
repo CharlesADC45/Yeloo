@@ -12,7 +12,6 @@ import {
   FiGrid,
   FiLogOut,
   FiMenu,
-  FiSearch,
   FiX,
 } from "react-icons/fi";
 import { adminNavItems } from "@/lib/adminNav";
@@ -308,10 +307,8 @@ function TopBarContent({
   const renderHomeSearchBar = () => {
     if (!homeSearch) return null;
 
-    const widthClass = homeSearch.compact
-      ? homeSearch.showFilterButton
-        ? "max-w-[760px]"
-        : "max-w-[620px]"
+    const widthClass = compactHomeSearch
+      ? "max-w-[760px]"
       : homeSearch.showFilterButton
         ? "max-w-[980px]"
         : "max-w-[760px]";
@@ -319,71 +316,55 @@ function TopBarContent({
     return (
       <motion.div
         initial={false}
-        animate={{ scale: homeSearch.compact ? 0.96 : 1 }}
-        transition={{ type: "spring", stiffness: 280, damping: 30 }}
+        animate={{
+          scale: compactHomeSearch ? 0.91 : 1,
+          opacity: 1,
+          y: compactHomeSearch ? -8 : 0,
+        }}
+        transition={{ type: "spring", stiffness: 220, damping: 28 }}
         className={`pointer-events-none mx-auto w-full ${widthClass}`}
         style={{ transformOrigin: "center center" }}
       >
-        <div className="pointer-events-auto rounded-[2rem] bg-white/92 p-1.5 shadow-[0_18px_45px_rgba(15,23,42,0.16)] backdrop-blur-md">
+        <div
+          className={`pointer-events-auto bg-white/94 backdrop-blur-md shadow-[0_18px_45px_rgba(15,23,42,0.16)] ${
+            compactHomeSearch
+              ? "rounded-full border border-neutral-200/70 px-1.5 py-1"
+              : "rounded-[2rem] p-1.5"
+          }`}
+        >
           <form
             onSubmit={(event) => {
               event.preventDefault();
               homeSearch.onSubmit();
             }}
-            className={`flex w-full flex-nowrap items-center gap-2 rounded-full bg-white px-4 ${
-              homeSearch.compact ? "py-2" : "py-2.5"
-            } text-sm`}
+            className={`flex w-full flex-nowrap items-center gap-2 rounded-full bg-white px-4 text-sm ${
+              compactHomeSearch ? "py-2" : "py-2.5"
+            }`}
           >
             <div className="min-w-0 flex-1 px-2">
-              <AnimatePresence mode="wait" initial={false}>
-                {!homeSearch.compact ? (
-                  <motion.div
-                    key="expanded-home-field"
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.18 }}
-                  >
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-800">
-                      Destination
-                    </p>
-                    <input
-                      value={homeSearch.value}
-                      onChange={homeSearch.onChange}
-                      onFocus={homeSearch.onFocus}
-                      onBlur={homeSearch.onBlur}
-                      placeholder="Rechercher une destination"
-                      className="mt-0.5 min-w-0 w-full bg-transparent text-sm text-neutral-700 outline-none placeholder:text-neutral-400"
-                    />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="compact-home-field"
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.18 }}
-                    className="flex min-w-0 items-center gap-3"
-                  >
-                    <div className="hidden h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-700 sm:flex">
-                      <FiSearch className="text-sm" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-800">
-                        Destination
-                      </p>
-                      <input
-                        value={homeSearch.value}
-                        onChange={homeSearch.onChange}
-                        onFocus={homeSearch.onFocus}
-                        onBlur={homeSearch.onBlur}
-                        placeholder="N'importe où"
-                        className="mt-0.5 min-w-0 w-full bg-transparent text-sm font-medium text-neutral-800 outline-none placeholder:text-neutral-500"
-                      />
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <motion.div
+                key="home-field"
+                initial={false}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.18 }}
+                className="min-w-0"
+              >
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-800">
+                  Destination
+                </p>
+                <input
+                  value={homeSearch.value}
+                  onChange={homeSearch.onChange}
+                  onFocus={homeSearch.onFocus}
+                  onBlur={homeSearch.onBlur}
+                  placeholder={compactHomeSearch ? "N'importe où" : "Rechercher une destination"}
+                  className={`mt-0.5 min-w-0 w-full bg-transparent outline-none ${
+                    compactHomeSearch
+                      ? "text-[13px] font-medium text-neutral-800 placeholder:text-neutral-500"
+                      : "text-sm text-neutral-700 placeholder:text-neutral-400"
+                  }`}
+                />
+              </motion.div>
             </div>
 
             <AnimatePresence initial={false}>
@@ -393,7 +374,11 @@ function TopBarContent({
                   type="button"
                   onClick={homeSearch.onOpenFilters}
                   initial={{ width: 0, opacity: 0, scale: 0.9 }}
-                  animate={{ width: 92, opacity: 1, scale: 1 }}
+                  animate={{
+                    width: compactHomeSearch ? 0 : 92,
+                    opacity: compactHomeSearch ? 0 : 1,
+                    scale: compactHomeSearch ? 0.9 : 1,
+                  }}
                   exit={{ width: 0, opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.22, ease: "easeInOut" }}
                   className="shrink-0 overflow-hidden rounded-full border border-neutral-200 px-0 py-2.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
@@ -405,7 +390,9 @@ function TopBarContent({
 
             <button
               type="submit"
-              className="shrink-0 inline-flex items-center rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 sm:px-6"
+              className={`shrink-0 inline-flex items-center rounded-full bg-blue-600 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 ${
+                compactHomeSearch ? "px-4 py-2" : "px-5 py-2.5 sm:px-6"
+              }`}
             >
               <span>Go</span>
             </button>
@@ -423,15 +410,8 @@ function TopBarContent({
         }`}
       >
         <div className="w-full px-4 sm:px-8 lg:px-10">
-          <div
-            className={`flex items-center justify-between py-4 ${
-              isOwnerRoute ? "lg:px-0" : ""
-            }`}
-          >
-            <motion.div
-              initial={false}
-              animate={{ y: compactHomeSearch ? 11 : 0 }}
-              transition={{ duration: 0.22, ease: "easeInOut" }}
+          <div className={`flex items-center justify-between py-4 ${isOwnerRoute ? "lg:px-0" : ""}`}>
+            <div
               className={`flex items-center gap-2 ${
                 isOwnerRoute ? "lg:w-64 lg:px-6" : ""
               }`}
@@ -448,11 +428,8 @@ function TopBarContent({
                   <span className="whitespace-nowrap">{locationLabel}</span>
                 )}
               </Link>
-            </motion.div>
-            <motion.div
-              initial={false}
-              animate={{ y: compactHomeSearch ? 11 : 0 }}
-              transition={{ duration: 0.22, ease: "easeInOut" }}
+            </div>
+            <div
               className={`relative z-20 flex items-center gap-2 ${
                 isOwnerRoute ? "lg:pr-8" : ""
               }`}
@@ -588,23 +565,23 @@ function TopBarContent({
                 onClick={() => setIsMenuOpen(true)}
                 className="flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-sm sm:hidden"
                 aria-label="Menu"
-              >
-                <FiMenu />
-              </button>
-            </motion.div>
+                >
+                  <FiMenu />
+                </button>
+            </div>
           </div>
 
           {showHomeSearch && (
-            <div className={`${compactHomeSearch ? "pb-3" : "pb-4"}`}>
+            <div className={`${compactHomeSearch ? "pb-0" : "pb-4"}`}>
               <motion.div
                 initial={false}
                 animate={{
                   opacity: compactHomeSearch ? 0 : 1,
                   height: compactHomeSearch ? 0 : "auto",
                   marginBottom: compactHomeSearch ? 0 : 20,
-                  y: compactHomeSearch ? -10 : 0,
+                  y: compactHomeSearch ? -22 : 0,
                 }}
-                transition={{ duration: 0.24, ease: "easeInOut" }}
+                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                 className="overflow-hidden text-center"
               >
                 <div className="mx-auto w-full max-w-3xl">
@@ -619,10 +596,11 @@ function TopBarContent({
               <motion.div
                 initial={false}
                 animate={{
+                  opacity: 1,
+                  scale: compactHomeSearch ? 0.97 : 1,
                   y: compactHomeSearch ? -56 : 0,
-                  marginBottom: compactHomeSearch ? -52 : 0,
                 }}
-                transition={{ duration: 0.24, ease: "easeInOut" }}
+                transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
                 className="relative z-10"
               >
                 {renderHomeSearchBar()}
