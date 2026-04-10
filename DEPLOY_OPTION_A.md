@@ -77,6 +77,9 @@ Configuration recommandée :
 - Dockerfile : `backend/Dockerfile`
 - Health check path : `/health`
 
+Le fichier `render.yaml` à la racine donne aussi une base de Blueprint Render pour ce service.
+Si tu utilises le Blueprint, Render te demandera quand même de remplir les variables marquées `sync: false`.
+
 Variables à ajouter dans Render :
 
 ```env
@@ -134,6 +137,8 @@ Variables à ajouter dans Vercel :
 NEXT_PUBLIC_API_BASE_URL=https://your-yeloo-api.onrender.com
 NEXT_PUBLIC_MAPBOX_TOKEN=your_mapbox_token
 ```
+
+Le fichier `frontend/.vercelignore` évite d'envoyer les caches locaux inutiles.
 
 Après le déploiement Vercel, récupérer l'URL frontend, par exemple :
 
