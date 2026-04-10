@@ -6,11 +6,13 @@ Thumbs.db
 .env.*.local
 
 .venv/
+.tmp/
 backend/.venv/
 frontend/.next/
 frontend/node_modules/
 frontend/.npm-cache/
 frontend/tsconfig.tsbuildinfo
+backend/uvicorn-test.*.log
 
 __pycache__/
 *.py[cod]

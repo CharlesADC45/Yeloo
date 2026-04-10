@@ -43,6 +43,8 @@ def build_public_url(object_key: str) -> str:
     bucket = settings.minio_bucket
     if settings.minio_public_url:
         base = settings.minio_public_url.rstrip("/")
+        if settings.minio_public_url_is_bucket_root:
+            return f"{base}/{object_key}"
         return f"{base}/{bucket}/{object_key}"
     protocol = "https" if settings.minio_secure else "http"
     return f"{protocol}://{settings.minio_endpoint}/{bucket}/{object_key}"

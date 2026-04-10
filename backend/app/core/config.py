@@ -28,9 +28,10 @@ class Settings(BaseSettings):
     minio_endpoint: str | None = None
     minio_access_key: str | None = None
     minio_secret_key: str | None = None
-    minio_bucket: str = "immoconnect"
+    minio_bucket: str = "yeloo"
     minio_secure: bool = False
     minio_public_url: str | None = None
+    minio_public_url_is_bucket_root: bool = False
 
     @field_validator("frontend_origins", mode="before")
     @classmethod

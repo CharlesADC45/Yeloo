@@ -1031,17 +1031,17 @@ function CartePageContent() {
                         <h2 className="text-xl font-semibold tracking-tight text-neutral-950">
                           {resultsLabel} a Abidjan
                         </h2>
-                        <p className="mt-1 text-sm text-neutral-500">
+                        {/* <p className="mt-1 text-sm text-neutral-500">
                           Meme logique que le design montre: les cartes defilent a droite, la carte reste fixe a gauche.
-                        </p>
+                        </p> */}
                       </div>
-                      <button
+                      {/* <button
                         type="button"
                         className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 sm:w-auto"
                       >
                         Prix · croissant
                         <FiChevronDown className="text-base" />
-                      </button>
+                      </button> */}
                     </div>
 
                     {quickLocations.length > 0 && (
