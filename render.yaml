@@ -3,6 +3,7 @@
     name: yeloo-api
     env: docker
     rootDir: backend
+    dockerfilePath: Dockerfile
     plan: free
     healthCheckPath: /health
     autoDeploy: true
