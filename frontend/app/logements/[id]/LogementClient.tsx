@@ -13,6 +13,7 @@ import {
   FiHeart,
   FiHome,
   FiMapPin,
+  FiMessageCircle,
   FiPhone,
   FiPlay,
   FiShare2,
@@ -200,6 +201,8 @@ export function LogementClient({ id }: Props) {
   const videoUrl = property?.videoUrl;
   const isTourImage = Boolean(tourUrl && !/\.(mp4|webm|ogg|mov)$/i.test(tourUrl));
   const isOwnerViewer = user?.role === "proprietaire" || user?.role === "admin";
+  const ownerLabel = property?.ownerIsVerified ? "Propriétaire vérifié" : "Propriétaire Yeloo";
+  const ownerInitial = ownerLabel.charAt(0).toUpperCase();
 
   const handleOpenChat = async () => {
     if (!resolvedId) return;
@@ -284,34 +287,6 @@ export function LogementClient({ id }: Props) {
         }
       );
 
-      const liftItems = gsap.utils.toArray<HTMLElement>("[data-detail-lift]");
-      liftItems.forEach((item) => {
-        const onEnter = () => {
-          gsap.to(item, {
-            y: -6,
-            scale: 1.01,
-            boxShadow: "0 22px 40px rgba(37, 99, 235, 0.10)",
-            duration: 0.26,
-            ease: "power3.out",
-          });
-        };
-        const onLeave = () => {
-          gsap.to(item, {
-            y: 0,
-            scale: 1,
-            boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)",
-            duration: 0.28,
-            ease: "power2.out",
-          });
-        };
-
-        item.addEventListener("mouseenter", onEnter);
-        item.addEventListener("mouseleave", onLeave);
-        cleanupFns.push(() => {
-          item.removeEventListener("mouseenter", onEnter);
-          item.removeEventListener("mouseleave", onLeave);
-        });
-      });
     }, detailRootRef);
 
     return () => {
@@ -416,9 +391,7 @@ export function LogementClient({ id }: Props) {
 
           <div
             data-detail-reveal="true"
-            data-detail-lift="true"
-            className="relative overflow-hidden rounded-[2rem] border border-neutral-200 bg-neutral-100 shadow-soft"
-            style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+            className="relative overflow-hidden border border-neutral-200 bg-neutral-100"
           >
             <div
               ref={sliderRef}
@@ -443,12 +416,10 @@ export function LogementClient({ id }: Props) {
             <div className="space-y-6">
               <section
                 data-detail-reveal="true"
-                data-detail-lift="true"
-                className="rounded-[2rem] bg-white p-6 shadow-soft"
-                style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+                className="bg-white py-6"
               >
                 <div className="grid gap-4 sm:grid-cols-4">
-                  <div className="rounded-[1.3rem] bg-neutral-50 p-4">
+                  <div className="bg-neutral-50 p-4">
                     <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
                       Prix
                     </p>
@@ -457,7 +428,7 @@ export function LogementClient({ id }: Props) {
                     </p>
                     <p className="text-sm text-neutral-500">/ {property.pricePeriod}</p>
                   </div>
-                  <div className="rounded-[1.3rem] bg-neutral-50 p-4">
+                  <div className="bg-neutral-50 p-4">
                     <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
                       Pièces
                     </p>
@@ -465,7 +436,7 @@ export function LogementClient({ id }: Props) {
                       {property.rooms ?? "N/A"}
                     </p>
                   </div>
-                  <div className="rounded-[1.3rem] bg-neutral-50 p-4">
+                  <div className="bg-neutral-50 p-4">
                     <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
                       Bains
                     </p>
@@ -473,7 +444,7 @@ export function LogementClient({ id }: Props) {
                       {property.bathrooms ?? "N/A"}
                     </p>
                   </div>
-                  <div className="rounded-[1.3rem] bg-neutral-50 p-4">
+                  <div className="bg-neutral-50 p-4">
                     <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
                       Surface
                     </p>
@@ -482,7 +453,7 @@ export function LogementClient({ id }: Props) {
                     </p>
                     <p className="text-sm text-neutral-500">m²</p>
                   </div>
-                  <div className="rounded-[1.3rem] bg-neutral-50 p-4 sm:col-span-4">
+                  <div className="bg-neutral-50 p-4 sm:col-span-4">
                     <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
                       Caution
                     </p>
@@ -495,9 +466,7 @@ export function LogementClient({ id }: Props) {
 
                <section
                  data-detail-reveal="true"
-                 data-detail-lift="true"
-                 className="rounded-[2rem] bg-white p-6 shadow-soft"
-                 style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+                 className="border-t border-neutral-200 bg-white py-6"
                >
                 <div className="flex items-center gap-2">
                   <FiFileText className="text-blue-600" />
@@ -511,9 +480,7 @@ export function LogementClient({ id }: Props) {
 
                <section
                  data-detail-reveal="true"
-                 data-detail-lift="true"
-                 className="rounded-[2rem] bg-white p-6 shadow-soft"
-                 style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+                 className="border-t border-neutral-200 bg-white py-6"
                >
                 <h2 className="text-xl font-semibold text-neutral-900">Caractéristiques</h2>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -525,7 +492,7 @@ export function LogementClient({ id }: Props) {
                     ["Adresse", property.address || "Communiquée après demande"],
                     ["Statut", property.isVerified ? "Annonce vérifiée" : "Annonce en cours"],
                   ].map(([label, value]) => (
-                    <div key={label} className="rounded-[1.2rem] border border-neutral-200 p-4">
+                    <div key={label} className="border border-neutral-200 p-4">
                       <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
                         {label}
                       </p>
@@ -537,9 +504,102 @@ export function LogementClient({ id }: Props) {
 
                <section
                  data-detail-reveal="true"
-                 data-detail-lift="true"
-                 className="rounded-[2rem] bg-white p-6 shadow-soft"
-                 style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+                 className="border-t border-neutral-200 bg-white py-8"
+               >
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">
+                  Propriétaire
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-neutral-900">
+                  Faites connaissance avec la personne qui a publié ce logement
+                </h2>
+                <div className="mt-6 grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+                  <div className="border-y border-neutral-200 py-5">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-16 w-16 items-center justify-center bg-neutral-950 text-2xl font-semibold text-white">
+                        {ownerInitial}
+                      </div>
+                      <div>
+                        <p className="text-lg font-semibold text-neutral-950">{ownerLabel}</p>
+                        <p className="mt-1 text-sm text-neutral-500">
+                          Hôte sur Yeloo
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-5 grid grid-cols-3 divide-x divide-neutral-200 border-t border-neutral-200 pt-4 text-center">
+                      <div>
+                        <p className="text-lg font-semibold text-neutral-950">
+                          {property.ownerIsVerified ? "Oui" : "En cours"}
+                        </p>
+                        <p className="mt-1 text-[11px] uppercase tracking-wide text-neutral-500">
+                          Vérifié
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-lg font-semibold text-neutral-950">1</p>
+                        <p className="mt-1 text-[11px] uppercase tracking-wide text-neutral-500">
+                          Annonce
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-lg font-semibold text-neutral-950">Direct</p>
+                        <p className="mt-1 text-[11px] uppercase tracking-wide text-neutral-500">
+                          Contact
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-y border-neutral-200 py-5">
+                    <h3 className="text-base font-semibold text-neutral-950">
+                      Informations sur le propriétaire
+                    </h3>
+                    <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-600">
+                      Ce propriétaire publie son logement sur Yeloo pour garder un échange clair,
+                      centralisé et vérifiable avant toute décision.
+                    </p>
+                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                      <div className="flex gap-3 border border-neutral-200 p-4">
+                        <FiCheckCircle className="mt-0.5 text-blue-600" />
+                        <div>
+                          <p className="text-sm font-semibold text-neutral-900">
+                            Statut du profil
+                          </p>
+                          <p className="mt-1 text-sm text-neutral-500">
+                            {property.ownerIsVerified
+                              ? "Propriétaire vérifié par la plateforme"
+                              : "Profil propriétaire en cours de vérification"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3 border border-neutral-200 p-4">
+                        <FiMessageCircle className="mt-0.5 text-blue-600" />
+                        <div>
+                          <p className="text-sm font-semibold text-neutral-900">
+                            Échange locataire
+                          </p>
+                          <p className="mt-1 text-sm text-neutral-500">
+                            Message direct depuis l’annonce pour poser vos questions.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    {!isOwnerViewer && isChatEnabled && (
+                      <button
+                        type="button"
+                        onClick={() => void handleOpenChat()}
+                        disabled={isOpeningChat}
+                        className="mt-5 inline-flex items-center justify-center bg-neutral-950 px-5 py-3 text-sm font-semibold text-white disabled:opacity-70"
+                      >
+                        {isOpeningChat ? "Ouverture..." : "Envoyer un message au propriétaire"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </section>
+
+               <section
+                 data-detail-reveal="true"
+                 className="border-t border-neutral-200 bg-white py-6"
                >
                 <h2 className="text-xl font-semibold text-neutral-900">Localisation</h2>
                 <div className="mt-4 space-y-4">
@@ -550,24 +610,22 @@ export function LogementClient({ id }: Props) {
                       title={property.title}
                     />
                   ) : (
-                    <div className="rounded-[1.4rem] border border-dashed border-neutral-200 bg-neutral-50 p-6 text-sm text-neutral-500">
+                    <div className="border border-dashed border-neutral-200 bg-neutral-50 p-6 text-sm text-neutral-500">
                       Localisation indisponible pour ce logement.
                     </div>
                   )}
-                  <div className="rounded-[1.4rem] border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-600">
+                  <div className="border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-600">
                     Adresse: {property.address || "Adresse communiquée après contact"}
                   </div>
                 </div>
               </section>
 
                <section data-detail-reveal="true" className="grid gap-6 lg:grid-cols-2">
-                 <div
-                   data-detail-lift="true"
-                   className="rounded-[2rem] bg-white p-5 shadow-soft"
-                   style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
-                 >
+                  <div
+                    className="border-t border-neutral-200 bg-white py-5"
+                  >
                   <h2 className="text-lg font-semibold text-neutral-900">Visite 360°</h2>
-                  <div className="relative mt-3 h-52 overflow-hidden rounded-[1.4rem] bg-neutral-100">
+                  <div className="relative mt-3 h-52 overflow-hidden bg-neutral-100">
                     {tourUrl && isTourImage ? (
                       <PannellumViewer imageUrl={tourUrl} className="h-full w-full" />
                     ) : (
@@ -588,13 +646,11 @@ export function LogementClient({ id }: Props) {
                     )}
                   </div>
                 </div>
-                 <div
-                   data-detail-lift="true"
-                   className="rounded-[2rem] bg-white p-5 shadow-soft"
-                   style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
-                 >
+                  <div
+                    className="border-t border-neutral-200 bg-white py-5"
+                  >
                   <h2 className="text-lg font-semibold text-neutral-900">Vidéo</h2>
-                  <div className="relative mt-3 h-52 overflow-hidden rounded-[1.4rem] bg-neutral-100">
+                  <div className="relative mt-3 h-52 overflow-hidden bg-neutral-100">
                     {videoUrl ? (
                       <video
                         controls
@@ -627,11 +683,10 @@ export function LogementClient({ id }: Props) {
             </div>
 
             <aside className="space-y-5 xl:sticky xl:top-28 xl:self-start">
-               <div
-                 data-detail-reveal="true"
-                 data-detail-lift="true"
-                 className="rounded-[2rem] bg-white p-6 shadow-soft"
-                 style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+                <div
+                  data-detail-reveal="true"
+                  className="rounded-[2rem] bg-white p-6 shadow-soft"
+                  style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
                >
                 <p className="text-xs font-semibold uppercase tracking-[0.25em] text-neutral-500">
                   Contact & décision
@@ -664,7 +719,7 @@ export function LogementClient({ id }: Props) {
                       type="button"
                       onClick={() => void handleOpenChat()}
                       disabled={isOpeningChat}
-                      className="inline-flex w-full items-center justify-center rounded-full bg-teal-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:opacity-70"
+                      className="inline-flex w-full items-center justify-center rounded-full bg-teal-600 px-5 py-3 text-sm font-semibold text-white disabled:opacity-70"
                     >
                       {isOpeningChat ? "Ouverture..." : "Contacter le propriétaire"}
                     </button>
@@ -672,21 +727,21 @@ export function LogementClient({ id }: Props) {
                   <button
                     type="button"
                     onClick={() => resolvedId && toggleFavorite(resolvedId)}
-                    className="inline-flex w-full items-center justify-center rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+                    className="inline-flex w-full items-center justify-center rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white"
                   >
                     {isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
                   </button>
                   {!isAuthenticated && (
                     <Link
                       href={`/connexion?next=/logements/${property.id}`}
-                      className="inline-flex w-full items-center justify-center rounded-full border border-neutral-200 px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
+                      className="inline-flex w-full items-center justify-center rounded-full border border-neutral-200 px-5 py-3 text-sm font-semibold text-neutral-700"
                     >
                       Se connecter pour continuer
                     </Link>
                   )}
                   <button
                     type="button"
-                    className="inline-flex w-full items-center justify-center rounded-full border border-neutral-200 px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
+                    className="inline-flex w-full items-center justify-center rounded-full border border-neutral-200 px-5 py-3 text-sm font-semibold text-neutral-700"
                   >
                     <FiPhone className="mr-2" />
                     Assistance Yeloo
@@ -699,11 +754,10 @@ export function LogementClient({ id }: Props) {
                 </div>
               </div>
 
-               <div
-                 data-detail-reveal="true"
-                 data-detail-lift="true"
-                 className="rounded-[2rem] bg-white p-6 shadow-soft"
-                 style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+                <div
+                  data-detail-reveal="true"
+                  className="rounded-[2rem] bg-white p-6 shadow-soft"
+                  style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
                >
                 <div className="flex items-center gap-2 text-blue-700">
                   <FiShield />
