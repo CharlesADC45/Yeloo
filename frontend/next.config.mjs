@@ -2,6 +2,54 @@ import withPWA from 'next-pwa';
 
 const isProd = process.env.NODE_ENV === 'production';
 
+const csp = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "object-src 'none'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https://images.pexels.com https://a0.muscache.com https://*.r2.dev https://*.cloudflarestorage.com",
+  "font-src 'self' data:",
+  "connect-src 'self' https://yeloo-api.onrender.com https://*.onrender.com",
+  "media-src 'self' blob: https://*.r2.dev https://*.cloudflarestorage.com",
+  "worker-src 'self' blob:",
+  "manifest-src 'self'",
+  "upgrade-insecure-requests",
+].join('; ');
+
+const securityHeaders = [
+  {
+    key: 'Content-Security-Policy-Report-Only',
+    value: csp,
+  },
+  {
+    key: 'Referrer-Policy',
+    value: 'strict-origin-when-cross-origin',
+  },
+  {
+    key: 'X-Content-Type-Options',
+    value: 'nosniff',
+  },
+  {
+    key: 'X-Frame-Options',
+    value: 'DENY',
+  },
+  {
+    key: 'X-DNS-Prefetch-Control',
+    value: 'on',
+  },
+  {
+    key: 'Permissions-Policy',
+    value: 'camera=(), microphone=(), geolocation=(self)',
+  },
+  {
+    key: 'Strict-Transport-Security',
+    value: 'max-age=63072000; includeSubDomains; preload',
+  },
+];
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -16,6 +64,14 @@ const nextConfig = {
         hostname: 'a0.muscache.com',
       },
     ],
+  },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: securityHeaders,
+      },
+    ];
   },
 };
 

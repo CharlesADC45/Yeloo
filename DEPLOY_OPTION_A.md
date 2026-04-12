@@ -74,7 +74,7 @@ Configuration recommandée :
 
 - Root directory : `backend`
 - Environment : Docker
-- Dockerfile : `backend/Dockerfile`
+- Dockerfile path : `Dockerfile`
 - Health check path : `/health`
 
 Le fichier `render.yaml` à la racine donne aussi une base de Blueprint Render pour ce service.
@@ -110,7 +110,7 @@ puis démarre l'API FastAPI sur le port fourni par Render.
 Test après déploiement :
 
 ```text
-https://your-yeloo-api.onrender.com/health
+https://yeloo-api.onrender.com/health
 ```
 
 Réponse attendue :
@@ -134,8 +134,7 @@ Configuration recommandée :
 Variables à ajouter dans Vercel :
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=https://your-yeloo-api.onrender.com
-NEXT_PUBLIC_MAPBOX_TOKEN=your_mapbox_token
+NEXT_PUBLIC_API_BASE_URL=https://yeloo-api.onrender.com
 ```
 
 Le fichier `frontend/.vercelignore` évite d'envoyer les caches locaux inutiles.
