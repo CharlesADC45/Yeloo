@@ -1,6 +1,8 @@
 import withPWA from 'next-pwa';
 
 const isProd = process.env.NODE_ENV === 'production';
+const enablePWA = isProd || process.env.NEXT_ENABLE_PWA === 'true';
+const disablePWA = process.env.NEXT_DISABLE_PWA === 'true' || !enablePWA;
 
 const csp = [
   "default-src 'self'",
@@ -77,6 +79,8 @@ const nextConfig = {
 
 export default withPWA({
   dest: 'public',
-  disable: !isProd,
+  disable: disablePWA,
+  register: true,
+  skipWaiting: true,
 })(nextConfig);
 
