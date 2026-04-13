@@ -1,6 +1,14 @@
 import type { Metadata, Viewport } from "next";
+import { Poppins } from "next/font/google";
 import "./globals.css";
 import { AuthSync } from "@/components/AuthSync";
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-yeloo",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Yeloo - Logements en Cote d'Ivoire",
@@ -32,7 +40,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr">
+    <html lang="fr" className={poppins.variable}>
       <body className="min-h-screen bg-white text-neutral-900">
         <AuthSync />
         {children}

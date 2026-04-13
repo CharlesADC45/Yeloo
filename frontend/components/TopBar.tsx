@@ -56,7 +56,7 @@ type ReverseGeocodeResponse = {
 
 function YelooBrand() {
   return (
-    <Link href="/" className="flex items-center gap-2.5" aria-label="Yeloo accueil">
+    <Link href="/" className="flex items-center gap-1.5" aria-label="Yeloo accueil">
       <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[1.15rem] bg-[#2F57FF] shadow-soft sm:h-11 sm:w-11">
         <span className="absolute inset-x-[7px] top-[11px] h-[11px] rounded-full bg-white/12" />
         <span className="flex items-center gap-1.5">
@@ -69,7 +69,7 @@ function YelooBrand() {
         </span>
         <span className="absolute bottom-[8px] h-[8px] w-[18px] rounded-b-full border-b-2 border-white/90" />
       </span>
-      <span className="text-[1.7rem] font-black tracking-[-0.085em] leading-none text-[#111827]">
+      <span className="text-[1.65rem] font-extrabold tracking-[-0.045em] leading-none text-[#111827]">
         Yeloo
       </span>
     </Link>
@@ -81,7 +81,7 @@ function LocationBadgeIcon() {
     <svg
       viewBox="0 0 48 48"
       aria-hidden="true"
-      className="h-[18px] w-[18px]"
+      className="h-[24px] w-[24px]"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -419,12 +419,12 @@ function TopBarContent({
               <YelooBrand />
               <Link
                 href="/carte"
-                className="ml-2 inline-flex items-center rounded-full bg-blue-600 pl-1.5 pr-2.5 py-1.5 text-xs font-semibold text-white shadow-soft transition hover:bg-blue-700 sm:pr-3"
+                className="ml-1 inline-flex items-center rounded-full px-1.5 py-1.5 text-xs font-bold text-neutral-800 transition hover:bg-neutral-50 sm:pr-2.5"
               >
-                <span className="mr-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-sm text-blue-600 shadow-sm">
+                <span className="mr-1.5 flex shrink-0 items-center justify-center rounded-full text-blue-600">
                   <LocationBadgeIcon />
                 </span>
-                {(viewportWidth === null || viewportWidth > 375) && (
+                {(viewportWidth === null || viewportWidth >= 405) && (
                   <span className="whitespace-nowrap">{locationLabel}</span>
                 )}
               </Link>
@@ -588,9 +588,9 @@ function TopBarContent({
                   <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
                     {homeTitle || "Commence ta recherche."}
                   </h1>
-                  <p className="mt-2 text-sm text-neutral-600 sm:text-base">
+                  {/* <p className="mt-2 text-sm text-neutral-600 sm:text-base">
                     {homeSubtitle || "Explore les logements populaires à Abidjan et dans toute la Côte d'Ivoire."}
-                  </p>
+                  </p> */}
                 </div>
               </motion.div>
               <motion.div

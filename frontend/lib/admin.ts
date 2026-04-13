@@ -45,13 +45,31 @@ export type AdminUserSummary = {
 export type AdminPropertySummary = {
   id: string;
   title: string;
+  description?: string | null;
+  property_type?: string | null;
   city: string;
   neighborhood?: string | null;
+  address?: string | null;
   price: number;
   price_period: string;
   deposit_months?: number | null;
+  surface_m2?: number | null;
+  rooms?: number | null;
+  bathrooms?: number | null;
+  is_furnished?: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
+  video_url?: string | null;
+  tour_360_url?: string | null;
+  photo_urls?: string[];
+  is_verified_listing?: boolean;
+  views_count?: number;
+  owner_id?: string | null;
   status: string;
   owner_name?: string | null;
+  owner_email?: string | null;
+  owner_phone?: string | null;
+  owner_is_verified?: boolean;
   created_at: string;
 };
 

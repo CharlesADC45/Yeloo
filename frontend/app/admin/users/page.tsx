@@ -1,8 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { FiShield, FiUserCheck, FiUserX, FiUsers } from "react-icons/fi";
+import { FiUserCheck, FiUserX, FiUsers } from "react-icons/fi";
 import { AdminDashboardSkeleton } from "@/components/Skeleton";
 import {
   type AdminUserSummary,
@@ -14,7 +14,7 @@ import { useAuthStore } from "@/stores/authStore";
 const roleFilters = [
   { key: "all", label: "Tous" },
   { key: "locataire", label: "Locataires" },
-  { key: "proprietaire", label: "PropriÃ©taires" },
+  { key: "proprietaire", label: "Propriétaires" },
   { key: "admin", label: "Admins" },
 ];
 
@@ -41,9 +41,7 @@ export default function AdminUsersPage() {
         if (!active) return;
         setError(err instanceof Error ? err.message : "Impossible de charger les utilisateurs.");
       } finally {
-        if (active) {
-          setIsLoading(false);
-        }
+        if (active) setIsLoading(false);
       }
     };
 
@@ -53,13 +51,14 @@ export default function AdminUsersPage() {
     };
   }, [role, token]);
 
-  const stats = useMemo(() => {
-    return {
+  const stats = useMemo(
+    () => ({
       total: users.length,
       verified: users.filter((item) => item.is_verified).length,
       suspended: users.filter((item) => item.is_suspended).length,
-    };
-  }, [users]);
+    }),
+    [users]
+  );
 
   const toggleSuspension = async (user: AdminUserSummary) => {
     if (!token) return;
@@ -68,51 +67,47 @@ export default function AdminUsersPage() {
       const updated = await updateAdminUserSuspension(token, user.id, !user.is_suspended);
       setUsers((current) => current.map((item) => (item.id === updated.id ? updated : item)));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Mise Ã  jour impossible.");
+      setError(err instanceof Error ? err.message : "Mise à jour impossible.");
     } finally {
       setPendingUserId(null);
     }
   };
 
   return (
-    <main className="mx-auto w-full px-4 pb-28 pt-24 lg:ml-72 lg:max-w-[calc(100%-18rem)] lg:px-8">
+    <main className="mx-auto w-full bg-white px-4 pb-28 pt-24 lg:ml-72 lg:max-w-[calc(100%-18rem)] lg:px-8">
       <motion.section
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25 }}
-        className="space-y-6"
+        className="space-y-7"
       >
-        <div className="rounded-[2rem] bg-white p-6 shadow-soft">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                <FiUsers />
-                Utilisateurs
-              </div>
-              <h1 className="mt-4 text-3xl font-semibold tracking-tight text-neutral-900">
-                Gestion des comptes
-              </h1>
-              <p className="mt-2 max-w-2xl text-sm text-neutral-600">
-                Surveille les locataires, propriÃ©taires et admins, puis suspends si besoin.
+        <section className="max-w-4xl">
+          <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-blue-700">
+            <FiUsers />
+            Utilisateurs
+          </div>
+          <h1 className="mt-4 text-3xl font-semibold tracking-[-0.03em] text-neutral-950 sm:text-4xl">
+            Gestion des comptes
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-500">
+            Surveille les locataires, propriétaires et admins, puis suspends les comptes si besoin.
+          </p>
+        </section>
+
+        <section className="grid max-w-4xl grid-cols-3 text-center">
+          {[
+            ["Comptes affichés", stats.total],
+            ["Vérifiés", stats.verified],
+            ["Suspendus", stats.suspended],
+          ].map(([label, value]) => (
+            <div key={label} className="py-3">
+              <p className="text-2xl font-semibold tracking-tight text-neutral-950">{value}</p>
+              <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+                {label}
               </p>
             </div>
-          </div>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-[1.6rem] border border-neutral-200 bg-white p-5 shadow-soft">
-            <p className="text-xs uppercase tracking-[0.16em] text-neutral-500">Comptes affichÃ©s</p>
-            <p className="mt-3 text-3xl font-semibold text-neutral-900">{stats.total}</p>
-          </div>
-          <div className="rounded-[1.6rem] border border-neutral-200 bg-white p-5 shadow-soft">
-            <p className="text-xs uppercase tracking-[0.16em] text-neutral-500">VÃ©rifiÃ©s</p>
-            <p className="mt-3 text-3xl font-semibold text-neutral-900">{stats.verified}</p>
-          </div>
-          <div className="rounded-[1.6rem] border border-neutral-200 bg-white p-5 shadow-soft">
-            <p className="text-xs uppercase tracking-[0.16em] text-neutral-500">Suspendus</p>
-            <p className="mt-3 text-3xl font-semibold text-neutral-900">{stats.suspended}</p>
-          </div>
-        </div>
+          ))}
+        </section>
 
         <div className="flex flex-wrap gap-2">
           {roleFilters.map((filter) => (
@@ -122,8 +117,8 @@ export default function AdminUsersPage() {
               onClick={() => setRole(filter.key)}
               className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                 role === filter.key
-                  ? "bg-blue-600 text-white"
-                  : "border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50"
+                  ? "bg-neutral-950 text-white"
+                  : "bg-white text-neutral-600 hover:text-neutral-950"
               }`}
             >
               {filter.label}
@@ -134,72 +129,66 @@ export default function AdminUsersPage() {
         {isLoading ? (
           <AdminDashboardSkeleton />
         ) : (
-          <section className="rounded-[2rem] border border-neutral-200 bg-white p-4 shadow-soft sm:p-6">
-            <div className="space-y-3">
+          <section className="max-w-5xl bg-white">
+            <div className="divide-y divide-neutral-100">
               {users.map((user) => (
-                <div
+                <article
                   key={user.id}
-                  className="flex flex-wrap items-start justify-between gap-4 rounded-[1.4rem] border border-neutral-200 bg-neutral-50 p-4"
+                  className="flex flex-wrap items-start justify-between gap-4 py-5"
                 >
                   <div>
-                    <p className="font-semibold text-neutral-900">{user.full_name || user.email}</p>
-                    <p className="mt-1 text-sm text-neutral-600">{user.email}</p>
+                    <p className="font-semibold text-neutral-950">{user.full_name || user.email}</p>
+                    <p className="mt-1 text-sm text-neutral-500">{user.email}</p>
                     <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
-                      <span className="rounded-full bg-white px-2.5 py-1 text-neutral-600">{user.role}</span>
+                      <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-neutral-600">
+                        {user.role}
+                      </span>
                       <span
                         className={`rounded-full px-2.5 py-1 ${
-                          user.is_verified ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                          user.is_verified
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-amber-50 text-amber-700"
                         }`}
                       >
-                        {user.is_verified ? "VÃ©rifiÃ©" : "Ã€ vÃ©rifier"}
+                        {user.is_verified ? "Vérifié" : "À vérifier"}
                       </span>
                       {user.role === "proprietaire" && user.owner_verification_status && (
-                        <span
-                          className={`rounded-full px-2.5 py-1 ${
-                            user.owner_verification_status === "approved"
-                              ? "bg-emerald-100 text-emerald-700"
-                              : user.owner_verification_status === "rejected"
-                                ? "bg-red-100 text-red-700"
-                                : "bg-amber-100 text-amber-700"
-                          }`}
-                        >
+                        <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-neutral-600">
                           KYC : {user.owner_verification_status}
                         </span>
                       )}
                       {user.is_suspended && (
-                        <span className="rounded-full bg-red-100 px-2.5 py-1 text-red-700">Suspendu</span>
+                        <span className="rounded-full bg-red-50 px-2.5 py-1 text-red-700">
+                          Suspendu
+                        </span>
                       )}
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => void toggleSuspension(user)}
-                      disabled={pendingUserId === user.id}
-                      className={`rounded-full px-4 py-2 text-sm font-semibold ${
-                        user.is_suspended
-                          ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                          : "bg-red-600 text-white hover:bg-red-700"
-                      }`}
-                    >
-                      {user.is_suspended ? (
-                        <span className="inline-flex items-center gap-2">
-                          <FiUserCheck />
-                          RÃ©activer
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-2">
-                          <FiUserX />
-                          Suspendre
-                        </span>
-                      )}
-                    </button>
-                  </div>
-                </div>
+                  <button
+                    type="button"
+                    onClick={() => void toggleSuspension(user)}
+                    disabled={pendingUserId === user.id}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold disabled:opacity-60 ${
+                      user.is_suspended ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
+                    }`}
+                  >
+                    {user.is_suspended ? (
+                      <span className="inline-flex items-center gap-2">
+                        <FiUserCheck />
+                        Réactiver
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-2">
+                        <FiUserX />
+                        Suspendre
+                      </span>
+                    )}
+                  </button>
+                </article>
               ))}
             </div>
             {error && (
-              <div className="mt-4 rounded-[1.2rem] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
                 {error}
               </div>
             )}
@@ -209,4 +198,3 @@ export default function AdminUsersPage() {
     </main>
   );
 }
-

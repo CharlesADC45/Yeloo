@@ -9,7 +9,7 @@ const config: Config = {
     extend: {
       colors: {
         foundation: {
-          base: '#F8FAFC',
+          base: '#FFFFFF',
           surface: '#FFFFFF',
           secondary: '#2563EB',
           secondarySoft: '#EAF1FF',

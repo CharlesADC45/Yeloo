@@ -35,10 +35,10 @@ export function BottomNav() {
       initial={{ y: 80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 260, damping: 22 }}
-      className="fixed bottom-5 left-0 right-0 z-40 mx-auto w-[calc(100%-2rem)] max-w-2xl rounded-3xl border border-neutral-200 bg-white/80 px-4 py-3 shadow-[0_8px_30px_rgba(0,0,0,0.12)] backdrop-blur-md"
+      className="fixed bottom-5 left-0 right-0 z-40 mx-auto w-[calc(100%-1rem)] max-w-2xl rounded-3xl border border-neutral-200 bg-white/80 px-3 py-3 shadow-[0_8px_30px_rgba(0,0,0,0.12)] backdrop-blur-md sm:w-[calc(100%-2rem)] sm:px-4"
     >
-      <div className="flex justify-between gap-2 sm:gap-4">
-        {tabs.map((tab) => {
+      <div className="grid grid-cols-5 gap-1 sm:gap-4">
+        {tabs.map((tab, index) => {
           const isActive =
             pathname === tab.href ||
             (tab.href === "/messages" && pathname?.startsWith("/messages")) ||
@@ -47,7 +47,9 @@ export function BottomNav() {
             <Link
               key={tab.href}
               href={tab.href}
-              className="flex min-w-0 flex-1 flex-col items-center gap-1 text-center text-sm"
+              className={`flex min-w-0 flex-col items-center gap-1 text-center text-sm ${
+                index >= 3 ? "px-1" : ""
+              }`}
             >
               <motion.span
                 whileTap={{ scale: 0.9 }}
@@ -58,7 +60,7 @@ export function BottomNav() {
                 {tab.icon}
               </motion.span>
               <span
-                className={`truncate text-[13px] sm:text-sm ${
+                className={`max-w-full truncate text-[12px] leading-none sm:text-sm ${
                   isActive ? "font-semibold text-neutral-900" : "text-neutral-500"
                 }`}
               >

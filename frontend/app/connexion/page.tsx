@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 import { BottomNav } from "@/components/BottomNav";
 import { TopBar } from "@/components/TopBar";
 import { getApiBaseUrl } from "@/lib/api";
@@ -25,6 +26,7 @@ export default function ConnexionPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [shouldRedirect, setShouldRedirect] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const setSession = useAuthStore((s) => s.setSession);
   const router = useRouter();
 
@@ -144,13 +146,24 @@ export default function ConnexionPage() {
               <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
                 Mot de passe
               </span>
-              <input
-                type="password"
-                required
-                className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-                value={form.password}
-                onChange={handleChange("password")}
-              />
+              <div className="flex items-center rounded-lg border border-neutral-200 bg-white pr-2 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-200/70">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm outline-none"
+                  value={form.password}
+                  onChange={handleChange("password")}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((value) => !value)}
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold text-neutral-500 transition hover:text-neutral-900"
+                  aria-label={showPassword ? "Masquer le mot de passe" : "Montrer le mot de passe"}
+                >
+                  {showPassword ? <FiEyeOff /> : <FiEye />}
+                  {showPassword ? "Masquer" : "Montrer"}
+                </button>
+              </div>
             </label>
 
             {error && (

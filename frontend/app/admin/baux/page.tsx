@@ -35,9 +35,7 @@ export default function AdminBauxPage() {
         if (!active) return;
         setError(err instanceof Error ? err.message : "Impossible de charger les baux.");
       } finally {
-        if (active) {
-          setIsLoading(false);
-        }
+        if (active) setIsLoading(false);
       }
     };
     void load();
@@ -56,40 +54,40 @@ export default function AdminBauxPage() {
   );
 
   return (
-    <main className="mx-auto w-full px-4 pb-28 pt-24 lg:ml-72 lg:max-w-[calc(100%-18rem)] lg:px-8">
+    <main className="mx-auto w-full bg-white px-4 pb-28 pt-24 lg:ml-72 lg:max-w-[calc(100%-18rem)] lg:px-8">
       <motion.section
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25 }}
-        className="space-y-6"
+        className="space-y-7"
       >
-        <div className="rounded-[2rem] bg-white p-6 shadow-soft">
-          <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+        <section className="max-w-4xl">
+          <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-blue-700">
             <FiFileText />
             Baux
           </div>
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight text-neutral-900">
+          <h1 className="mt-4 text-3xl font-semibold tracking-[-0.03em] text-neutral-950 sm:text-4xl">
             Dossiers de bail
           </h1>
-          <p className="mt-2 max-w-2xl text-sm text-neutral-600">
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-500">
             Suis toutes les demandes de bail remontées par les locataires et validées par les propriétaires.
           </p>
-        </div>
+        </section>
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-[1.6rem] border border-neutral-200 bg-white p-5 shadow-soft">
-            <p className="text-xs uppercase tracking-[0.16em] text-neutral-500">Dossiers</p>
-            <p className="mt-3 text-3xl font-semibold text-neutral-900">{counts.total}</p>
-          </div>
-          <div className="rounded-[1.6rem] border border-neutral-200 bg-white p-5 shadow-soft">
-            <p className="text-xs uppercase tracking-[0.16em] text-neutral-500">En attente</p>
-            <p className="mt-3 text-3xl font-semibold text-neutral-900">{counts.submitted}</p>
-          </div>
-          <div className="rounded-[1.6rem] border border-neutral-200 bg-white p-5 shadow-soft">
-            <p className="text-xs uppercase tracking-[0.16em] text-neutral-500">Approuvés</p>
-            <p className="mt-3 text-3xl font-semibold text-neutral-900">{counts.approved}</p>
-          </div>
-        </div>
+        <section className="grid max-w-4xl grid-cols-3 text-center">
+          {[
+            ["Dossiers", counts.total],
+            ["En attente", counts.submitted],
+            ["Approuvés", counts.approved],
+          ].map(([label, value]) => (
+            <div key={label} className="py-3">
+              <p className="text-2xl font-semibold tracking-tight text-neutral-950">{value}</p>
+              <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+                {label}
+              </p>
+            </div>
+          ))}
+        </section>
 
         <div className="flex flex-wrap gap-2">
           {statusFilters.map((filter) => (
@@ -99,8 +97,8 @@ export default function AdminBauxPage() {
               onClick={() => setStatus(filter.key)}
               className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                 status === filter.key
-                  ? "bg-blue-600 text-white"
-                  : "border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50"
+                  ? "bg-neutral-950 text-white"
+                  : "bg-white text-neutral-600 hover:text-neutral-950"
               }`}
             >
               {filter.label}
@@ -111,23 +109,25 @@ export default function AdminBauxPage() {
         {isLoading ? (
           <AdminDashboardSkeleton />
         ) : (
-          <section className="rounded-[2rem] border border-neutral-200 bg-white p-4 shadow-soft sm:p-6">
-            <div className="space-y-3">
+          <section className="max-w-5xl">
+            <div className="divide-y divide-neutral-100">
               {items.map((item) => (
-                <div key={item.id} className="rounded-[1.4rem] border border-neutral-200 bg-neutral-50 p-4">
+                <article key={item.id} className="py-5">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                      <p className="font-semibold text-neutral-900">{item.property_title}</p>
-                      <p className="mt-1 text-sm text-neutral-600">{item.tenant_full_name} · {item.tenant_email}</p>
-                      <p className="mt-2 text-[11px] text-neutral-400">{item.property_city}</p>
+                      <p className="font-semibold text-neutral-950">{item.property_title}</p>
+                      <p className="mt-1 text-sm text-neutral-500">
+                        {item.tenant_full_name} · {item.tenant_email}
+                      </p>
+                      <p className="mt-2 text-xs text-neutral-400">{item.property_city}</p>
                     </div>
                     <span
                       className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                         item.status === "approved"
-                          ? "bg-emerald-100 text-emerald-700"
+                          ? "bg-emerald-50 text-emerald-700"
                           : item.status === "rejected"
-                            ? "bg-red-100 text-red-700"
-                            : "bg-blue-100 text-blue-700"
+                            ? "bg-red-50 text-red-700"
+                            : "bg-blue-50 text-blue-700"
                       }`}
                     >
                       {item.status === "submitted" ? (
@@ -145,14 +145,14 @@ export default function AdminBauxPage() {
                       )}
                     </span>
                   </div>
-                  <p className="mt-3 text-[11px] text-neutral-400">
+                  <p className="mt-3 text-xs text-neutral-400">
                     Créé le {new Date(item.created_at).toLocaleString("fr-FR")}
                   </p>
-                </div>
+                </article>
               ))}
             </div>
             {error && (
-              <div className="mt-4 rounded-[1.2rem] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
                 {error}
               </div>
             )}

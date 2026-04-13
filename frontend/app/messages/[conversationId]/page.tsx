@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { FiArrowLeft, FiSend } from "react-icons/fi";
 import { useParams } from "next/navigation";
+import { AdminSidebar } from "@/components/AdminSidebar";
 import { BottomNav } from "@/components/BottomNav";
 import { TopBar } from "@/components/TopBar";
 import {
@@ -98,11 +99,19 @@ export default function MessageConversationPage() {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+  const isAdmin = user?.role === "admin";
 
   return (
     <div className="min-h-screen bg-transparent">
       <TopBar />
-      <main className="mx-auto max-w-6xl px-4 pb-28 pt-24 sm:px-8">
+      {isAdmin && <AdminSidebar />}
+      <main
+        className={`mx-auto bg-white px-4 pt-24 sm:px-8 ${
+          isAdmin
+            ? "w-full pb-16 lg:ml-72 lg:max-w-[calc(100%-18rem)]"
+            : "max-w-6xl pb-28"
+        }`}
+      >
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -209,7 +218,7 @@ export default function MessageConversationPage() {
           </section>
         </motion.section>
       </main>
-      <BottomNav />
+      {!isAdmin && <BottomNav />}
     </div>
   );
 }

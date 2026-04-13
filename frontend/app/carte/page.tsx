@@ -660,7 +660,7 @@ function CartePageContent() {
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f7f7f7]">
+    <div className="min-h-screen overflow-x-hidden bg-white">
       <div className="hidden xl:block">
         <TopBar />
       </div>
@@ -767,7 +767,7 @@ function CartePageContent() {
 
             <motion.div
               ref={mobileSheetRef}
-              className="absolute inset-x-0 bottom-0 z-20 flex flex-col overflow-hidden rounded-t-[2rem] bg-[#f7f7f7] shadow-[0_-18px_40px_rgba(15,23,42,0.14)]"
+              className="absolute inset-x-0 bottom-0 z-20 flex flex-col overflow-hidden rounded-t-[2rem] bg-white shadow-[0_-18px_40px_rgba(15,23,42,0.14)]"
               style={{
                 top: mobileSheetTop ? `${mobileSheetTop}px` : undefined,
                 transition: isDraggingMobileSheet ? "none" : "top 260ms cubic-bezier(0.22, 1, 0.36, 1)",
@@ -783,7 +783,7 @@ function CartePageContent() {
                 />
               </div>
 
-              <div className="shrink-0 border-b border-neutral-200/80 bg-[#f7f7f7] px-4 pb-4 pt-8">
+              <div className="shrink-0 border-b border-neutral-200/80 bg-white px-4 pb-4 pt-8">
                 <div>
                   <p className="text-[1.7rem] font-semibold tracking-tight text-neutral-950">
                     {resultsLabel}
@@ -866,7 +866,7 @@ function CartePageContent() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.96 }}
                   transition={{ duration: 0.18 }}
-                  className="absolute bottom-[5.7rem] left-1/2 z-30 inline-flex -translate-x-1/2 items-center gap-2 rounded-full bg-neutral-950 px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(15,23,42,0.22)]"
+                  className="absolute bottom-[6.8rem] right-2 z-30 inline-flex items-center gap-2 rounded-full bg-neutral-950 px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(15,23,42,0.22)] sm:right-4"
                 >
                   <span>Show map</span>
                   <FiMapPin className="h-4 w-4" />
@@ -938,7 +938,7 @@ function CartePageContent() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25, delay: 0.05 }}
-              className="relative order-2 z-20 -mt-12 mb-24 w-full min-w-0 max-w-full overflow-x-hidden rounded-t-[2rem] bg-[#f7f7f7] px-4 pb-4 pt-4 shadow-[0_-18px_40px_rgba(15,23,42,0.14)] sm:mx-2 sm:max-w-[calc(100%-1rem)] sm:rounded-[2rem] xl:z-auto xl:mt-0 xl:mb-0 xl:h-[calc(100vh-9rem)] xl:max-w-[calc(100vw-1rem)] xl:min-h-0 xl:overflow-hidden xl:rounded-[1.6rem] xl:border xl:border-neutral-200 xl:bg-[#f7f7f7] xl:px-0 xl:pb-0 xl:pt-0 xl:shadow-[0_14px_40px_rgba(15,23,42,0.08)] xl:sticky xl:top-32"
+              className="relative order-2 z-20 -mt-12 mb-24 w-full min-w-0 max-w-full overflow-x-hidden rounded-t-[2rem] bg-white px-4 pb-4 pt-4 shadow-[0_-18px_40px_rgba(15,23,42,0.14)] sm:mx-2 sm:max-w-[calc(100%-1rem)] sm:rounded-[2rem] xl:z-auto xl:mt-0 xl:mb-0 xl:h-[calc(100vh-9rem)] xl:max-w-[calc(100vw-1rem)] xl:min-h-0 xl:overflow-hidden xl:rounded-[1.6rem] xl:border xl:border-neutral-200 xl:bg-white xl:px-0 xl:pb-0 xl:pt-0 xl:shadow-[0_14px_40px_rgba(15,23,42,0.08)] xl:sticky xl:top-32"
             >
               <div
                 ref={resultsPanelRef}
@@ -988,7 +988,7 @@ function CartePageContent() {
                     )}
                   </div>
 
-                <div className="hidden xl:block xl:sticky xl:top-0 xl:z-20 xl:bg-[#f7f7f7] xl:pb-5">
+                <div className="hidden xl:block xl:sticky xl:top-0 xl:z-20 xl:bg-white xl:pb-5">
                   <div className="space-y-5">
                     <div className="rounded-[1.75rem] border border-neutral-200 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)] sm:p-5">
                       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">

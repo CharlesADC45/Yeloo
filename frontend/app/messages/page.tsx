@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { FiArrowRight, FiMessageCircle } from "react-icons/fi";
+import { AdminSidebar } from "@/components/AdminSidebar";
 import { BottomNav } from "@/components/BottomNav";
 import { TopBar } from "@/components/TopBar";
 import { fetchConversations, type ConversationSummary } from "@/lib/messages";
@@ -21,6 +22,7 @@ function formatTime(value: string) {
 export default function MessagesPage() {
   const token = useAuthStore((s) => s.token);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const user = useAuthStore((s) => s.user);
   const [items, setItems] = useState<ConversationSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +57,7 @@ export default function MessagesPage() {
     () => items.reduce((sum, item) => sum + item.unread_count, 0),
     [items]
   );
+  const isAdmin = user?.role === "admin";
 
   if (!isAuthenticated) {
     return (
@@ -82,7 +85,14 @@ export default function MessagesPage() {
   return (
     <div className="min-h-screen bg-transparent">
       <TopBar />
-      <main className="mx-auto max-w-5xl px-4 pb-28 pt-24 sm:px-8">
+      {isAdmin && <AdminSidebar />}
+      <main
+        className={`mx-auto bg-white px-4 pt-24 sm:px-8 ${
+          isAdmin
+            ? "w-full pb-16 lg:ml-72 lg:max-w-[calc(100%-18rem)]"
+            : "max-w-5xl pb-28"
+        }`}
+      >
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -199,7 +209,7 @@ export default function MessagesPage() {
           </section>
         </motion.section>
       </main>
-      <BottomNav />
+      {!isAdmin && <BottomNav />}
     </div>
   );
 }

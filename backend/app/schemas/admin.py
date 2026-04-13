@@ -34,13 +34,31 @@ class AdminUserSummary(BaseModel):
 class AdminPropertySummary(BaseModel):
     id: str
     title: str
+    description: str | None = None
+    property_type: str | None = None
     city: str
     neighborhood: str | None = None
+    address: str | None = None
     price: float
     price_period: str
     deposit_months: int | None = None
+    surface_m2: int | None = None
+    rooms: int | None = None
+    bathrooms: int | None = None
+    is_furnished: bool = False
+    latitude: float | None = None
+    longitude: float | None = None
+    video_url: str | None = None
+    tour_360_url: str | None = None
+    photo_urls: list[str] = []
+    is_verified_listing: bool = False
+    views_count: int = 0
+    owner_id: str | None = None
     status: str
     owner_name: str | None = None
+    owner_email: str | None = None
+    owner_phone: str | None = None
+    owner_is_verified: bool = False
     created_at: datetime
 
 
