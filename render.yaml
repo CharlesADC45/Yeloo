@@ -4,12 +4,10 @@ services:
     env: node
     rootDir: frontend
     plan: free
-    buildCommand: npm ci && npm run build
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm run start
     autoDeploy: true
     envVars:
-      - key: NODE_ENV
-        value: production
       - key: NEXT_PUBLIC_API_BASE_URL
         value: https://yeloo-api.onrender.com
       - key: NEXT_ENABLE_PWA
