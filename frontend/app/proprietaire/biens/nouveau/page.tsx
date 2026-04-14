@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { CelebrationModal } from "@/components/CelebrationModal";
 import { OwnerSidebar } from "@/components/OwnerSidebar";
 import { TopBar } from "@/components/TopBar";
 import { getApiBaseUrl } from "@/lib/api";
@@ -129,7 +130,7 @@ export default function NouveauBienPage() {
     if (!shouldRedirect) return;
     const timer = window.setTimeout(() => {
       router.push("/proprietaire");
-    }, 900);
+    }, 2600);
     return () => window.clearTimeout(timer);
   }, [shouldRedirect, router]);
 
@@ -429,7 +430,7 @@ export default function NouveauBienPage() {
         imageUrl: null,
       });
 
-      setSuccess("Annonce créée. Redirection...");
+      setSuccess("Annonce créée. Préparation de votre espace...");
       setShouldRedirect(true);
     } catch (err) {
       const message = normalizeFetchError(err, "Publication impossible.");
@@ -454,6 +455,11 @@ export default function NouveauBienPage() {
     setSuccess(null);
     setShouldRedirect(false);
     setStepIndex((prev) => Math.max(prev - 1, 0));
+  };
+
+  const handleCelebrationClose = () => {
+    setShouldRedirect(false);
+    router.push("/proprietaire");
   };
 
   const isLastStep = stepIndex === STEPS.length - 1;
@@ -1021,12 +1027,6 @@ export default function NouveauBienPage() {
                 {submitError}
               </div>
             )}
-            {success && (
-              <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-700">
-                {success}
-              </div>
-            )}
-
             <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
               <button
                 type="button"
@@ -1053,6 +1053,13 @@ export default function NouveauBienPage() {
           </div>
         </motion.section>
       </main>
+      <CelebrationModal
+        open={Boolean(success)}
+        title="Annonce créée"
+        message="Bravo, votre bien est enregistré. Vous pourrez le publier, le suivre et l'améliorer depuis votre espace propriétaire."
+        actionLabel="Voir mon dashboard"
+        onClose={handleCelebrationClose}
+      />
     </div>
   );
 }

@@ -38,7 +38,10 @@ type MapProps = {
   latitude?: number;
   longitude?: number;
   title: string;
+  isApproximate?: boolean;
 };
+
+const ABIDJAN_CENTER = { latitude: 5.3599517, longitude: -4.0082563 };
 
 function buildDetailLocationIcon() {
   return `
@@ -52,7 +55,7 @@ function buildDetailLocationIcon() {
   `;
 }
 
-function PropertyMap({ latitude, longitude, title }: MapProps) {
+function PropertyMap({ latitude, longitude, title, isApproximate = false }: MapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<import("leaflet").Map | null>(null);
   const markerRef = useRef<import("leaflet").Marker | null>(null);
@@ -109,7 +112,7 @@ function PropertyMap({ latitude, longitude, title }: MapProps) {
       markerRef.current.bindTooltip(
         `<div class="imc-hover-card imc-hover-card--compact">
           <div class="imc-hover-card__header">
-            <p class="imc-hover-card__title">${title}</p>
+            <p class="imc-hover-card__title">${title}${isApproximate ? " · zone approximative" : ""}</p>
             <span class="imc-hover-card__close">&times;</span>
           </div>
         </div>`,
@@ -143,7 +146,7 @@ function PropertyMap({ latitude, longitude, title }: MapProps) {
       isMounted = false;
       cleanup?.();
     };
-  }, [latitude, longitude, title]);
+  }, [latitude, longitude, title, isApproximate]);
 
     return (
       <div
@@ -194,6 +197,10 @@ export function LogementClient({ id }: Props) {
       : property?.longitude != null
         ? Number(property.longitude)
         : undefined;
+  const hasExactLocation =
+    Number.isFinite(parsedLatitude) && Number.isFinite(parsedLongitude);
+  const mapLatitude = hasExactLocation ? parsedLatitude : ABIDJAN_CENTER.latitude;
+  const mapLongitude = hasExactLocation ? parsedLongitude : ABIDJAN_CENTER.longitude;
 
   const tourImage = gallery[1] ?? gallery[0];
   const videoImage = gallery[2] ?? gallery[0];
@@ -603,19 +610,19 @@ export function LogementClient({ id }: Props) {
                >
                 <h2 className="text-xl font-semibold text-neutral-900">Localisation</h2>
                 <div className="mt-4 space-y-4">
-                  {Number.isFinite(parsedLatitude) && Number.isFinite(parsedLongitude) ? (
-                    <PropertyMap
-                      latitude={parsedLatitude}
-                      longitude={parsedLongitude}
-                      title={property.title}
-                    />
-                  ) : (
-                    <div className="border border-dashed border-neutral-200 bg-neutral-50 p-6 text-sm text-neutral-500">
-                      Localisation indisponible pour ce logement.
-                    </div>
-                  )}
+                  <PropertyMap
+                    latitude={mapLatitude}
+                    longitude={mapLongitude}
+                    title={property.title}
+                    isApproximate={!hasExactLocation}
+                  />
                   <div className="border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-600">
-                    Adresse: {property.address || "Adresse communiquée après contact"}
+                    <p>Adresse: {property.address || "Adresse communiquée après contact"}</p>
+                    {!hasExactLocation && (
+                      <p className="mt-2 text-xs text-neutral-500">
+                        Position approximative: les coordonnées exactes n'ont pas encore été ajoutées par le propriétaire.
+                      </p>
+                    )}
                   </div>
                 </div>
               </section>

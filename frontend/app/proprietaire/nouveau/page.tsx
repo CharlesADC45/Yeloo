@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { FiCheckCircle, FiFileText, FiUploadCloud } from "react-icons/fi";
 import { BottomNav } from "@/components/BottomNav";
+import { CelebrationModal } from "@/components/CelebrationModal";
 import { OwnerSidebar } from "@/components/OwnerSidebar";
 import { TopBar } from "@/components/TopBar";
 import { getApiBaseUrl } from "@/lib/api";
@@ -35,6 +37,73 @@ const STEPS: Step[] = [
   { title: "Justificatifs", subtitle: "Documents et preuves" },
   { title: "Paiement", subtitle: "Coordonnées bancaires" },
 ];
+
+type FileUploadFieldProps = {
+  label: string;
+  file: File | null;
+  error?: string;
+  accept?: string;
+  capture?: "user" | "environment";
+  onChange: (file: File | null) => void;
+};
+
+function FileUploadField({
+  label,
+  file,
+  error,
+  accept,
+  capture,
+  onChange,
+}: FileUploadFieldProps) {
+  return (
+    <label className="block min-w-0 text-xs text-neutral-600">
+      <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
+        {label}
+      </span>
+      <input
+        type="file"
+        accept={accept}
+        capture={capture}
+        onChange={(event) => onChange(event.target.files?.[0] ?? null)}
+        className="sr-only"
+        aria-invalid={Boolean(error)}
+      />
+      <span
+        className={`mt-2 flex min-w-0 cursor-pointer items-center gap-3 rounded-2xl border bg-white p-3 transition active:scale-[0.99] ${
+          error
+            ? "border-red-300 ring-2 ring-red-100"
+            : file
+              ? "border-blue-200 ring-2 ring-blue-50"
+              : "border-neutral-200"
+        }`}
+      >
+        <span
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
+            file ? "bg-blue-600 text-white" : "bg-neutral-100 text-neutral-500"
+          }`}
+        >
+          {file ? <FiFileText /> : <FiUploadCloud />}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold text-neutral-900">
+            {file?.name ?? "Ajouter un fichier"}
+          </span>
+          <span className="mt-0.5 block truncate text-[11px] text-neutral-500">
+            {file ? "Fichier sélectionné" : "Photo, PDF ou document"}
+          </span>
+        </span>
+        <span
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+            file ? "bg-emerald-50 text-emerald-600" : "bg-neutral-950 text-white"
+          }`}
+        >
+          {file ? <FiCheckCircle /> : "+"}
+        </span>
+      </span>
+      {error && <span className="mt-1 block text-[11px] text-red-500">{error}</span>}
+    </label>
+  );
+}
 
 export default function NouveauBienPage() {
   const [stepIndex, setStepIndex] = useState(0);
@@ -94,9 +163,14 @@ export default function NouveauBienPage() {
     if (!shouldRedirect) return;
     const timer = window.setTimeout(() => {
       router.push("/proprietaire");
-    }, 900);
+    }, 2600);
     return () => window.clearTimeout(timer);
   }, [shouldRedirect, router]);
+
+  const handleCelebrationClose = () => {
+    setShouldRedirect(false);
+    router.push("/proprietaire");
+  };
 
   const validateStep = (index: number) => {
     const nextErrors: Partial<Record<keyof OwnerFormState, string>> = {};
@@ -228,7 +302,7 @@ export default function NouveauBienPage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="rounded-3xl bg-white p-6 shadow-soft"
+          className="overflow-hidden rounded-3xl bg-white p-5 shadow-soft sm:p-6"
         >
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
@@ -249,7 +323,7 @@ export default function NouveauBienPage() {
             )}
           </div>
 
-          <div className="mt-6 rounded-3xl border border-neutral-200 p-4 sm:p-5">
+          <div className="mt-6 min-w-0 overflow-hidden rounded-3xl border border-neutral-200 p-4 sm:p-5">
             <div className="relative">
               <div className="flex items-start justify-between gap-2 text-center">
                 {STEPS.map((step, index) => {
@@ -337,7 +411,7 @@ export default function NouveauBienPage() {
               </div>
             </div>
 
-            <div className="mt-6 rounded-2xl bg-neutral-50 p-4 sm:p-5">
+            <div className="mt-6 min-w-0 overflow-hidden rounded-2xl bg-neutral-50 p-3 sm:p-5">
               {stepIndex === 0 && (
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="flex flex-col gap-1 text-xs text-neutral-600">
@@ -411,75 +485,27 @@ export default function NouveauBienPage() {
               )}
 
               {stepIndex === 1 && (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="flex flex-col gap-1 text-xs text-neutral-600">
-                    <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
-                      Pièce d'identité
-                    </span>
-                    <input
-                      type="file"
-                      onChange={(event) =>
-                        updateField("identityFile", event.target.files?.[0] ?? null)
-                      }
-                      className={`rounded-xl border bg-white px-3 py-2 text-sm ${
-                        errors.identityFile
-                          ? "border-red-300 ring-2 ring-red-200"
-                          : "border-neutral-200"
-                      }`}
-                      aria-invalid={Boolean(errors.identityFile)}
-                    />
-                    {errors.identityFile && (
-                      <span className="text-[11px] text-red-500">
-                        {errors.identityFile}
-                      </span>
-                    )}
-                  </label>
-                  <label className="flex flex-col gap-1 text-xs text-neutral-600">
-                    <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
-                      Selfie de vérification
-                    </span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      capture="user"
-                      onChange={(event) =>
-                        updateField("selfieFile", event.target.files?.[0] ?? null)
-                      }
-                      className={`rounded-xl border bg-white px-3 py-2 text-sm ${
-                        errors.selfieFile
-                          ? "border-red-300 ring-2 ring-red-200"
-                          : "border-neutral-200"
-                      }`}
-                      aria-invalid={Boolean(errors.selfieFile)}
-                    />
-                    {errors.selfieFile && (
-                      <span className="text-[11px] text-red-500">
-                        {errors.selfieFile}
-                      </span>
-                    )}
-                  </label>
-                  <label className="flex flex-col gap-1 text-xs text-neutral-600">
-                    <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
-                      Justificatif de propriété
-                    </span>
-                    <input
-                      type="file"
-                      onChange={(event) =>
-                        updateField("propertyFile", event.target.files?.[0] ?? null)
-                      }
-                      className={`rounded-xl border bg-white px-3 py-2 text-sm ${
-                        errors.propertyFile
-                          ? "border-red-300 ring-2 ring-red-200"
-                          : "border-neutral-200"
-                      }`}
-                      aria-invalid={Boolean(errors.propertyFile)}
-                    />
-                    {errors.propertyFile && (
-                      <span className="text-[11px] text-red-500">
-                        {errors.propertyFile}
-                      </span>
-                    )}
-                  </label>
+                <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+                  <FileUploadField
+                    label="Pièce d'identité"
+                    file={formValues.identityFile}
+                    error={errors.identityFile}
+                    onChange={(file) => updateField("identityFile", file)}
+                  />
+                  <FileUploadField
+                    label="Selfie de vérification"
+                    file={formValues.selfieFile}
+                    error={errors.selfieFile}
+                    accept="image/*"
+                    capture="user"
+                    onChange={(file) => updateField("selfieFile", file)}
+                  />
+                  <FileUploadField
+                    label="Justificatif de propriété"
+                    file={formValues.propertyFile}
+                    error={errors.propertyFile}
+                    onChange={(file) => updateField("propertyFile", file)}
+                  />
                   <label className="flex flex-col gap-1 text-xs text-neutral-600 sm:col-span-2">
                     <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
                       Adresse du bien principal
@@ -585,11 +611,6 @@ export default function NouveauBienPage() {
               )}
             </div>
 
-            {isCompleted && (
-              <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs text-blue-700">
-                Dossier envoyé. Votre compte propriétaire est maintenant en cours de validation par le super admin.
-              </div>
-            )}
             {submitError && (
               <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
                 {submitError}
@@ -622,6 +643,13 @@ export default function NouveauBienPage() {
           </div>
         </motion.section>
       </main>
+      <CelebrationModal
+        open={isCompleted}
+        title="Demande envoyée"
+        message="Bravo, votre dossier propriétaire est parti pour validation. On vous tient au courant dès que le super admin confirme votre vérification."
+        actionLabel="Voir mon espace"
+        onClose={handleCelebrationClose}
+      />
       <div className="lg:hidden">
         <BottomNav />
       </div>

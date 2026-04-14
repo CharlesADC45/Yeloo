@@ -99,16 +99,16 @@ export default function MessagesPage() {
           transition={{ duration: 0.25 }}
           className="space-y-6"
         >
-          <div className="rounded-[2rem] border border-neutral-200 bg-white p-6">
+          <div className="rounded-[2rem] border-neutral-200 bg-white p-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h1 className="text-3xl font-semibold tracking-tight text-neutral-900">Messages</h1>
-                <p className="mt-2 text-sm text-neutral-600">
+                {/* <p className="mt-2 text-sm text-neutral-600">
                   Retrouvez vos conversations liées aux annonces Yeloo.
-                </p>
+                </p> */}
               </div>
               <div className="flex items-center gap-3">
-                <span className="rounded-full bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700">
+                <span className="rounded-full bg-blue-50 p-2 text-sm font-semibold text-blue-700">
                   {unreadCount} non lu(s)
                 </span>
                 <span className="rounded-full border border-neutral-200 px-4 py-2 text-sm text-neutral-500">
@@ -193,7 +193,7 @@ export default function MessagesPage() {
             )}
           </section>
 
-          <section className="rounded-[2rem] border border-neutral-200 bg-white p-5">
+          {/* <section className="rounded-[2rem] border border-neutral-200 bg-white p-5">
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
                 <FiMessageCircle className="text-xl" />
@@ -206,7 +206,7 @@ export default function MessagesPage() {
                 </p>
               </div>
             </div>
-          </section>
+          </section> */}
         </motion.section>
       </main>
       {!isAdmin && <BottomNav />}

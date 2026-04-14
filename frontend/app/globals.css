@@ -36,7 +36,8 @@ body {
   color: #171717;
 }
 
-.imc-skeleton-base {
+.imc-skeleton-base,
+.yeloo-skeleton-base {
   position: relative;
   overflow: hidden;
   background: linear-gradient(
@@ -466,6 +467,7 @@ body {
   }
 
   .imc-skeleton-base,
+  .yeloo-skeleton-base,
   .imc-hover-tooltip,
   .imc-hover-card {
     animation: none !important;

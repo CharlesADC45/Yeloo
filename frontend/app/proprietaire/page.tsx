@@ -5,6 +5,7 @@ import gsap from "gsap";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { FiTrash2 } from "react-icons/fi";
 import { OwnerSidebar } from "@/components/OwnerSidebar";
 import { OwnerDashboardSkeleton } from "@/components/Skeleton";
 import { TopBar } from "@/components/TopBar";
@@ -50,6 +51,7 @@ export default function ProprietairePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [canViewDashboard, setCanViewDashboard] = useState<boolean | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [redirectTarget, setRedirectTarget] = useState<string | null>(null);
   const dashboardRootRef = useRef<HTMLDivElement | null>(null);
 
@@ -159,6 +161,30 @@ export default function ProprietairePage() {
     if (!redirectTarget) return;
     router.replace(redirectTarget);
   }, [redirectTarget, router]);
+
+  const handleDeleteProperty = async (property: OwnerProperty) => {
+    if (!token) return;
+    const confirmed = window.confirm(`Supprimer définitivement "${property.title}" ?`);
+    if (!confirmed) return;
+
+    setDeletingId(property.id);
+    setError(null);
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/api/properties/${property.id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok && response.status !== 204) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.detail || payload?.message || `Erreur API (${response.status})`);
+      }
+      setProperties((current) => current.filter((item) => item.id !== property.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Suppression impossible.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   useEffect(() => {
     if (isLoading || canViewDashboard !== true) return;
@@ -521,6 +547,34 @@ export default function ProprietairePage() {
                     {draftCount} brouillon(s)
                   </span>
                 </div>
+                {properties.length > 0 && (
+                  <div className="mt-5 divide-y divide-neutral-100">
+                    {properties.slice(0, 3).map((property) => (
+                      <div
+                        key={property.id}
+                        className="flex items-center justify-between gap-3 py-3"
+                      >
+                        <Link href={`/proprietaire/biens/${property.id}`} className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-neutral-950">
+                            {property.title}
+                          </p>
+                          <p className="mt-1 text-xs text-neutral-500">
+                            {Number(property.price).toLocaleString("fr-FR")} FCFA / {property.price_period}
+                          </p>
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => void handleDeleteProperty(property)}
+                          disabled={deletingId === property.id}
+                          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600 disabled:opacity-60"
+                          aria-label={`Supprimer ${property.title}`}
+                        >
+                          <FiTrash2 />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
               </div>
 

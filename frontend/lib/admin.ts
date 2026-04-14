@@ -179,6 +179,17 @@ async function apiPatch<T>(path: string, token: string, body: unknown): Promise<
   return response.json();
 }
 
+async function apiDelete(path: string, token: string): Promise<void> {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok && response.status !== 204) {
+    const payload = await response.json().catch(() => null);
+    throw new Error(payload?.detail || "Suppression impossible.");
+  }
+}
+
 export function fetchAdminUsers(token: string, role?: string) {
   const query = role ? `?role=${encodeURIComponent(role)}` : "";
   return apiGet<AdminUserSummary[]>(`/api/admin/users${query}`, token);
@@ -199,6 +210,10 @@ export function updateAdminPropertyStatus(token: string, propertyId: string, sta
   return apiPatch<AdminPropertySummary>(`/api/admin/properties/${propertyId}/status`, token, {
     status,
   });
+}
+
+export function deleteAdminProperty(token: string, propertyId: string) {
+  return apiDelete(`/api/properties/${propertyId}`, token);
 }
 
 export function fetchAdminLeaseRequests(token: string, status?: string) {

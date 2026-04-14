@@ -21,6 +21,7 @@ import {
   FiPhone,
   FiPlayCircle,
   FiSearch,
+  FiTrash2,
   FiUser,
   FiVideo,
   FiX,
@@ -29,6 +30,7 @@ import type { Map as LeafletMap } from "leaflet";
 import { AdminDashboardSkeleton } from "@/components/Skeleton";
 import {
   type AdminPropertySummary,
+  deleteAdminProperty,
   fetchAdminProperties,
   updateAdminPropertyStatus,
 } from "@/lib/admin";
@@ -200,6 +202,7 @@ export default function AdminPublicationsPage() {
   const [previewDocument, setPreviewDocument] = useState<PreviewDocument | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(null);
   const [pendingPropertyId, setPendingPropertyId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -278,6 +281,24 @@ export default function AdminPublicationsPage() {
     }
   };
 
+  const handleDeleteProperty = async (property: AdminPropertySummary) => {
+    if (!token) return;
+    const confirmed = window.confirm(`Supprimer définitivement "${property.title}" ?`);
+    if (!confirmed) return;
+
+    setDeletingPropertyId(property.id);
+    setError(null);
+    try {
+      await deleteAdminProperty(token, property.id);
+      setProperties((current) => current.filter((item) => item.id !== property.id));
+      setSelectedId((current) => (current === property.id ? null : current));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Suppression impossible.");
+    } finally {
+      setDeletingPropertyId(null);
+    }
+  };
+
   const renderList = () => (
     <section className="space-y-7">
       <div className="max-w-4xl">
@@ -346,11 +367,17 @@ export default function AdminPublicationsPage() {
             {filteredProperties.map((property) => {
               const documentCount = buildPreviewDocuments(property).filter((doc) => doc.url).length;
               return (
-                <button
+                <div
                   key={property.id}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedId(property.id)}
-                  className="grid w-full grid-cols-1 gap-4 py-5 text-left transition hover:text-neutral-950 md:grid-cols-[minmax(0,1.35fr)_120px_160px_120px_56px] md:items-center"
+                  onKeyDown={(event) => {
+                    if (event.key !== "Enter" && event.key !== " ") return;
+                    event.preventDefault();
+                    setSelectedId(property.id);
+                  }}
+                  className="grid w-full cursor-pointer grid-cols-1 gap-4 py-5 text-left transition hover:text-neutral-950 md:grid-cols-[minmax(0,1.35fr)_120px_160px_120px_72px] md:items-center"
                 >
                   <span className="min-w-0">
                     <span className="block truncate text-base font-semibold text-neutral-950">
@@ -377,10 +404,21 @@ export default function AdminPublicationsPage() {
                     <span className="ml-2 text-xs text-neutral-500">{documentCount}/3</span>
                   </span>
                   <StatusBadge status={property.status} />
-                  <span className="flex justify-end text-neutral-400">
-                    <FiEye />
+                  <span className="flex items-center justify-end gap-3 text-neutral-400">
+                    <FiEye className="shrink-0" />
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void handleDeleteProperty(property);
+                      }}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-red-50 text-red-600"
+                      aria-label={`Supprimer ${property.title}`}
+                    >
+                      <FiTrash2 />
+                    </button>
                   </span>
-                </button>
+                </div>
               );
             })}
           </div>
@@ -615,6 +653,15 @@ export default function AdminPublicationsPage() {
                   Suspendre
                 </button>
               )}
+              <button
+                type="button"
+                onClick={() => void handleDeleteProperty(property)}
+                disabled={deletingPropertyId === property.id}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 disabled:opacity-70"
+              >
+                <FiTrash2 />
+                {deletingPropertyId === property.id ? "Suppression..." : "Supprimer"}
+              </button>
             </section>
           </aside>
         </div>

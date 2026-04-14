@@ -58,6 +58,7 @@ function CartePageContent() {
   const [viewportHeight, setViewportHeight] = useState(0);
   const [mobileSheetTop, setMobileSheetTop] = useState(0);
   const [isDraggingMobileSheet, setIsDraggingMobileSheet] = useState(false);
+  const [favoritePulseId, setFavoritePulseId] = useState<string | null>(null);
 
   const filtered = useMemo(
     () => applyPropertyFilters(properties, filters),
@@ -169,6 +170,23 @@ function CartePageContent() {
     setMobileSheetTop(mobileSheetBounds.collapsed);
   };
 
+  const handleToggleFavorite = (propertyId: string) => {
+    setFavoritePulseId(propertyId);
+    toggleFavorite(propertyId);
+    window.setTimeout(() => {
+      setFavoritePulseId((current) => (current === propertyId ? null : current));
+    }, 520);
+  };
+
+  const getPropertyFacts = (property: (typeof paginatedResultProperties)[number]) =>
+    [
+      property.rooms ? `${property.rooms} chambre${property.rooms > 1 ? "s" : ""}` : null,
+      property.bathrooms
+        ? `${property.bathrooms} salle${property.bathrooms > 1 ? "s" : ""} de bain`
+        : null,
+      property.surfaceM2 ? `${property.surfaceM2} m2` : null,
+    ].filter((fact): fact is string => Boolean(fact));
+
   const renderExpandedFilters = (gridClassName: string) => (
     <>
       <div className={`mt-4 grid gap-3 ${gridClassName}`}>
@@ -246,7 +264,12 @@ function CartePageContent() {
     </>
   );
 
-  const renderMobilePropertyCard = (property: (typeof paginatedResultProperties)[number]) => (
+  const renderMobilePropertyCard = (property: (typeof paginatedResultProperties)[number]) => {
+    const facts = getPropertyFacts(property);
+    const isFavorite = favoriteIds.includes(property.id);
+    const isPulsing = favoritePulseId === property.id;
+
+    return (
     <article
       key={`mobile-${property.id}`}
       onClick={() => setSelectedId(property.id)}
@@ -266,73 +289,74 @@ function CartePageContent() {
           alt={property.title}
           className="h-full w-full object-cover"
         />
+        <div className="absolute left-3 top-3 flex max-w-[72%] flex-wrap items-center gap-2">
+          {property.ownerIsVerified && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/92 px-3 py-1.5 text-[11px] font-semibold text-neutral-800 shadow-sm backdrop-blur">
+              <FiCheckCircle className="text-xs text-blue-600" />
+              Vérifié
+            </span>
+          )}
+          {property.badgeLabel && (
+            <span className="rounded-full bg-white/92 px-3 py-1.5 text-[11px] font-semibold text-neutral-800 shadow-sm backdrop-blur">
+              {property.badgeLabel}
+            </span>
+          )}
+        </div>
         <motion.button
           type="button"
           animate={
-            favoriteIds.includes(property.id)
-              ? { scale: [1, 1.16, 1], rotate: [0, -10, 8, 0] }
+            isPulsing
+              ? { scale: [1, 1.22, 0.96, 1.05, 1], rotate: [0, -12, 10, -4, 0] }
               : { scale: 1, rotate: 0 }
           }
-          transition={{ duration: 0.34, ease: "easeOut" }}
+          transition={{ duration: 0.48, ease: "easeOut" }}
           whileHover={{ scale: 1.06 }}
           whileTap={{ scale: 0.9 }}
           onClick={(event) => {
             event.stopPropagation();
-            toggleFavorite(property.id);
+            handleToggleFavorite(property.id);
           }}
           className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur"
           aria-label="Ajouter aux favoris"
         >
+          <AnimatePresence>
+            {isPulsing && (
+              <motion.span
+                initial={{ scale: 0.8, opacity: 0.55 }}
+                animate={{ scale: 1.9, opacity: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="absolute inset-0 rounded-full bg-white/65"
+              />
+            )}
+          </AnimatePresence>
           <FiHeart
-            className={favoriteIds.includes(property.id) ? "fill-white text-white" : ""}
+            className={`relative ${isFavorite ? "fill-white text-white" : ""}`}
           />
         </motion.button>
       </div>
-      <div className="space-y-3 px-1 pb-1 pt-4">
+      <div className="space-y-2.5 px-1 pb-1 pt-3">
         <div className="flex items-start justify-between gap-3">
-          <p className="text-[1.15rem] font-semibold leading-tight text-neutral-950">
+          <p className="text-[1.08rem] font-semibold leading-snug text-neutral-950">
             {property.title}
           </p>
           <span className="shrink-0 rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] font-semibold text-neutral-600">
             {property.pricePeriod}
           </span>
         </div>
-        <p className="text-base text-neutral-600">{property.neighborhood || property.city}</p>
-        <p className="text-base text-neutral-600">
-          {property.rooms ?? "—"} chambres
-          {" · "}
-          {property.bathrooms ?? "—"} salles de bain
-          {" · "}
-          {property.surfaceM2 ?? "—"} m2
-        </p>
-        <p className="text-base text-neutral-900">
-          <span className="line-through text-neutral-400">
-            {(property.price * 1.12).toLocaleString("fr-FR")} F
-          </span>
-          {" "}
+        {(property.neighborhood || property.city) && (
+          <p className="text-sm leading-5 text-neutral-600">
+            {property.neighborhood || property.city}
+          </p>
+        )}
+        {facts.length > 0 && (
+          <p className="text-sm leading-5 text-neutral-600">{facts.join(" · ")}</p>
+        )}
+        <p className="text-[0.98rem] leading-5 text-neutral-900">
           <span className="font-semibold">{property.price.toLocaleString("fr-FR")} F</span>
-          {" "}
-          <span className="text-neutral-500">pour 25 nuits</span>
+          <span className="text-neutral-500"> / {property.pricePeriod}</span>
         </p>
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            {selected?.id === property.id && (
-              <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] font-semibold text-neutral-700">
-                Sur la carte
-              </span>
-            )}
-            {property.ownerIsVerified && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] font-semibold text-neutral-700">
-                <FiCheckCircle className="text-xs" />
-                Vérifié
-              </span>
-            )}
-            {property.badgeLabel && (
-              <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] font-semibold text-neutral-600">
-                {property.badgeLabel}
-              </span>
-            )}
-          </div>
+        <div className="grid grid-cols-2 gap-2 pt-1">
           <button
             type="button"
             onClick={(event) => {
@@ -340,14 +364,22 @@ function CartePageContent() {
               setSelectedId(property.id);
               handleShowMap();
             }}
-            className="shrink-0 text-xs font-semibold text-neutral-900"
+            className="rounded-full bg-neutral-950 px-4 py-2.5 text-center text-xs font-semibold text-white"
           >
             Voir sur map
           </button>
+          <Link
+            href={`/logements/${property.id}`}
+            onClick={(event) => event.stopPropagation()}
+            className="rounded-full border border-neutral-200 px-4 py-2.5 text-center text-xs font-semibold text-neutral-900"
+          >
+            Voir les détails
+          </Link>
         </div>
       </div>
     </article>
-  );
+    );
+  };
 
   useEffect(() => {
     if (selectedId && !visibleProperties.some((p) => p.id === selectedId)) {
@@ -667,18 +699,6 @@ function CartePageContent() {
       <main
         className="mx-auto h-[100svh] w-full max-w-full overflow-hidden px-0 pb-0 pt-0 sm:px-6 xl:h-auto xl:overflow-x-hidden xl:pb-32 xl:pt-32 lg:px-12"
       >
-        {/* <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25 }}
-          className="space-y-2"
-        >
-          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Carte</h1>
-          <p className="text-xs text-neutral-600 sm:text-sm">
-            Filtre les logements FastAPI et clique sur un point pour voir un aperçu
-            sur la carte.
-          </p>
-        </motion.div> */}
 
         <section className="h-full xl:hidden">
           <div className="relative h-full overflow-hidden bg-white">
@@ -868,7 +888,7 @@ function CartePageContent() {
                   transition={{ duration: 0.18 }}
                   className="absolute bottom-[6.8rem] right-2 z-30 inline-flex items-center gap-2 rounded-full bg-neutral-950 px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(15,23,42,0.22)] sm:right-4"
                 >
-                  <span>Show map</span>
+                  <span>Voir la carte</span>
                   <FiMapPin className="h-4 w-4" />
                 </motion.button>
               )}
@@ -1031,17 +1051,7 @@ function CartePageContent() {
                         <h2 className="text-xl font-semibold tracking-tight text-neutral-950">
                           {resultsLabel} a Abidjan
                         </h2>
-                        {/* <p className="mt-1 text-sm text-neutral-500">
-                          Meme logique que le design montre: les cartes defilent a droite, la carte reste fixe a gauche.
-                        </p> */}
                       </div>
-                      {/* <button
-                        type="button"
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 sm:w-auto"
-                      >
-                        Prix · croissant
-                        <FiChevronDown className="text-base" />
-                      </button> */}
                     </div>
 
                     {quickLocations.length > 0 && (
@@ -1105,7 +1115,12 @@ function CartePageContent() {
                       ref={secondaryGridRef}
                       className="grid grid-cols-1 gap-5 md:grid-cols-2"
                     >
-                    {paginatedResultProperties.map((property) => (
+                    {paginatedResultProperties.map((property) => {
+                      const facts = getPropertyFacts(property);
+                      const isFavorite = favoriteIds.includes(property.id);
+                      const isPulsing = favoritePulseId === property.id;
+
+                      return (
                       <article
                         key={property.id}
                         data-result-card="true"
@@ -1124,106 +1139,113 @@ function CartePageContent() {
                             : "border-neutral-200"
                         }`}
                       >
-                        <div
-                          className={`pointer-events-none absolute inset-x-0 top-0 h-1 transition-all duration-200 ${
-                            selected?.id === property.id
-                              ? "bg-neutral-900 opacity-100"
-                              : "bg-transparent opacity-0"
-                          }`}
-                        />
                         <div className="relative h-64 overflow-hidden">
                           <img
                             src={property.imageUrl}
                             alt={property.title}
                             className="h-full w-full object-cover"
                           />
+                          <div className="absolute left-3 top-3 flex max-w-[72%] flex-wrap items-center gap-2">
+                            {selected?.id === property.id && (
+                              <span className="rounded-full bg-neutral-950/85 px-3 py-1.5 text-[11px] font-semibold text-white shadow-sm backdrop-blur">
+                                Sur la carte
+                              </span>
+                            )}
+                            {property.ownerIsVerified && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-white/92 px-3 py-1.5 text-[11px] font-semibold text-neutral-800 shadow-sm backdrop-blur">
+                                <FiCheckCircle className="text-xs text-blue-600" />
+                                Vérifié
+                              </span>
+                            )}
+                            {property.badgeLabel && (
+                              <span className="rounded-full bg-white/92 px-3 py-1.5 text-[11px] font-semibold text-neutral-800 shadow-sm backdrop-blur">
+                                {property.badgeLabel}
+                              </span>
+                            )}
+                          </div>
                           <motion.button
                             type="button"
                             animate={
-                              favoriteIds.includes(property.id)
-                                ? { scale: [1, 1.16, 1], rotate: [0, -10, 8, 0] }
+                              isPulsing
+                                ? { scale: [1, 1.22, 0.96, 1.05, 1], rotate: [0, -12, 10, -4, 0] }
                                 : { scale: 1, rotate: 0 }
                             }
-                            transition={{ duration: 0.34, ease: "easeOut" }}
+                            transition={{ duration: 0.48, ease: "easeOut" }}
                             whileHover={{ scale: 1.06 }}
                             whileTap={{ scale: 0.9 }}
                             onClick={(event) => {
                               event.stopPropagation();
-                              toggleFavorite(property.id);
+                              handleToggleFavorite(property.id);
                             }}
                             className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/92 text-neutral-700 shadow-sm ring-1 ring-black/5 backdrop-blur"
                             aria-label="Ajouter aux favoris"
                           >
+                            <AnimatePresence>
+                              {isPulsing && (
+                                <motion.span
+                                  initial={{ scale: 0.8, opacity: 0.55 }}
+                                  animate={{ scale: 1.9, opacity: 0 }}
+                                  exit={{ opacity: 0 }}
+                                  transition={{ duration: 0.5, ease: "easeOut" }}
+                                  className="absolute inset-0 rounded-full bg-blue-300/55"
+                                />
+                              )}
+                            </AnimatePresence>
                             <FiHeart
-                              className={
-                                favoriteIds.includes(property.id)
-                                  ? "fill-blue-600 text-blue-600"
-                                  : ""
-                              }
+                              className={`relative ${
+                                isFavorite ? "fill-blue-600 text-blue-600" : ""
+                              }`}
                             />
                           </motion.button>
                         </div>
-                          <div className="space-y-3 p-4">
+                        <div className="space-y-2.5 p-4">
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <p className="text-lg font-semibold tracking-tight text-neutral-950">
+                              <p className="text-base font-semibold tracking-tight text-neutral-950">
                                 {property.price.toLocaleString("fr-FR")} F
+                                <span className="font-normal text-neutral-500"> / {property.pricePeriod}</span>
                               </p>
-                              <p className="mt-1 line-clamp-1 text-sm font-medium text-neutral-900">
+                              <p className="mt-1 line-clamp-1 text-sm font-semibold text-neutral-900">
                                 {property.title}
                               </p>
                             </div>
-                            <span className="shrink-0 rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] font-semibold text-neutral-600">
-                              {property.pricePeriod}
-                            </span>
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-neutral-500">
-                            <FiMapPin className="text-neutral-400" />
-                            <p className="line-clamp-1">
-                              {property.neighborhood || property.city}
-                            </p>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-500">
-                            <span>{property.rooms ?? "—"} chambres</span>
-                            <span>·</span>
-                            <span>{property.bathrooms ?? "—"} salles de bain</span>
-                            <span>·</span>
-                            <span>{property.surfaceM2 ?? "—"} m2</span>
-                          </div>
-                          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="flex flex-wrap items-center gap-2">
-                              {selected?.id === property.id && (
-                                <span className="rounded-full bg-neutral-900 px-2.5 py-1 text-[11px] font-semibold text-white">
-                                  Sur la carte
-                                </span>
-                              )}
-                              {property.ownerIsVerified && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] font-semibold text-neutral-700">
-                                  <FiCheckCircle className="text-xs" />
-                                  Vérifié
-                                </span>
-                              )}
-                              {property.badgeLabel && (
-                                <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] font-semibold text-neutral-600">
-                                  {property.badgeLabel}
-                                </span>
-                              )}
+                          {(property.neighborhood || property.city) && (
+                            <div className="flex items-center gap-2 text-sm text-neutral-500">
+                              <FiMapPin className="text-neutral-400" />
+                              <p className="line-clamp-1">
+                                {property.neighborhood || property.city}
+                              </p>
                             </div>
+                          )}
+                          {facts.length > 0 && (
+                            <div className="text-xs leading-5 text-neutral-500">
+                              {facts.join(" · ")}
+                            </div>
+                          )}
+                          <div className="grid grid-cols-2 gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setSelectedId(property.id);
+                              }}
+                              className="rounded-full bg-neutral-950 px-4 py-2.5 text-center text-xs font-semibold text-white"
+                            >
+                              Voir sur map
+                            </button>
                             <Link
                               href={`/logements/${property.id}`}
                               onClick={(event) => event.stopPropagation()}
-                              className={`w-full break-words text-left text-xs font-semibold transition sm:w-auto sm:text-right ${
-                                selected?.id === property.id
-                                  ? "text-neutral-950"
-                                  : "text-neutral-700 hover:text-neutral-950"
-                              }`}
+                              className="rounded-full border border-neutral-200 px-4 py-2.5 text-center text-xs font-semibold text-neutral-900"
                             >
                               Voir les détails
                             </Link>
                           </div>
                         </div>
                       </article>
-                    ))}
+                      );
+                    })}
                     </div>
 
                     {visibleProperties.length > resultsPageSize && (

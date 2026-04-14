@@ -68,7 +68,7 @@ export default function FavorisPage() {
               Aucun logement dans vos favoris
             </h2>
             <p className="mt-1 text-xs text-neutral-600">
-              Ajoutez des logements en cliquant sur le cÅ“ur.
+              Ajoutez des logements en cliquant sur le cœur.
             </p>
             <Link
               href="/"

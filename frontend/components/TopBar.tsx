@@ -81,7 +81,7 @@ function LocationBadgeIcon() {
     <svg
       viewBox="0 0 48 48"
       aria-hidden="true"
-      className="h-[24px] w-[24px]"
+      className="h-[34px] w-[34px]"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -326,7 +326,7 @@ function TopBarContent({
         style={{ transformOrigin: "center center" }}
       >
         <div
-          className={`pointer-events-auto bg-white/94 backdrop-blur-md shadow-[0_18px_45px_rgba(15,23,42,0.16)] ${
+          className={`pointer-events-auto bg-white/94 backdrop-blur-md shadow-[0_18px_45px_rgba(10,23,42,0.10)] ${
             compactHomeSearch
               ? "rounded-full border border-neutral-200/70 px-1.5 py-1"
               : "rounded-[2rem] p-1.5"
@@ -421,10 +421,10 @@ function TopBarContent({
                 href="/carte"
                 className="ml-1 inline-flex items-center rounded-full px-1.5 py-1.5 text-xs font-bold text-neutral-800 transition hover:bg-neutral-50 sm:pr-2.5"
               >
-                <span className="mr-1.5 flex shrink-0 items-center justify-center rounded-full text-blue-600">
+                <span className="mr-1 flex shrink-0 items-center justify-center rounded-full text-blue-600">
                   <LocationBadgeIcon />
                 </span>
-                {(viewportWidth === null || viewportWidth >= 405) && (
+                {(viewportWidth === null || viewportWidth >= 445) && (
                   <span className="whitespace-nowrap">{locationLabel}</span>
                 )}
               </Link>
