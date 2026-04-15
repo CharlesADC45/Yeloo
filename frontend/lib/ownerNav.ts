@@ -29,7 +29,7 @@ export const ownerNavItems: OwnerNavItem[] = [
     isActive: (pathname) => pathname.startsWith("/proprietaire/biens"),
   },
   {
-    href: "/messages",
+    href: "/messages?mode=owner",
     label: "Messages",
     Icon: FiMessageCircle,
     isActive: (pathname) => pathname.startsWith("/messages"),

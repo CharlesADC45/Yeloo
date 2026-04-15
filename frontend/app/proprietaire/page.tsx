@@ -239,7 +239,7 @@ export default function ProprietairePage() {
       <div className="min-h-screen bg-transparent">
         <TopBar />
         <main className="mx-auto max-w-md px-4 pb-28 pt-24">
-          <section className="rounded-3xl border border-neutral-200 bg-white p-6 text-center shadow-soft">
+          <section className="rounded-3xl border border-neutral-100 bg-white p-6 text-center">
             <h1 className="text-lg font-semibold">Accès propriétaire</h1>
             <p className="mt-2 text-xs text-neutral-600">
               Connectez-vous pour accéder à votre espace.
@@ -261,7 +261,7 @@ export default function ProprietairePage() {
       <div className="min-h-screen bg-transparent">
         <TopBar />
         <main className="mx-auto max-w-md px-4 pb-28 pt-24">
-          <section className="rounded-3xl border border-neutral-200 bg-white p-6 text-center shadow-soft">
+          <section className="rounded-3xl border border-neutral-100 bg-white p-6 text-center">
             <h1 className="text-lg font-semibold">Redirection en cours…</h1>
             <p className="mt-2 text-sm text-neutral-600">
               On vous redirige vers la bonne page.
@@ -284,7 +284,7 @@ export default function ProprietairePage() {
         <TopBar />
         <OwnerSidebar />
         <main className="mx-auto max-w-3xl px-4 pb-28 pt-24 lg:ml-64 lg:max-w-[calc(100%-16rem)] lg:px-8">
-          <section className="rounded-3xl bg-white p-6 shadow-soft">
+          <section className="rounded-3xl bg-white p-6">
             <OwnerDashboardSkeleton />
           </section>
         </main>
@@ -314,7 +314,7 @@ export default function ProprietairePage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="rounded-3xl bg-white p-6 shadow-soft"
+          className="bg-white px-1 py-4 sm:rounded-3xl sm:p-6"
         >
           {isLoading ? (
             <OwnerDashboardSkeleton />
@@ -361,7 +361,7 @@ export default function ProprietairePage() {
                     {isProfileComplete ? "Modifier le profil" : "Compléter le profil"}
                   </Link>
                   <Link
-                    href="/messages"
+                    href="/messages?mode=owner"
                     className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700"
                   >
                     Messages
@@ -397,32 +397,28 @@ export default function ProprietairePage() {
               <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div
                   data-owner-reveal="true"
-                  className="rounded-2xl border border-neutral-200 p-4"
-                  style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+                  className="rounded-2xl border border-neutral-100 bg-white p-4"
                 >
                   <p className="text-xs text-neutral-500">Biens publiés</p>
                   <p className="mt-2 text-2xl font-semibold text-neutral-900">{publishedCount}</p>
                 </div>
                 <div
                   data-owner-reveal="true"
-                  className="rounded-2xl border border-neutral-200 p-4"
-                  style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+                  className="rounded-2xl border border-neutral-100 bg-white p-4"
                 >
                   <p className="text-xs text-neutral-500">Brouillons</p>
                   <p className="mt-2 text-2xl font-semibold text-neutral-900">{draftCount}</p>
                 </div>
                 <div
                   data-owner-reveal="true"
-                  className="rounded-2xl border border-neutral-200 p-4"
-                  style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+                  className="rounded-2xl border border-neutral-100 bg-white p-4"
                 >
                   <p className="text-xs text-neutral-500">Total de biens</p>
                   <p className="mt-2 text-2xl font-semibold text-neutral-900">{totalProperties}</p>
                 </div>
                 <div
                   data-owner-reveal="true"
-                  className="rounded-2xl border border-neutral-200 p-4"
-                  style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+                  className="rounded-2xl border border-neutral-100 bg-white p-4"
                 >
                   <p className="text-xs text-neutral-500">Vues</p>
                   <p className="mt-2 text-2xl font-semibold text-neutral-900">{totalViews}</p>
@@ -432,8 +428,7 @@ export default function ProprietairePage() {
               <div className="mt-6 grid gap-4 lg:grid-cols-[2fr,1fr]">
                  <div
                    data-owner-reveal="true"
-                   className="rounded-2xl border border-neutral-200 bg-neutral-50 p-5"
-                   style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+                    className="rounded-2xl border border-neutral-100 bg-white p-5"
                  >
                   <div className="flex items-center justify-between">
                     <div>
@@ -459,8 +454,7 @@ export default function ProprietairePage() {
                 </div>
                  <div
                    data-owner-reveal="true"
-                   className="rounded-2xl border border-neutral-200 bg-white p-5"
-                   style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+                    className="rounded-2xl border border-neutral-100 bg-white p-5"
                  >
                   <p className="text-sm font-semibold text-neutral-900">Répartition</p>
                   <p className="text-xs text-neutral-500">État des annonces</p>
@@ -499,8 +493,7 @@ export default function ProprietairePage() {
 
                <div
                  data-owner-reveal="true"
-                 className="mt-8 rounded-2xl border border-neutral-200 p-5"
-                 style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+                  className="mt-8 rounded-2xl border border-neutral-100 bg-white p-5"
                >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
@@ -558,8 +551,7 @@ export default function ProprietairePage() {
 
                <div
                  data-owner-reveal="true"
-                 className="mt-8 rounded-2xl border border-neutral-200 bg-white p-5"
-                 style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+                  className="mt-8 rounded-2xl border border-neutral-100 bg-white p-5"
                >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
@@ -595,7 +587,7 @@ export default function ProprietairePage() {
                       return (
                         <Link
                           key={item.id}
-                          href={`/messages/${item.id}`}
+                          href={`/messages/${item.id}?mode=owner`}
                           className="flex items-center gap-3 py-4"
                         >
                           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">
@@ -637,8 +629,7 @@ export default function ProprietairePage() {
 
                <div
                  data-owner-reveal="true"
-                 className="mt-8 rounded-2xl border border-neutral-200 p-5"
-                 style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+                  className="mt-8 rounded-2xl border border-neutral-100 bg-white p-5"
                >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>

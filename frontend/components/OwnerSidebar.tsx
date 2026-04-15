@@ -14,7 +14,7 @@ export function OwnerSidebar() {
   return (
     <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-neutral-200 lg:bg-white/90 lg:pt-24">
       <div className="flex items-center gap-3 px-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-soft">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-600 text-white">
           <FiGrid />
         </div>
         <div>
@@ -31,7 +31,7 @@ export function OwnerSidebar() {
               href={href}
               className={`flex items-center gap-3 rounded-2xl px-4 py-3 ${
                 active
-                  ? "bg-blue-50 text-blue-700 shadow-sm"
+                  ? "bg-blue-50 text-blue-700"
                   : "text-neutral-600"
               }`}
             >

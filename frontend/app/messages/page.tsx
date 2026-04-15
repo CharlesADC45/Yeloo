@@ -1,7 +1,8 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { FiArrowRight, FiMessageCircle } from "react-icons/fi";
 import { AdminSidebar } from "@/components/AdminSidebar";
@@ -20,10 +21,11 @@ function formatTime(value: string) {
   });
 }
 
-export default function MessagesPage() {
+function MessagesPageContent() {
   const token = useAuthStore((s) => s.token);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const user = useAuthStore((s) => s.user);
+  const searchParams = useSearchParams();
   const [items, setItems] = useState<ConversationSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -65,8 +67,9 @@ export default function MessagesPage() {
     [items]
   );
   const isAdmin = user?.role === "admin";
-  const isOwner = user?.role === "proprietaire";
-  const hasDashboardShell = isAdmin || isOwner;
+  const isOwnerDashboard = user?.role === "proprietaire" && searchParams.get("mode") === "owner";
+  const hasDashboardShell = isAdmin || isOwnerDashboard;
+  const messageHrefSuffix = isOwnerDashboard ? "?mode=owner" : "";
 
   if (!isAuthenticated) {
     return (
@@ -95,12 +98,12 @@ export default function MessagesPage() {
     <div className="min-h-screen bg-transparent">
       <TopBar />
       {isAdmin && <AdminSidebar />}
-      {isOwner && <OwnerSidebar />}
+      {isOwnerDashboard && <OwnerSidebar />}
       <main
         className={`mx-auto bg-white px-4 pt-24 sm:px-8 ${
           isAdmin
             ? "w-full pb-16 lg:ml-72 lg:max-w-[calc(100%-18rem)]"
-            : isOwner
+            : isOwnerDashboard
               ? "w-full pb-16 lg:ml-64 lg:max-w-[calc(100%-16rem)]"
             : "max-w-5xl pb-28"
         }`}
@@ -154,7 +157,7 @@ export default function MessagesPage() {
                   return (
                     <Link
                       key={item.id}
-                      href={`/messages/${item.id}`}
+                      href={`/messages/${item.id}${messageHrefSuffix}`}
                       className="group flex items-center gap-4 px-4 py-4 transition hover:bg-[#F8FAFF] sm:px-5"
                     >
                       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-semibold text-white">
@@ -223,5 +226,13 @@ export default function MessagesPage() {
       </main>
       {!hasDashboardShell && <BottomNav />}
     </div>
+  );
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white" />}>
+      <MessagesPageContent />
+    </Suspense>
   );
 }

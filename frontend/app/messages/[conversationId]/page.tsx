@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -15,7 +15,7 @@ import {
   FiSend,
   FiUser,
 } from "react-icons/fi";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { BottomNav } from "@/components/BottomNav";
 import { OwnerSidebar } from "@/components/OwnerSidebar";
@@ -38,9 +38,10 @@ function formatTime(value: string) {
   });
 }
 
-export default function MessageConversationPage() {
+function MessageConversationPageContent() {
   const token = useAuthStore((s) => s.token);
   const user = useAuthStore((s) => s.user);
+  const searchParams = useSearchParams();
   const params = useParams<{ conversationId?: string | string[] }>();
   const conversationId = useMemo(() => {
     const raw = params?.conversationId;
@@ -138,19 +139,20 @@ export default function MessageConversationPage() {
     .slice(0, 2)
     .toUpperCase();
   const isAdmin = user?.role === "admin";
-  const isOwner = user?.role === "proprietaire";
-  const hasDashboardShell = isAdmin || isOwner;
+  const isOwnerDashboard = user?.role === "proprietaire" && searchParams.get("mode") === "owner";
+  const hasDashboardShell = isAdmin || isOwnerDashboard;
+  const messageHrefSuffix = isOwnerDashboard ? "?mode=owner" : "";
 
   return (
     <div className="min-h-screen bg-white">
       <TopBar />
       {isAdmin && <AdminSidebar />}
-      {isOwner && <OwnerSidebar />}
+      {isOwnerDashboard && <OwnerSidebar />}
       <main
         className={`mx-auto px-3 pt-24 sm:px-6 ${
           isAdmin
             ? "w-full pb-16 lg:ml-72 lg:max-w-[calc(100%-18rem)]"
-            : isOwner
+            : isOwnerDashboard
               ? "w-full pb-16 lg:ml-64 lg:max-w-[calc(100%-16rem)]"
             : "max-w-7xl pb-28"
         }`}
@@ -210,7 +212,7 @@ export default function MessageConversationPage() {
                     return (
                       <Link
                         key={item.id}
-                        href={`/messages/${item.id}`}
+                        href={`/messages/${item.id}${messageHrefSuffix}`}
                         className={`flex items-center gap-3 rounded-2xl px-3 py-3 transition ${
                           active ? "bg-[#eef0ff]" : "hover:bg-neutral-50"
                         }`}
@@ -241,7 +243,7 @@ export default function MessageConversationPage() {
                 <div className="flex items-center justify-between gap-3 border-b border-neutral-100 px-4 py-3 sm:px-5">
                   <div className="flex min-w-0 items-center gap-3">
                     <Link
-                      href="/messages"
+                      href={`/messages${messageHrefSuffix}`}
                       className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-700"
                       aria-label="Retour aux conversations"
                     >
@@ -389,5 +391,13 @@ export default function MessageConversationPage() {
       </main>
       {!hasDashboardShell && <BottomNav />}
     </div>
+  );
+}
+
+export default function MessageConversationPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white" />}>
+      <MessageConversationPageContent />
+    </Suspense>
   );
 }

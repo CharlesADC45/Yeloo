@@ -549,14 +549,14 @@ export default function NouveauBienPage() {
     <div className="min-h-screen bg-transparent">
       <TopBar />
       <OwnerSidebar />
-      <main className="mx-auto max-w-3xl px-4 pb-28 pt-24 lg:ml-64 lg:max-w-[calc(100%-16rem)] lg:px-8">
+      <main className="mx-auto max-w-3xl px-3 pb-36 pt-20 sm:px-4 sm:pt-24 lg:ml-64 lg:max-w-[calc(100%-16rem)] lg:px-8">
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="rounded-3xl bg-white p-6 shadow-soft"
+          className="bg-white px-1 py-3 sm:rounded-3xl sm:p-6"
         >
-          <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-1 sm:px-0">
             <div>
               <h1 className="text-xl font-semibold tracking-tight">
                 Publier un nouveau bien
@@ -573,21 +573,21 @@ export default function NouveauBienPage() {
             </Link>
           </div>
 
-          <div className="mt-6 rounded-3xl border border-neutral-200 p-4 sm:p-5">
+          <div className="mt-5 min-w-0 overflow-visible sm:rounded-3xl sm:border sm:border-neutral-200 sm:p-5">
             <div className="relative">
-              <div className="flex items-start justify-between gap-2 text-center">
+              <div className="flex items-start justify-between gap-1 text-center sm:gap-2">
                 {STEPS.map((step, index) => {
                   const isActive = index === stepIndex;
                   const isDone = index < stepIndex;
                   const isFirst = index === 0;
                   const isLast = index === STEPS.length - 1;
                   return (
-                    <div key={step.title} className="relative flex flex-1 flex-col items-center px-2">
+                    <div key={step.title} className="relative flex flex-1 flex-col items-center px-0.5 sm:px-2">
                       {!isFirst && (
                         <>
-                          <span className="absolute left-0 right-1/2 top-5 h-0.5 bg-neutral-200" />
+                          <span className="absolute left-0 right-1/2 top-4 h-0.5 bg-neutral-200 sm:top-5" />
                           <motion.span
-                            className="absolute left-0 right-1/2 top-5 h-0.5 origin-right bg-blue-600"
+                            className="absolute left-0 right-1/2 top-4 h-0.5 origin-right bg-blue-600 sm:top-5"
                             initial={false}
                             animate={{ scaleX: index <= stepIndex ? 1 : 0 }}
                             transition={{ duration: 0.28, ease: "easeInOut" }}
@@ -596,9 +596,9 @@ export default function NouveauBienPage() {
                       )}
                       {!isLast && (
                         <>
-                          <span className="absolute left-1/2 right-0 top-5 h-0.5 bg-neutral-200" />
+                          <span className="absolute left-1/2 right-0 top-4 h-0.5 bg-neutral-200 sm:top-5" />
                           <motion.span
-                            className="absolute left-1/2 right-0 top-5 h-0.5 origin-left bg-blue-600"
+                            className="absolute left-1/2 right-0 top-4 h-0.5 origin-left bg-blue-600 sm:top-5"
                             initial={false}
                             animate={{ scaleX: index < stepIndex ? 1 : 0 }}
                             transition={{ duration: 0.28, ease: "easeInOut" }}
@@ -621,7 +621,7 @@ export default function NouveauBienPage() {
                             : "0 0 0 0 rgba(37, 99, 235, 0)",
                         }}
                         transition={{ type: "spring", stiffness: 280, damping: 22 }}
-                        className="relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 text-xs font-semibold"
+                        className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 text-[11px] font-semibold sm:h-10 sm:w-10 sm:text-xs"
                       >
                         <motion.span
                           key={`${step.title}-${isDone}-${isActive}`}
@@ -648,7 +648,7 @@ export default function NouveauBienPage() {
                         >
                           {step.title}
                         </p>
-                        <p className="text-[11px] text-neutral-400">{step.subtitle}</p>
+                        <p className="hidden text-[11px] text-neutral-400 min-[390px]:block">{step.subtitle}</p>
                       </motion.div>
                     </div>
                   );
@@ -656,7 +656,7 @@ export default function NouveauBienPage() {
               </div>
             </div>
 
-            <div className="mt-6 rounded-2xl bg-neutral-50 p-4 sm:p-5">
+            <div className="mt-6 min-w-0 overflow-visible sm:rounded-2xl sm:bg-neutral-50 sm:p-5">
               {stepIndex === 0 && (
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="flex flex-col gap-1 text-xs text-neutral-600 sm:col-span-2">
@@ -666,7 +666,7 @@ export default function NouveauBienPage() {
                     <input
                       value={form.title}
                       onChange={(event) => updateField("title", event.target.value)}
-                      className={`rounded-xl border bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2 ${
+                      className={`h-12 rounded-2xl border bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70 ${
                         errors.title ? "border-red-300 ring-red-200" : "border-neutral-200"
                       }`}
                       aria-invalid={Boolean(errors.title)}
@@ -683,7 +683,7 @@ export default function NouveauBienPage() {
                     <select
                       value={form.propertyType}
                       onChange={(event) => updateField("propertyType", event.target.value)}
-                      className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
+                      className="h-12 rounded-2xl border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70"
                     >
                       <option value="studio">Studio</option>
                       <option value="appartement">Appartement</option>
@@ -700,7 +700,7 @@ export default function NouveauBienPage() {
                       type="number"
                       value={form.price}
                       onChange={(event) => updateField("price", event.target.value)}
-                      className={`rounded-xl border bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2 ${
+                      className={`h-12 rounded-2xl border bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70 ${
                         errors.price ? "border-red-300 ring-red-200" : "border-neutral-200"
                       }`}
                       aria-invalid={Boolean(errors.price)}
@@ -719,7 +719,7 @@ export default function NouveauBienPage() {
                       onChange={(event) =>
                         updateField("pricePeriod", event.target.value as FormState["pricePeriod"])
                       }
-                      className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
+                       className="h-12 rounded-2xl border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70"
                     >
                       <option value="jour">Jour</option>
                       <option value="semaine">Semaine</option>
@@ -736,7 +736,7 @@ export default function NouveauBienPage() {
                       min={1}
                       value={form.depositMonths}
                       onChange={(event) => updateField("depositMonths", event.target.value)}
-                      className={`rounded-xl border bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2 ${
+                      className={`h-12 rounded-2xl border bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70 ${
                         errors.depositMonths ? "border-red-300 ring-red-200" : "border-neutral-200"
                       }`}
                     />
@@ -752,7 +752,7 @@ export default function NouveauBienPage() {
                     <input
                       value={form.city}
                       onChange={(event) => updateField("city", event.target.value)}
-                      className={`rounded-xl border bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2 ${
+                      className={`h-12 rounded-2xl border bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70 ${
                         errors.city ? "border-red-300 ring-red-200" : "border-neutral-200"
                       }`}
                       aria-invalid={Boolean(errors.city)}
@@ -769,7 +769,7 @@ export default function NouveauBienPage() {
                     <input
                       value={form.address}
                       onChange={(event) => updateField("address", event.target.value)}
-                      className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
+                      className="h-12 rounded-2xl border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70"
                     />
                   </label>
 
@@ -781,7 +781,7 @@ export default function NouveauBienPage() {
                       type="number"
                       value={form.surfaceM2}
                       onChange={(event) => updateField("surfaceM2", event.target.value)}
-                      className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
+                      className="h-12 rounded-2xl border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70"
                     />
                   </label>
 
@@ -793,7 +793,7 @@ export default function NouveauBienPage() {
                       type="number"
                       value={form.rooms}
                       onChange={(event) => updateField("rooms", event.target.value)}
-                      className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
+                      className="h-12 rounded-2xl border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70"
                     />
                   </label>
 
@@ -805,7 +805,7 @@ export default function NouveauBienPage() {
                       type="number"
                       value={form.bathrooms}
                       onChange={(event) => updateField("bathrooms", event.target.value)}
-                      className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
+                      className="h-12 rounded-2xl border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70"
                     />
                   </label>
 
@@ -818,7 +818,7 @@ export default function NouveauBienPage() {
                         value={form.coordinates}
                         onChange={(event) => updateField("coordinates", event.target.value)}
                         placeholder="5.296552, -3.966379"
-                        className={`flex-1 rounded-xl border bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2 ${
+                         className={`h-12 flex-1 rounded-2xl border bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70 ${
                           errors.coordinates
                             ? "border-red-300 ring-red-200"
                             : "border-neutral-200"
@@ -857,7 +857,7 @@ export default function NouveauBienPage() {
                       rows={4}
                       value={form.description}
                       onChange={(event) => updateField("description", event.target.value)}
-                      className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
+                      className="rounded-2xl border border-neutral-200 bg-white px-3 py-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70"
                     />
                   </label>
                 </div>
@@ -865,7 +865,7 @@ export default function NouveauBienPage() {
 
               {stepIndex === 1 && (
                 <div className="grid gap-4 lg:grid-cols-2">
-                  <div className="rounded-2xl border-2 border-dashed border-neutral-200 bg-white p-4 sm:p-5">
+                  <div className="rounded-2xl border border-neutral-100 bg-white p-4 sm:border-dashed sm:p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold text-neutral-900">Photos du bien</p>
@@ -905,7 +905,7 @@ export default function NouveauBienPage() {
                     <button
                       type="button"
                       onClick={() => photoInputRef.current?.click()}
-                      className="mt-4 rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700"
+                      className="mt-4 min-h-11 rounded-full bg-neutral-950 px-4 py-2 text-xs font-semibold text-white"
                     >
                       Prendre une photo
                     </button>
@@ -919,7 +919,7 @@ export default function NouveauBienPage() {
                     />
                   </div>
 
-                  <div className="rounded-2xl border-2 border-dashed border-neutral-200 bg-white p-4 sm:p-5">
+                  <div className="rounded-2xl border border-neutral-100 bg-white p-4 sm:border-dashed sm:p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold text-neutral-900">Vidéo de visite</p>
@@ -947,7 +947,7 @@ export default function NouveauBienPage() {
                     <button
                       type="button"
                       onClick={() => videoInputRef.current?.click()}
-                      className="mt-4 rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700"
+                      className="mt-4 min-h-11 rounded-full bg-neutral-950 px-4 py-2 text-xs font-semibold text-white"
                     >
                       Choisir une vidéo
                     </button>
@@ -961,7 +961,7 @@ export default function NouveauBienPage() {
                     />
                   </div>
 
-                  <div className="rounded-2xl border-2 border-dashed border-neutral-200 bg-white p-4 sm:p-5 lg:col-span-2">
+                  <div className="rounded-2xl border border-neutral-100 bg-white p-4 sm:border-dashed sm:p-5 lg:col-span-2">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold text-neutral-900">Visite 360°</p>
@@ -997,7 +997,7 @@ export default function NouveauBienPage() {
                     <button
                       type="button"
                       onClick={() => tourInputRef.current?.click()}
-                      className="mt-4 rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700"
+                      className="mt-4 min-h-11 rounded-full bg-neutral-950 px-4 py-2 text-xs font-semibold text-white"
                     >
                       Ajouter la visite 360°
                     </button>
@@ -1094,11 +1094,11 @@ export default function NouveauBienPage() {
                 {submitError}
               </div>
             )}
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+            <div className="sticky bottom-24 -mx-1 mt-6 flex items-center justify-between gap-3 border-t border-neutral-100 bg-white/96 px-1 py-3 backdrop-blur sm:static sm:mx-0 sm:border-t-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-0">
               <button
                 type="button"
                 onClick={goPrev}
-                className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-600"
+                className="min-h-11 rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-600 disabled:opacity-40"
                 disabled={stepIndex === 0}
               >
                 Précédent
@@ -1111,7 +1111,7 @@ export default function NouveauBienPage() {
                   type="button"
                   onClick={goNext}
                   disabled={isSubmitting}
-                  className="rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
+                  className="min-h-11 rounded-full bg-blue-600 px-5 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {isLastStep ? (isSubmitting ? "Envoi..." : "Publier") : "Suivant"}
                 </button>
