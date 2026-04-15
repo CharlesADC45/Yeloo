@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { FiArrowRight, FiMessageCircle } from "react-icons/fi";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { BottomNav } from "@/components/BottomNav";
+import { OwnerSidebar } from "@/components/OwnerSidebar";
 import { TopBar } from "@/components/TopBar";
 import { fetchConversations, type ConversationSummary } from "@/lib/messages";
 import { useAuthStore } from "@/stores/authStore";
@@ -58,6 +59,8 @@ export default function MessagesPage() {
     [items]
   );
   const isAdmin = user?.role === "admin";
+  const isOwner = user?.role === "proprietaire";
+  const hasDashboardShell = isAdmin || isOwner;
 
   if (!isAuthenticated) {
     return (
@@ -86,10 +89,13 @@ export default function MessagesPage() {
     <div className="min-h-screen bg-transparent">
       <TopBar />
       {isAdmin && <AdminSidebar />}
+      {isOwner && <OwnerSidebar />}
       <main
         className={`mx-auto bg-white px-4 pt-24 sm:px-8 ${
           isAdmin
             ? "w-full pb-16 lg:ml-72 lg:max-w-[calc(100%-18rem)]"
+            : isOwner
+              ? "w-full pb-16 lg:ml-64 lg:max-w-[calc(100%-16rem)]"
             : "max-w-5xl pb-28"
         }`}
       >
@@ -209,7 +215,7 @@ export default function MessagesPage() {
           </section> */}
         </motion.section>
       </main>
-      {!isAdmin && <BottomNav />}
+      {!hasDashboardShell && <BottomNav />}
     </div>
   );
 }

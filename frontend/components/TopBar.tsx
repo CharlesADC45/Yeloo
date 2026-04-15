@@ -457,7 +457,7 @@ function TopBarContent({
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 6, scale: 0.98 }}
                       transition={{ duration: 0.18 }}
-                      className="absolute right-0 top-[calc(100%+12px)] z-[1100] w-[min(22rem,calc(100vw-1rem))] overflow-hidden rounded-[1.5rem] border border-neutral-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.16)] sm:w-[min(24rem,calc(100vw-2rem))]"
+                      className="fixed left-3 right-3 top-20 z-[1100] mx-auto max-w-sm overflow-hidden rounded-[1.5rem] border border-neutral-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.16)] sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+12px)] sm:mx-0 sm:w-[min(24rem,calc(100vw-2rem))]"
                     >
                       <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-3">
                         <div>

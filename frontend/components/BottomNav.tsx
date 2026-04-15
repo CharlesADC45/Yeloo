@@ -1,14 +1,54 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { FiSearch, FiHeart, FiMapPin, FiMessageCircle, FiUser } from "react-icons/fi";
+import { fetchConversations } from "@/lib/messages";
 import { useAuthStore } from "@/stores/authStore";
 
 export function BottomNav() {
   const pathname = usePathname();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const token = useAuthStore((s) => s.token);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+
+  useEffect(() => {
+    if (!isAuthenticated || !token) {
+      setUnreadMessages(0);
+      return;
+    }
+
+    let active = true;
+
+    const loadUnread = async () => {
+      try {
+        const conversations = await fetchConversations(token);
+        if (!active) return;
+        setUnreadMessages(
+          conversations.reduce((total, item) => total + item.unread_count, 0)
+        );
+      } catch {
+        if (active) setUnreadMessages(0);
+      }
+    };
+
+    void loadUnread();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void loadUnread();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      active = false;
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [isAuthenticated, token]);
 
   const tabs = [
     {
@@ -22,6 +62,7 @@ export function BottomNav() {
       href: isAuthenticated ? "/messages" : "/connexion?next=/messages",
       label: "Messages",
       icon: <FiMessageCircle />,
+      badge: unreadMessages,
     },
     {
       href: isAuthenticated ? "/compte" : "/connexion",
@@ -43,6 +84,7 @@ export function BottomNav() {
             pathname === tab.href ||
             (tab.href === "/messages" && pathname?.startsWith("/messages")) ||
             (tab.href.startsWith("/connexion?next=/messages") && pathname?.startsWith("/messages"));
+          const badgeCount = "badge" in tab ? tab.badge ?? 0 : 0;
           return (
             <Link
               key={tab.href}
@@ -53,11 +95,16 @@ export function BottomNav() {
             >
               <motion.span
                 whileTap={{ scale: 0.9 }}
-                className={`text-xl ${
+                className={`relative text-xl ${
                   isActive ? "text-neutral-900" : "text-neutral-500"
                 }`}
               >
                 {tab.icon}
+                {badgeCount > 0 && (
+                  <span className="absolute -right-2 -top-2 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[9px] font-bold leading-none text-white ring-2 ring-white">
+                    {badgeCount > 9 ? "9+" : badgeCount}
+                  </span>
+                )}
               </motion.span>
               <span
                 className={`max-w-full truncate text-[12px] leading-none sm:text-sm ${

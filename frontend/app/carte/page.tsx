@@ -889,7 +889,7 @@ function CartePageContent() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.96 }}
                   transition={{ duration: 0.18 }}
-                  className="absolute bottom-[6.8rem] right-2 z-30 inline-flex items-center gap-2 rounded-full bg-neutral-950 px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(15,23,42,0.22)] sm:right-4"
+                  className="absolute bottom-[5.9rem] right-2 z-30 inline-flex items-center gap-2 rounded-full bg-neutral-950 px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(15,23,42,0.22)] sm:right-4"
                 >
                   <span>Voir la carte</span>
                   <FiMapPin className="h-4 w-4" />

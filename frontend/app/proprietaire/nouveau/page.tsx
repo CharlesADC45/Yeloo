@@ -57,7 +57,7 @@ function FileUploadField({
 }: FileUploadFieldProps) {
   return (
     <label className="block min-w-0 text-xs text-neutral-600">
-      <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
+      <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
         {label}
       </span>
       <input
@@ -69,7 +69,7 @@ function FileUploadField({
         aria-invalid={Boolean(error)}
       />
       <span
-        className={`mt-2 flex min-w-0 cursor-pointer items-center gap-3 rounded-2xl border bg-white p-3 transition active:scale-[0.99] ${
+        className={`mt-2 flex w-full min-w-0 cursor-pointer items-center gap-3 rounded-2xl border bg-white px-3 py-3 transition active:scale-[0.99] ${
           error
             ? "border-red-300 ring-2 ring-red-100"
             : file
@@ -78,26 +78,26 @@ function FileUploadField({
         }`}
       >
         <span
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${
             file ? "bg-blue-600 text-white" : "bg-neutral-100 text-neutral-500"
           }`}
         >
           {file ? <FiFileText /> : <FiUploadCloud />}
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-semibold text-neutral-900">
+          <span className="block truncate text-[13px] font-semibold text-neutral-900">
             {file?.name ?? "Ajouter un fichier"}
           </span>
-          <span className="mt-0.5 block truncate text-[11px] text-neutral-500">
+          <span className="mt-0.5 block truncate text-[10px] text-neutral-500">
             {file ? "Fichier sélectionné" : "Photo, PDF ou document"}
           </span>
         </span>
         <span
-          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+          className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold ${
             file ? "bg-emerald-50 text-emerald-600" : "bg-neutral-950 text-white"
           }`}
         >
-          {file ? <FiCheckCircle /> : "+"}
+          {file ? "OK" : "Choisir"}
         </span>
       </span>
       {error && <span className="mt-1 block text-[11px] text-red-500">{error}</span>}
@@ -294,7 +294,7 @@ export default function NouveauBienPage() {
       <TopBar />
       {isVerifiedOwner && <OwnerSidebar />}
       <main
-        className={`mx-auto max-w-3xl px-4 pb-28 pt-24 ${
+        className={`mx-auto max-w-3xl px-3 pb-36 pt-20 sm:px-4 sm:pt-24 ${
           isVerifiedOwner ? "lg:ml-64 lg:max-w-[calc(100%-16rem)] lg:px-8" : ""
         }`}
       >
@@ -302,11 +302,11 @@ export default function NouveauBienPage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="overflow-hidden rounded-3xl bg-white p-5 shadow-soft sm:p-6"
+          className="bg-white px-1 py-3 sm:rounded-3xl sm:p-6 sm:shadow-soft"
         >
-          <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-1 sm:px-0">
             <div>
-              <h1 className="text-xl font-semibold tracking-tight">
+              <h1 className="text-lg font-semibold tracking-tight sm:text-xl">
                 Onboarding propriétaire
               </h1>
               <p className="mt-1 text-xs text-neutral-600">
@@ -323,9 +323,9 @@ export default function NouveauBienPage() {
             )}
           </div>
 
-          <div className="mt-6 min-w-0 overflow-hidden rounded-3xl border border-neutral-200 p-4 sm:p-5">
+          <div className="mt-5 min-w-0 overflow-visible sm:rounded-3xl sm:border sm:border-neutral-200 sm:p-5">
             <div className="relative">
-              <div className="flex items-start justify-between gap-2 text-center">
+              <div className="flex items-start justify-between gap-1 text-center sm:gap-2">
                 {STEPS.map((step, index) => {
                   const isActive = index === stepIndex;
                   const isDone = index < stepIndex;
@@ -334,13 +334,13 @@ export default function NouveauBienPage() {
                   return (
                     <div
                       key={step.title}
-                      className="relative flex flex-1 flex-col items-center px-2"
+                      className="relative flex flex-1 flex-col items-center px-0.5 sm:px-2"
                     >
                       {!isFirst && (
                         <>
-                          <span className="absolute left-0 right-1/2 top-5 h-0.5 bg-neutral-200" />
+                          <span className="absolute left-0 right-1/2 top-4 h-0.5 bg-neutral-200 sm:top-5" />
                           <motion.span
-                            className="absolute left-0 right-1/2 top-5 h-0.5 origin-right bg-blue-600"
+                            className="absolute left-0 right-1/2 top-4 h-0.5 origin-right bg-blue-600 sm:top-5"
                             initial={false}
                             animate={{ scaleX: index <= stepIndex ? 1 : 0 }}
                             transition={{ duration: 0.28, ease: "easeInOut" }}
@@ -349,9 +349,9 @@ export default function NouveauBienPage() {
                       )}
                       {!isLast && (
                         <>
-                          <span className="absolute left-1/2 right-0 top-5 h-0.5 bg-neutral-200" />
+                          <span className="absolute left-1/2 right-0 top-4 h-0.5 bg-neutral-200 sm:top-5" />
                           <motion.span
-                            className="absolute left-1/2 right-0 top-5 h-0.5 origin-left bg-blue-600"
+                            className="absolute left-1/2 right-0 top-4 h-0.5 origin-left bg-blue-600 sm:top-5"
                             initial={false}
                             animate={{ scaleX: index < stepIndex ? 1 : 0 }}
                             transition={{ duration: 0.28, ease: "easeInOut" }}
@@ -370,11 +370,11 @@ export default function NouveauBienPage() {
                               ? "#2563eb"
                               : "#a3a3a3",
                           boxShadow: isActive
-                            ? "0 0 0 6px rgba(37, 99, 235, 0.10)"
+                            ? "0 0 0 4px rgba(37, 99, 235, 0.10)"
                             : "0 0 0 0 rgba(37, 99, 235, 0)",
                         }}
                         transition={{ type: "spring", stiffness: 280, damping: 22 }}
-                        className="relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 text-xs font-semibold"
+                        className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 text-[11px] font-semibold sm:h-10 sm:w-10 sm:text-xs"
                       >
                         <motion.span
                           key={`${step.title}-${isDone}-${isActive}`}
@@ -386,7 +386,7 @@ export default function NouveauBienPage() {
                         </motion.span>
                       </motion.div>
                       <motion.div
-                        className="mt-3"
+                        className="mt-2 sm:mt-3"
                         initial={false}
                         animate={{
                           opacity: isActive || isDone ? 1 : 0.7,
@@ -395,13 +395,13 @@ export default function NouveauBienPage() {
                         transition={{ duration: 0.2 }}
                       >
                         <p
-                          className={`text-xs font-semibold ${
+                          className={`text-[11px] font-semibold leading-tight sm:text-xs ${
                             isActive || isDone ? "text-neutral-900" : "text-neutral-400"
                           }`}
                         >
                           {step.title}
                         </p>
-                        <p className="text-[11px] text-neutral-400">
+                        <p className="mt-0.5 hidden text-[11px] leading-tight text-neutral-400 min-[405px]:block">
                           {step.subtitle}
                         </p>
                       </motion.div>
@@ -411,17 +411,17 @@ export default function NouveauBienPage() {
               </div>
             </div>
 
-            <div className="mt-6 min-w-0 overflow-hidden rounded-2xl bg-neutral-50 p-3 sm:p-5">
+            <div className="mt-6 min-w-0 overflow-visible sm:rounded-2xl sm:bg-neutral-50 sm:p-5">
               {stepIndex === 0 && (
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="flex flex-col gap-1 text-xs text-neutral-600">
-                    <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
                       Nom complet
                     </span>
                     <input
                       value={formValues.fullName}
                       onChange={(event) => updateField("fullName", event.target.value)}
-                      className={`rounded-xl border bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2 ${
+                      className={`h-12 rounded-2xl border bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70 ${
                         errors.fullName ? "border-red-300 ring-red-200" : "border-neutral-200"
                       }`}
                       aria-invalid={Boolean(errors.fullName)}
@@ -433,13 +433,13 @@ export default function NouveauBienPage() {
                     )}
                   </label>
                   <label className="flex flex-col gap-1 text-xs text-neutral-600">
-                    <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
                       Téléphone
                     </span>
                     <input
                       value={formValues.phone}
                       onChange={(event) => updateField("phone", event.target.value)}
-                      className={`rounded-xl border bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2 ${
+                      className={`h-12 rounded-2xl border bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70 ${
                         errors.phone ? "border-red-300 ring-red-200" : "border-neutral-200"
                       }`}
                       aria-invalid={Boolean(errors.phone)}
@@ -449,14 +449,14 @@ export default function NouveauBienPage() {
                     )}
                   </label>
                   <label className="flex flex-col gap-1 text-xs text-neutral-600">
-                    <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
                       Email
                     </span>
                     <input
                       type="email"
                       value={formValues.email}
                       onChange={(event) => updateField("email", event.target.value)}
-                      className={`rounded-xl border bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2 ${
+                      className={`h-12 rounded-2xl border bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70 ${
                         errors.email ? "border-red-300 ring-red-200" : "border-neutral-200"
                       }`}
                       aria-invalid={Boolean(errors.email)}
@@ -466,13 +466,13 @@ export default function NouveauBienPage() {
                     )}
                   </label>
                   <label className="flex flex-col gap-1 text-xs text-neutral-600">
-                    <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
                       Ville principale
                     </span>
                     <input
                       value={formValues.city}
                       onChange={(event) => updateField("city", event.target.value)}
-                      className={`rounded-xl border bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2 ${
+                      className={`h-12 rounded-2xl border bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70 ${
                         errors.city ? "border-red-300 ring-red-200" : "border-neutral-200"
                       }`}
                       aria-invalid={Boolean(errors.city)}
@@ -507,13 +507,13 @@ export default function NouveauBienPage() {
                     onChange={(file) => updateField("propertyFile", file)}
                   />
                   <label className="flex flex-col gap-1 text-xs text-neutral-600 sm:col-span-2">
-                    <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
                       Adresse du bien principal
                     </span>
                     <input
                       value={formValues.address}
                       onChange={(event) => updateField("address", event.target.value)}
-                      className={`rounded-xl border bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2 ${
+                      className={`h-12 rounded-2xl border bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70 ${
                         errors.address ? "border-red-300 ring-red-200" : "border-neutral-200"
                       }`}
                       aria-invalid={Boolean(errors.address)}
@@ -528,13 +528,13 @@ export default function NouveauBienPage() {
               {stepIndex === 2 && (
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="flex flex-col gap-1 text-xs text-neutral-600">
-                    <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
                       Nom de la banque
                     </span>
                     <input
                       value={formValues.bankName}
                       onChange={(event) => updateField("bankName", event.target.value)}
-                      className={`rounded-xl border bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2 ${
+                      className={`h-12 rounded-2xl border bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70 ${
                         errors.bankName ? "border-red-300 ring-red-200" : "border-neutral-200"
                       }`}
                       aria-invalid={Boolean(errors.bankName)}
@@ -546,13 +546,13 @@ export default function NouveauBienPage() {
                     )}
                   </label>
                   <label className="flex flex-col gap-1 text-xs text-neutral-600">
-                    <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
                       Numéro de compte
                     </span>
                     <input
                       value={formValues.accountNumber}
                       onChange={(event) => updateField("accountNumber", event.target.value)}
-                      className={`rounded-xl border bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2 ${
+                      className={`h-12 rounded-2xl border bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70 ${
                         errors.accountNumber
                           ? "border-red-300 ring-red-200"
                           : "border-neutral-200"
@@ -566,13 +566,13 @@ export default function NouveauBienPage() {
                     )}
                   </label>
                   <label className="flex flex-col gap-1 text-xs text-neutral-600">
-                    <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
                       Mobile money
                     </span>
                     <input
                       value={formValues.mobileMoney}
                       onChange={(event) => updateField("mobileMoney", event.target.value)}
-                      className={`rounded-xl border bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2 ${
+                      className={`h-12 rounded-2xl border bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70 ${
                         errors.mobileMoney
                           ? "border-red-300 ring-red-200"
                           : "border-neutral-200"
@@ -586,7 +586,7 @@ export default function NouveauBienPage() {
                     )}
                   </label>
                   <label className="flex flex-col gap-1 text-xs text-neutral-600">
-                    <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
                       Nom du titulaire
                     </span>
                     <input
@@ -594,7 +594,7 @@ export default function NouveauBienPage() {
                       onChange={(event) =>
                         updateField("accountHolder", event.target.value)
                       }
-                      className={`rounded-xl border bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2 ${
+                      className={`h-12 rounded-2xl border bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70 ${
                         errors.accountHolder
                           ? "border-red-300 ring-red-200"
                           : "border-neutral-200"
@@ -617,24 +617,24 @@ export default function NouveauBienPage() {
               </div>
             )}
 
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+            <div className="sticky bottom-24 -mx-1 mt-6 flex items-center justify-between gap-3 border-t border-neutral-100 bg-white/96 px-1 py-3 backdrop-blur sm:static sm:mx-0 sm:border-t-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-0">
               <button
                 type="button"
                 onClick={goPrev}
-                className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-600"
+                className="min-h-11 rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-600 disabled:opacity-40"
                 disabled={stepIndex === 0}
               >
                 Précédent
               </button>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-neutral-500">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="hidden text-xs text-neutral-500 min-[380px]:inline">
                   Étape {stepIndex + 1} / {STEPS.length}
                 </span>
                 <button
                   type="button"
                   onClick={goNext}
                   disabled={isSubmitting}
-                  className="rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
+                  className="min-h-11 rounded-full bg-blue-600 px-5 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {isLastStep ? (isSubmitting ? "Envoi..." : "Terminer") : "Suivant"}
                 </button>

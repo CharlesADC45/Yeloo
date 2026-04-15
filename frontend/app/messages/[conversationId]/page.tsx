@@ -18,6 +18,7 @@ import {
 import { useParams } from "next/navigation";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { BottomNav } from "@/components/BottomNav";
+import { OwnerSidebar } from "@/components/OwnerSidebar";
 import { TopBar } from "@/components/TopBar";
 import {
   fetchConversation,
@@ -127,15 +128,20 @@ export default function MessageConversationPage() {
     .slice(0, 2)
     .toUpperCase();
   const isAdmin = user?.role === "admin";
+  const isOwner = user?.role === "proprietaire";
+  const hasDashboardShell = isAdmin || isOwner;
 
   return (
     <div className="min-h-screen bg-white">
       <TopBar />
       {isAdmin && <AdminSidebar />}
+      {isOwner && <OwnerSidebar />}
       <main
         className={`mx-auto px-3 pt-24 sm:px-6 ${
           isAdmin
             ? "w-full pb-16 lg:ml-72 lg:max-w-[calc(100%-18rem)]"
+            : isOwner
+              ? "w-full pb-16 lg:ml-64 lg:max-w-[calc(100%-16rem)]"
             : "max-w-7xl pb-28"
         }`}
       >
@@ -371,7 +377,7 @@ export default function MessageConversationPage() {
           )}
         </motion.section>
       </main>
-      {!isAdmin && <BottomNav />}
+      {!hasDashboardShell && <BottomNav />}
     </div>
   );
 }
