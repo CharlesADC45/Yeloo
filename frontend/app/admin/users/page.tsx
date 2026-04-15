@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { FiUserCheck, FiUserX, FiUsers } from "react-icons/fi";
+import { FiTrash2, FiUserCheck, FiUserX, FiUsers } from "react-icons/fi";
 import { AdminDashboardSkeleton } from "@/components/Skeleton";
 import {
   type AdminUserSummary,
+  deleteAdminUser,
   fetchAdminUsers,
   updateAdminUserSuspension,
 } from "@/lib/admin";
@@ -20,11 +21,13 @@ const roleFilters = [
 
 export default function AdminUsersPage() {
   const token = useAuthStore((s) => s.token);
+  const currentUser = useAuthStore((s) => s.user);
   const [role, setRole] = useState("all");
   const [users, setUsers] = useState<AdminUserSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -70,6 +73,27 @@ export default function AdminUsersPage() {
       setError(err instanceof Error ? err.message : "Mise à jour impossible.");
     } finally {
       setPendingUserId(null);
+    }
+  };
+
+  const deleteUser = async (user: AdminUserSummary) => {
+    if (!token || deletingUserId) return;
+
+    const label = user.full_name || user.email;
+    const confirmed = window.confirm(
+      `Supprimer définitivement ${label} ? Ses annonces, conversations et demandes liées seront supprimées aussi.`
+    );
+    if (!confirmed) return;
+
+    setDeletingUserId(user.id);
+    setError(null);
+    try {
+      await deleteAdminUser(token, user.id);
+      setUsers((current) => current.filter((item) => item.id !== user.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Suppression impossible.");
+    } finally {
+      setDeletingUserId(null);
     }
   };
 
@@ -164,26 +188,43 @@ export default function AdminUsersPage() {
                       )}
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => void toggleSuspension(user)}
-                    disabled={pendingUserId === user.id}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold disabled:opacity-60 ${
-                      user.is_suspended ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
-                    }`}
-                  >
-                    {user.is_suspended ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void toggleSuspension(user)}
+                      disabled={pendingUserId === user.id || deletingUserId === user.id}
+                      className={`rounded-full px-4 py-2 text-sm font-semibold disabled:opacity-60 ${
+                        user.is_suspended ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
+                      }`}
+                    >
+                      {user.is_suspended ? (
+                        <span className="inline-flex items-center gap-2">
+                          <FiUserCheck />
+                          Réactiver
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-2">
+                          <FiUserX />
+                          Suspendre
+                        </span>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void deleteUser(user)}
+                      disabled={
+                        deletingUserId === user.id ||
+                        pendingUserId === user.id ||
+                        currentUser?.id === user.id
+                      }
+                      className="rounded-full bg-neutral-950 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+                    >
                       <span className="inline-flex items-center gap-2">
-                        <FiUserCheck />
-                        Réactiver
+                        <FiTrash2 />
+                        {deletingUserId === user.id ? "Suppression..." : "Supprimer"}
                       </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-2">
-                        <FiUserX />
-                        Suspendre
-                      </span>
-                    )}
-                  </button>
+                    </button>
+                  </div>
                 </article>
               ))}
             </div>

@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+import shutil
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, joinedload
 
+from app.core.storage import get_upload_dir
 from app.core.security import get_current_admin
 from app.db.deps import get_db
+from app.models.conversation import Conversation
 from app.models.feature_module import FeatureModule
 from app.models.lease_request import LeaseRequest
 from app.models.owner_profile import OwnerProfile
@@ -386,6 +389,68 @@ def update_user_suspension(
     db.commit()
     db.refresh(user)
     return _serialize_user(user)
+
+
+@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_admin_user(
+    user_id: str,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable.")
+    if user.id == current_admin.id:
+        raise HTTPException(
+            status_code=400,
+            detail="Le super admin connecte ne peut pas supprimer son propre compte.",
+        )
+
+    upload_root = get_upload_dir()
+
+    properties = db.query(Property).filter(Property.owner_id == user.id).all()
+    for property_obj in properties:
+        property_dir = upload_root / "properties" / str(property_obj.id)
+        if property_dir.exists():
+            shutil.rmtree(property_dir, ignore_errors=True)
+
+    conversations = (
+        db.query(Conversation)
+        .filter(or_(Conversation.owner_id == user.id, Conversation.tenant_id == user.id))
+        .all()
+    )
+    for conversation in conversations:
+        db.delete(conversation)
+
+    lease_requests = (
+        db.query(LeaseRequest)
+        .filter(or_(LeaseRequest.owner_id == user.id, LeaseRequest.tenant_id == user.id))
+        .all()
+    )
+    for lease_request in lease_requests:
+        db.delete(lease_request)
+
+    for profile in db.query(OwnerProfile).filter(OwnerProfile.reviewed_by == user.id).all():
+        profile.reviewed_by = None
+        profile.reviewed_at = None
+        db.add(profile)
+
+    owner_profile = db.query(OwnerProfile).filter(OwnerProfile.user_id == user.id).first()
+    if owner_profile:
+        db.delete(owner_profile)
+
+    for property_obj in properties:
+        db.delete(property_obj)
+
+    avatar_url = user.profile_image_url or ""
+    if avatar_url.startswith("/uploads/avatars/"):
+        avatar_path = upload_root / avatar_url.removeprefix("/uploads/")
+        if avatar_path.exists():
+            avatar_path.unlink(missing_ok=True)
+
+    db.delete(user)
+    db.commit()
+    return None
 
 
 @router.get("/properties", response_model=list[AdminPropertySummary])

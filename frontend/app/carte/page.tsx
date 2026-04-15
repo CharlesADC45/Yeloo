@@ -287,6 +287,9 @@ function CartePageContent() {
         <img
           src={property.imageUrl}
           alt={property.title}
+          onError={(event) => {
+            event.currentTarget.src = "/property-fallback.svg";
+          }}
           className="h-full w-full object-cover"
         />
         <div className="absolute left-3 top-3 flex max-w-[72%] flex-wrap items-center gap-2">
@@ -1143,6 +1146,9 @@ function CartePageContent() {
                           <img
                             src={property.imageUrl}
                             alt={property.title}
+                            onError={(event) => {
+                              event.currentTarget.src = "/property-fallback.svg";
+                            }}
                             className="h-full w-full object-cover"
                           />
                           <div className="absolute left-3 top-3 flex max-w-[72%] flex-wrap items-center gap-2">

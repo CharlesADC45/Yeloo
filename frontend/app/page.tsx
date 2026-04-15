@@ -176,6 +176,9 @@ function HomePageContent() {
               <img
                 src={property.imageUrl}
                 alt={property.title}
+                onError={(event) => {
+                  event.currentTarget.src = "/property-fallback.svg";
+                }}
                 className="h-full w-full object-cover"
               />
               <button
@@ -333,6 +336,9 @@ function HomePageContent() {
                     <img
                       src={location.imageUrl}
                       alt={location.city}
+                      onError={(event) => {
+                        event.currentTarget.src = "/property-fallback.svg";
+                      }}
                       className="h-full w-full object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />

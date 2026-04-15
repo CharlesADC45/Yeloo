@@ -79,6 +79,9 @@ export function PropertyGrid({
                 <img
                   src={p.imageUrl}
                   alt={p.title}
+                  onError={(event) => {
+                    event.currentTarget.src = "/property-fallback.svg";
+                  }}
                   className="h-full w-full object-cover"
                 />
                 <motion.button

@@ -201,6 +201,10 @@ export function updateAdminUserSuspension(token: string, userId: string, isSuspe
   });
 }
 
+export function deleteAdminUser(token: string, userId: string) {
+  return apiDelete(`/api/admin/users/${userId}`, token);
+}
+
 export function fetchAdminProperties(token: string, status?: string) {
   const query = status ? `?status=${encodeURIComponent(status)}` : "";
   return apiGet<AdminPropertySummary[]>(`/api/admin/properties${query}`, token);

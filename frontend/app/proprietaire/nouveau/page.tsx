@@ -316,7 +316,7 @@ export default function NouveauBienPage() {
             {user?.is_verified && (
               <Link
                 href="/proprietaire"
-                className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+                className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700"
               >
                 Retour
               </Link>
@@ -621,7 +621,7 @@ export default function NouveauBienPage() {
               <button
                 type="button"
                 onClick={goPrev}
-                className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-600 hover:bg-neutral-50"
+                className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-600"
                 disabled={stepIndex === 0}
               >
                 Précédent
@@ -634,7 +634,7 @@ export default function NouveauBienPage() {
                   type="button"
                   onClick={goNext}
                   disabled={isSubmitting}
-                  className="rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {isLastStep ? (isSubmitting ? "Envoi..." : "Terminer") : "Suivant"}
                 </button>

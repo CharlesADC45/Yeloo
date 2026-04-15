@@ -173,7 +173,7 @@ export default function ProprietaireBiensPage() {
             </p>
             <Link
               href="/connexion"
-              className="mt-4 inline-flex rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              className="mt-4 inline-flex rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
             >
               Aller à la connexion
             </Link>
@@ -208,7 +208,7 @@ export default function ProprietaireBiensPage() {
             {isVerifiedOwner ? (
               <Link
                 href="/proprietaire/biens/nouveau"
-                className="rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700"
+                className="rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white"
               >
                 Ajouter un bien
               </Link>
@@ -261,7 +261,7 @@ export default function ProprietaireBiensPage() {
                           )
                         }
                         disabled={updatingId === property.id}
-                        className="rounded-full border border-neutral-200 px-3 py-1 text-[11px] font-semibold text-neutral-700 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="rounded-full border border-neutral-200 px-3 py-1 text-[11px] font-semibold text-neutral-700 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {updatingId === property.id
                           ? "Mise à jour..."
@@ -271,13 +271,13 @@ export default function ProprietaireBiensPage() {
                       </button>
                       <Link
                         href={`/proprietaire/biens/${property.id}`}
-                        className="rounded-full border border-neutral-200 px-3 py-1 text-[11px] font-semibold text-neutral-700 hover:bg-neutral-50"
+                        className="rounded-full border border-neutral-200 px-3 py-1 text-[11px] font-semibold text-neutral-700"
                       >
                         Modifier
                       </Link>
                       <Link
                         href={`/logements/${property.id}`}
-                        className="rounded-full border border-blue-100 px-3 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50"
+                        className="rounded-full border border-blue-100 px-3 py-1 text-[11px] font-semibold text-blue-700"
                       >
                         Voir la fiche
                       </Link>
@@ -285,7 +285,7 @@ export default function ProprietaireBiensPage() {
                         type="button"
                         onClick={() => handleDelete(property.id)}
                         disabled={deletingId === property.id}
-                        className="rounded-full border border-red-200 px-3 py-1 text-[11px] font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="rounded-full border border-red-200 px-3 py-1 text-[11px] font-semibold text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {deletingId === property.id ? "Suppression..." : "Supprimer"}
                       </button>

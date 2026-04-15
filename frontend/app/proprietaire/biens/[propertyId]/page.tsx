@@ -417,7 +417,7 @@ export default function EditPropertyPage() {
             </div>
             <Link
               href="/proprietaire"
-              className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+              className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700"
             >
               Retour
             </Link>
@@ -573,7 +573,7 @@ export default function EditPropertyPage() {
                   <button
                     type="button"
                     onClick={handleLocate}
-                    className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+                    className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700"
                     disabled={isLocating}
                   >
                     {isLocating ? "Localisation..." : "Utiliser ma position"}
@@ -732,7 +732,7 @@ export default function EditPropertyPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="rounded-full bg-blue-600 px-5 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="rounded-full bg-blue-600 px-5 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {isSubmitting ? "Envoi..." : "Enregistrer"}
                 </button>

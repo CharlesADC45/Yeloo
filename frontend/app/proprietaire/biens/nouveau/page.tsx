@@ -33,6 +33,15 @@ type FormState = {
 };
 
 type FieldErrorKey = keyof FormState | "photos" | "video" | "tour";
+type SubmissionStepId = "validation" | "property" | "photos" | "media" | "finalization";
+type SubmissionStepState = "pending" | "running" | "success" | "error";
+
+type SubmissionStep = {
+  id: SubmissionStepId;
+  label: string;
+  status: SubmissionStepState;
+  detail?: string;
+};
 
 const STEPS: Step[] = [
   { title: "Informations", subtitle: "Texte & localisation" },
@@ -58,6 +67,17 @@ const DEFAULT_FORM: FormState = {
 
 const MAX_VIDEO_BYTES = 150 * 1024 * 1024;
 const MAX_TOUR_BYTES = 50 * 1024 * 1024;
+const SUBMISSION_STEPS: SubmissionStep[] = [
+  { id: "validation", label: "Vérification locale", status: "pending" },
+  { id: "property", label: "Création annonce", status: "pending" },
+  { id: "photos", label: "Upload des photos", status: "pending" },
+  { id: "media", label: "Upload des médias", status: "pending" },
+  { id: "finalization", label: "Soumission du dossier", status: "pending" },
+];
+
+const getFreshSubmissionSteps = () =>
+  SUBMISSION_STEPS.map((step) => ({ ...step }));
+
 const parseLocaleNumber = (value: string) => {
   const normalized = value.trim().replace(/\s+/g, "").replace(/,/g, ".");
   if (!normalized) return null;
@@ -103,6 +123,12 @@ export default function NouveauBienPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [shouldRedirect, setShouldRedirect] = useState(false);
+  const [submissionStatus, setSubmissionStatus] = useState<
+    "idle" | "running" | "error" | "success"
+  >("idle");
+  const [submissionSteps, setSubmissionSteps] = useState<SubmissionStep[]>(
+    getFreshSubmissionSteps
+  );
   const [isLocating, setIsLocating] = useState(false);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const token = useAuthStore((state) => state.token);
@@ -297,35 +323,27 @@ export default function NouveauBienPage() {
     );
   };
 
+  const updateSubmissionStep = (
+    id: SubmissionStepId,
+    status: SubmissionStepState,
+    detail?: string
+  ) => {
+    setSubmissionSteps((current) =>
+      current.map((step) =>
+        step.id === id ? { ...step, status, detail } : step
+      )
+    );
+  };
+
+  const closeSubmissionModal = () => {
+    if (isSubmitting) return;
+    setSubmissionStatus("idle");
+    setSubmissionSteps(getFreshSubmissionSteps());
+  };
+
   const submitProperty = async () => {
     if (!token) {
       setSubmitError("Connectez-vous pour publier.");
-      return;
-    }
-    const priceValue = parseLocaleNumber(form.price);
-    if (!form.title.trim() || !form.city.trim() || !priceValue || priceValue <= 0) {
-      setSubmitError("Titre, ville et prix sont obligatoires.");
-      return;
-    }
-    const coords = form.coordinates.trim() ? parseCoordinates(form.coordinates) : null;
-    if (form.coordinates.trim() && !coords) {
-      setSubmitError("Coordonnées invalides. Format attendu: latitude, longitude.");
-      return;
-    }
-    const latitudeValue = coords?.lat ?? null;
-    const longitudeValue = coords?.lng ?? null;
-    if (
-      latitudeValue !== null &&
-      (latitudeValue < -90 || latitudeValue > 90)
-    ) {
-      setSubmitError("Latitude hors limite (-90 à 90).");
-      return;
-    }
-    if (
-      longitudeValue !== null &&
-      (longitudeValue < -180 || longitudeValue > 180)
-    ) {
-      setSubmitError("Longitude hors limite (-180 à 180).");
       return;
     }
 
@@ -333,45 +351,85 @@ export default function NouveauBienPage() {
     setSubmitError(null);
     setSuccess(null);
     setShouldRedirect(false);
+    setSubmissionStatus("running");
+    setSubmissionSteps(getFreshSubmissionSteps());
 
-    const payload = {
-      title: form.title.trim(),
-      description: form.description.trim() || null,
-      property_type: form.propertyType,
-      price: priceValue,
-      price_period: form.pricePeriod,
-      deposit_months: Number(form.depositMonths),
-      surface_m2: form.surfaceM2 ? parseLocaleNumber(form.surfaceM2) : null,
-      rooms: form.rooms ? parseLocaleNumber(form.rooms) : null,
-      bathrooms: form.bathrooms ? parseLocaleNumber(form.bathrooms) : null,
-      address: form.address.trim() || null,
-      city: form.city.trim(),
-      neighborhood: null,
-      latitude: latitudeValue,
-      longitude: longitudeValue,
-      is_furnished: form.isFurnished,
+    let activeStep: SubmissionStepId = "validation";
+    let propertyId: string | null = null;
+    let priceValue: number | null = null;
+    let latitudeValue: number | null = null;
+    let longitudeValue: number | null = null;
+
+    const runStep = async (id: SubmissionStepId, task: () => Promise<void>) => {
+      activeStep = id;
+      updateSubmissionStep(id, "running");
+      await task();
+      updateSubmissionStep(id, "success");
     };
 
     try {
-      const response = await fetch(`${getApiBaseUrl()}/api/properties`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
+      await runStep("validation", async () => {
+        priceValue = parseLocaleNumber(form.price);
+        if (!form.title.trim() || !form.city.trim() || !priceValue || priceValue <= 0) {
+          throw new Error("Titre, ville et prix sont obligatoires.");
+        }
+        if (photoFiles.length === 0) {
+          throw new Error("Ajoutez au moins une photo avant de soumettre.");
+        }
+        const coords = form.coordinates.trim() ? parseCoordinates(form.coordinates) : null;
+        if (form.coordinates.trim() && !coords) {
+          throw new Error("Coordonnées invalides. Format attendu: latitude, longitude.");
+        }
+        latitudeValue = coords?.lat ?? null;
+        longitudeValue = coords?.lng ?? null;
+        if (latitudeValue !== null && (latitudeValue < -90 || latitudeValue > 90)) {
+          throw new Error("Latitude hors limite (-90 à 90).");
+        }
+        if (longitudeValue !== null && (longitudeValue < -180 || longitudeValue > 180)) {
+          throw new Error("Longitude hors limite (-180 à 180).");
+        }
       });
 
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        const detail = body?.detail || body?.message || `Erreur API (${response.status})`;
-        throw new Error(`Création annonce: ${detail}`);
-      }
+      await runStep("property", async () => {
+        const payload = {
+          title: form.title.trim(),
+          description: form.description.trim() || null,
+          property_type: form.propertyType,
+          price: priceValue,
+          price_period: form.pricePeriod,
+          deposit_months: Number(form.depositMonths),
+          surface_m2: form.surfaceM2 ? parseLocaleNumber(form.surfaceM2) : null,
+          rooms: form.rooms ? parseLocaleNumber(form.rooms) : null,
+          bathrooms: form.bathrooms ? parseLocaleNumber(form.bathrooms) : null,
+          address: form.address.trim() || null,
+          city: form.city.trim(),
+          neighborhood: null,
+          latitude: latitudeValue,
+          longitude: longitudeValue,
+          is_furnished: form.isFurnished,
+        };
 
-      const created = await response.json();
-      const propertyId = created.id as string;
+        const response = await fetch(`${getApiBaseUrl()}/api/properties`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        });
 
-      if (photoFiles.length > 0) {
+        if (!response.ok) {
+          const body = await response.json().catch(() => null);
+          const detail = body?.detail || body?.message || `Erreur API (${response.status})`;
+          throw new Error(`Création annonce: ${detail}`);
+        }
+
+        const created = await response.json();
+        propertyId = created.id as string;
+      });
+
+      await runStep("photos", async () => {
+        if (!propertyId) throw new Error("Annonce créée sans identifiant.");
         const photoPayload = new FormData();
         photoFiles.forEach((file) => photoPayload.append("files", file));
         const photoResponse = await fetch(
@@ -390,50 +448,59 @@ export default function NouveauBienPage() {
             `Erreur upload (${photoResponse.status})`;
           throw new Error(`Upload photos: ${message}`);
         }
-      }
-
-      if (videoFile || tourFile) {
-        const mediaPayload = new FormData();
-        if (videoFile) {
-          mediaPayload.append("video", videoFile);
-        }
-        if (tourFile) {
-          mediaPayload.append("tour_360", tourFile);
-        }
-        const mediaResponse = await fetch(
-          `${getApiBaseUrl()}/api/properties/${propertyId}/media`,
-          {
-            method: "POST",
-            headers: { Authorization: `Bearer ${token}` },
-            body: mediaPayload,
-          }
-        );
-        if (!mediaResponse.ok) {
-          const detail = await mediaResponse.json().catch(() => null);
-          const message =
-            detail?.detail ||
-            detail?.message ||
-            `Erreur media (${mediaResponse.status})`;
-          throw new Error(`Upload médias: ${message}`);
-        }
-        const mediaData = await mediaResponse.json();
-        setUploadedVideoUrl(mediaData.video_url ?? null);
-        setUploadedTourUrl(mediaData.tour_360_url ?? null);
-      }
-
-      pushOwnerPost({
-        propertyId,
-        title: form.title.trim(),
-        city: form.city.trim(),
-        ownerId: user?.id ?? null,
-        ownerName: user?.full_name ?? null,
-        imageUrl: null,
       });
 
+      await runStep("media", async () => {
+        if (!propertyId) throw new Error("Annonce créée sans identifiant.");
+        if (videoFile || tourFile) {
+          const mediaPayload = new FormData();
+          if (videoFile) {
+            mediaPayload.append("video", videoFile);
+          }
+          if (tourFile) {
+            mediaPayload.append("tour_360", tourFile);
+          }
+          const mediaResponse = await fetch(
+            `${getApiBaseUrl()}/api/properties/${propertyId}/media`,
+            {
+              method: "POST",
+              headers: { Authorization: `Bearer ${token}` },
+              body: mediaPayload,
+            }
+          );
+          if (!mediaResponse.ok) {
+            const detail = await mediaResponse.json().catch(() => null);
+            const message =
+              detail?.detail ||
+              detail?.message ||
+              `Erreur media (${mediaResponse.status})`;
+            throw new Error(`Upload médias: ${message}`);
+          }
+          const mediaData = await mediaResponse.json();
+          setUploadedVideoUrl(mediaData.video_url ?? null);
+          setUploadedTourUrl(mediaData.tour_360_url ?? null);
+        }
+      });
+
+      await runStep("finalization", async () => {
+        if (!propertyId) throw new Error("Annonce créée sans identifiant.");
+        pushOwnerPost({
+          propertyId,
+          title: form.title.trim(),
+          city: form.city.trim(),
+          ownerId: user?.id ?? null,
+          ownerName: user?.full_name ?? null,
+          imageUrl: photoPreviews[0] ?? null,
+        });
+      });
+
+      setSubmissionStatus("success");
       setSuccess("Annonce créée. Préparation de votre espace...");
       setShouldRedirect(true);
     } catch (err) {
       const message = normalizeFetchError(err, "Publication impossible.");
+      setSubmissionStatus("error");
+      updateSubmissionStep(activeStep, "error", message);
       setSubmitError(message);
     } finally {
       setIsSubmitting(false);
@@ -500,7 +567,7 @@ export default function NouveauBienPage() {
             </div>
             <Link
               href="/proprietaire"
-              className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+              className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700"
             >
               Retour
             </Link>
@@ -761,7 +828,7 @@ export default function NouveauBienPage() {
                       <button
                         type="button"
                         onClick={handleLocate}
-                        className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+                        className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700"
                         disabled={isLocating}
                       >
                         {isLocating ? "Localisation..." : "Utiliser ma position"}
@@ -838,7 +905,7 @@ export default function NouveauBienPage() {
                     <button
                       type="button"
                       onClick={() => photoInputRef.current?.click()}
-                      className="mt-4 rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+                      className="mt-4 rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700"
                     >
                       Prendre une photo
                     </button>
@@ -880,7 +947,7 @@ export default function NouveauBienPage() {
                     <button
                       type="button"
                       onClick={() => videoInputRef.current?.click()}
-                      className="mt-4 rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+                      className="mt-4 rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700"
                     >
                       Choisir une vidéo
                     </button>
@@ -930,7 +997,7 @@ export default function NouveauBienPage() {
                     <button
                       type="button"
                       onClick={() => tourInputRef.current?.click()}
-                      className="mt-4 rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+                      className="mt-4 rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700"
                     >
                       Ajouter la visite 360°
                     </button>
@@ -1031,7 +1098,7 @@ export default function NouveauBienPage() {
               <button
                 type="button"
                 onClick={goPrev}
-                className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-600 hover:bg-neutral-50"
+                className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-600"
                 disabled={stepIndex === 0}
               >
                 Précédent
@@ -1044,7 +1111,7 @@ export default function NouveauBienPage() {
                   type="button"
                   onClick={goNext}
                   disabled={isSubmitting}
-                  className="rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {isLastStep ? (isSubmitting ? "Envoi..." : "Publier") : "Suivant"}
                 </button>
@@ -1053,6 +1120,83 @@ export default function NouveauBienPage() {
           </div>
         </motion.section>
       </main>
+      {(submissionStatus === "running" || submissionStatus === "error") && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/45 px-5 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 18 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.24 }}
+            className="w-full max-w-sm rounded-[2rem] bg-white p-6 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="flex items-start gap-4">
+              <div
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${
+                  submissionStatus === "error"
+                    ? "bg-red-50 text-red-600"
+                    : "bg-blue-50 text-blue-600"
+                }`}
+              >
+                {submissionStatus === "error" ? (
+                  <span className="text-xl font-semibold">×</span>
+                ) : (
+                  <span className="h-5 w-5 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
+                )}
+              </div>
+              <div>
+                <h2 className="text-base font-semibold text-neutral-950">
+                  {submissionStatus === "error" ? "Soumission échouée" : "Soumission en cours"}
+                </h2>
+                <p className="mt-1 text-sm text-neutral-500">
+                  {submissionStatus === "error"
+                    ? "Une erreur est survenue. Vérifiez l'étape indiquée."
+                    : "Nous finalisons votre annonce."}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-2">
+              {submissionSteps.map((step) => (
+                <div
+                  key={step.id}
+                  className="flex items-center justify-between gap-3 rounded-full bg-neutral-50 px-4 py-3 text-sm"
+                >
+                  <span className="min-w-0 truncate text-neutral-600">{step.label}</span>
+                  <span
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${
+                      step.status === "success"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : step.status === "error"
+                          ? "bg-red-100 text-red-700"
+                          : step.status === "running"
+                            ? "bg-blue-100 text-blue-700"
+                            : "bg-white text-neutral-300"
+                    }`}
+                  >
+                    {step.status === "success" && "✓"}
+                    {step.status === "error" && "×"}
+                    {step.status === "running" && (
+                      <span className="h-3 w-3 animate-spin rounded-full border border-blue-200 border-t-blue-700" />
+                    )}
+                    {step.status === "pending" && "-"}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {submissionStatus === "error" && (
+              <button
+                type="button"
+                onClick={closeSubmissionModal}
+                className="mt-5 w-full rounded-full border border-neutral-200 px-4 py-3 text-sm font-semibold text-neutral-700"
+              >
+                Fermer
+              </button>
+            )}
+          </motion.div>
+        </div>
+      )}
       <CelebrationModal
         open={Boolean(success)}
         title="Annonce créée"

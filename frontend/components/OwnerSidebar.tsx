@@ -32,7 +32,7 @@ export function OwnerSidebar() {
               className={`flex items-center gap-3 rounded-2xl px-4 py-3 ${
                 active
                   ? "bg-blue-50 text-blue-700 shadow-sm"
-                  : "text-neutral-600 hover:bg-neutral-50"
+                  : "text-neutral-600"
               }`}
             >
               <Icon />
@@ -46,7 +46,7 @@ export function OwnerSidebar() {
             logout();
             router.push("/");
           }}
-          className="mt-3 flex items-center gap-3 rounded-2xl px-4 py-3 text-neutral-600 hover:bg-neutral-50"
+          className="mt-3 flex items-center gap-3 rounded-2xl px-4 py-3 text-neutral-600"
         >
           <FiLogOut />
           Logout

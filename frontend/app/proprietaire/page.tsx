@@ -5,11 +5,12 @@ import gsap from "gsap";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { FiTrash2 } from "react-icons/fi";
+import { FiArrowRight, FiTrash2 } from "react-icons/fi";
 import { OwnerSidebar } from "@/components/OwnerSidebar";
 import { OwnerDashboardSkeleton } from "@/components/Skeleton";
 import { TopBar } from "@/components/TopBar";
 import { getApiBaseUrl } from "@/lib/api";
+import { fetchConversations, type ConversationSummary } from "@/lib/messages";
 import { useAuthStore } from "@/stores/authStore";
 
 type OwnerProfile = {
@@ -40,6 +41,15 @@ type OwnerProperty = {
   created_at: string;
 };
 
+const formatConversationDate = (value: string) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("fr-FR", {
+    day: "2-digit",
+    month: "short",
+  }).format(date);
+};
+
 export default function ProprietairePage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const token = useAuthStore((s) => s.token);
@@ -48,6 +58,7 @@ export default function ProprietairePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<OwnerProfile | null>(null);
   const [properties, setProperties] = useState<OwnerProperty[]>([]);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [canViewDashboard, setCanViewDashboard] = useState<boolean | null>(null);
@@ -102,13 +113,14 @@ export default function ProprietairePage() {
           return;
         }
 
-        const [profileResponse, propertiesResponse] = await Promise.all([
+        const [profileResponse, propertiesResponse, conversationData] = await Promise.all([
           fetch(`${getApiBaseUrl()}/api/owners/me`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
           fetch(`${getApiBaseUrl()}/api/properties/mine`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
+          fetchConversations(token).catch(() => [] as ConversationSummary[]),
         ]);
 
         if (!propertiesResponse.ok) {
@@ -134,6 +146,7 @@ export default function ProprietairePage() {
 
         if (isMounted) {
           setProperties(Array.isArray(propertyData) ? propertyData : []);
+          setConversations(Array.isArray(conversationData) ? conversationData : []);
           setProfile(profileData);
           setCanViewDashboard(true);
         }
@@ -189,7 +202,6 @@ export default function ProprietairePage() {
   useEffect(() => {
     if (isLoading || canViewDashboard !== true) return;
 
-    const cleanupFns: Array<() => void> = [];
     const context = gsap.context(() => {
       gsap.fromTo(
         gsap.utils.toArray<HTMLElement>("[data-owner-reveal]"),
@@ -215,37 +227,9 @@ export default function ProprietairePage() {
           ease: "back.out(1.6)",
         }
       );
-
-      const liftItems = gsap.utils.toArray<HTMLElement>("[data-owner-lift]");
-      liftItems.forEach((item) => {
-        const onEnter = () => {
-          gsap.to(item, {
-            y: -6,
-            boxShadow: "0 22px 40px rgba(37, 99, 235, 0.11)",
-            duration: 0.25,
-            ease: "power3.out",
-          });
-        };
-        const onLeave = () => {
-          gsap.to(item, {
-            y: 0,
-            boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)",
-            duration: 0.26,
-            ease: "power2.out",
-          });
-        };
-
-        item.addEventListener("mouseenter", onEnter);
-        item.addEventListener("mouseleave", onLeave);
-        cleanupFns.push(() => {
-          item.removeEventListener("mouseenter", onEnter);
-          item.removeEventListener("mouseleave", onLeave);
-        });
-      });
     }, dashboardRootRef);
 
     return () => {
-      cleanupFns.forEach((cleanup) => cleanup());
       context.revert();
     };
   }, [canViewDashboard, isLoading]);
@@ -262,7 +246,7 @@ export default function ProprietairePage() {
             </p>
             <Link
               href="/connexion"
-              className="mt-4 inline-flex rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              className="mt-4 inline-flex rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
             >
               Aller à la connexion
             </Link>
@@ -284,7 +268,7 @@ export default function ProprietairePage() {
             </p>
             <Link
               href={redirectTarget || "/"}
-              className="mt-4 inline-flex rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              className="mt-4 inline-flex rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
             >
               Continuer
             </Link>
@@ -319,6 +303,7 @@ export default function ProprietairePage() {
   const canPublish = Boolean(user?.is_verified) && verificationStatus === "approved";
   const chartData = [18, 24, 14, 30, 22, 28, 19];
   const maxChart = Math.max(...chartData, 1);
+  const unreadCount = conversations.reduce((sum, item) => sum + item.unread_count, 0);
 
   return (
     <div ref={dashboardRootRef} className="min-h-screen bg-transparent">
@@ -360,7 +345,7 @@ export default function ProprietairePage() {
                   {canPublish ? (
                     <Link
                       href="/proprietaire/biens/nouveau"
-                      className="rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700"
+                      className="rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white"
                     >
                       Ajouter un bien
                     </Link>
@@ -371,13 +356,13 @@ export default function ProprietairePage() {
                   )}
                   <Link
                     href="/proprietaire/profil"
-                    className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+                    className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700"
                   >
                     {isProfileComplete ? "Modifier le profil" : "Compléter le profil"}
                   </Link>
                   <Link
                     href="/messages"
-                    className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+                    className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700"
                   >
                     Messages
                   </Link>
@@ -412,7 +397,6 @@ export default function ProprietairePage() {
               <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div
                   data-owner-reveal="true"
-                  data-owner-lift="true"
                   className="rounded-2xl border border-neutral-200 p-4"
                   style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
                 >
@@ -421,7 +405,6 @@ export default function ProprietairePage() {
                 </div>
                 <div
                   data-owner-reveal="true"
-                  data-owner-lift="true"
                   className="rounded-2xl border border-neutral-200 p-4"
                   style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
                 >
@@ -430,7 +413,6 @@ export default function ProprietairePage() {
                 </div>
                 <div
                   data-owner-reveal="true"
-                  data-owner-lift="true"
                   className="rounded-2xl border border-neutral-200 p-4"
                   style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
                 >
@@ -439,7 +421,6 @@ export default function ProprietairePage() {
                 </div>
                 <div
                   data-owner-reveal="true"
-                  data-owner-lift="true"
                   className="rounded-2xl border border-neutral-200 p-4"
                   style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
                 >
@@ -451,7 +432,6 @@ export default function ProprietairePage() {
               <div className="mt-6 grid gap-4 lg:grid-cols-[2fr,1fr]">
                  <div
                    data-owner-reveal="true"
-                   data-owner-lift="true"
                    className="rounded-2xl border border-neutral-200 bg-neutral-50 p-5"
                    style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
                  >
@@ -479,7 +459,6 @@ export default function ProprietairePage() {
                 </div>
                  <div
                    data-owner-reveal="true"
-                   data-owner-lift="true"
                    className="rounded-2xl border border-neutral-200 bg-white p-5"
                    style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
                  >
@@ -520,7 +499,6 @@ export default function ProprietairePage() {
 
                <div
                  data-owner-reveal="true"
-                 data-owner-lift="true"
                  className="mt-8 rounded-2xl border border-neutral-200 p-5"
                  style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
                >
@@ -533,7 +511,7 @@ export default function ProprietairePage() {
                   </div>
                   <Link
                     href="/proprietaire/biens"
-                    className="rounded-full border border-blue-100 px-4 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+                    className="rounded-full border border-blue-100 px-4 py-2 text-xs font-semibold text-blue-700"
                   >
                     Voir tous mes biens
                   </Link>
@@ -580,7 +558,85 @@ export default function ProprietairePage() {
 
                <div
                  data-owner-reveal="true"
-                 data-owner-lift="true"
+                 className="mt-8 rounded-2xl border border-neutral-200 bg-white p-5"
+                 style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+               >
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-sm font-semibold text-neutral-900">Messages</h2>
+                    <p className="mt-1 text-xs text-neutral-500">
+                      Les conversations liées à vos annonces.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="rounded-full bg-blue-50 px-3 py-1 font-semibold text-blue-700">
+                      {unreadCount} non lu(s)
+                    </span>
+                    <span className="rounded-full border border-neutral-200 px-3 py-1 text-neutral-500">
+                      {conversations.length} conversation(s)
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-4 divide-y divide-neutral-100">
+                  {conversations.length === 0 ? (
+                    <div className="rounded-2xl bg-neutral-50 px-4 py-5 text-sm text-neutral-600">
+                      Aucune conversation pour le moment.
+                    </div>
+                  ) : (
+                    conversations.slice(0, 4).map((item) => {
+                      const initials = (item.counterpart_name || "Y")
+                        .split(" ")
+                        .map((part) => part[0])
+                        .join("")
+                        .slice(0, 2)
+                        .toUpperCase();
+
+                      return (
+                        <Link
+                          key={item.id}
+                          href={`/messages/${item.id}`}
+                          className="flex items-center gap-3 py-4"
+                        >
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">
+                            {initials}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold text-neutral-950">
+                                  {item.counterpart_name || "Interlocuteur"}
+                                </p>
+                                <p className="mt-0.5 truncate text-xs text-neutral-500">
+                                  {item.property_title}
+                                </p>
+                              </div>
+                              <span className="shrink-0 text-[11px] text-neutral-400">
+                                {formatConversationDate(item.updated_at)}
+                              </span>
+                            </div>
+                            <div className="mt-2 flex items-center gap-2">
+                              <p className="line-clamp-1 flex-1 text-xs text-neutral-500">
+                                {item.last_message_preview || "Aucun message envoyé pour le moment."}
+                              </p>
+                              {item.unread_count > 0 ? (
+                                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                                  {item.unread_count}
+                                </span>
+                              ) : (
+                                <FiArrowRight className="shrink-0 text-neutral-300" />
+                              )}
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+               <div
+                 data-owner-reveal="true"
                  className="mt-8 rounded-2xl border border-neutral-200 p-5"
                  style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
                >

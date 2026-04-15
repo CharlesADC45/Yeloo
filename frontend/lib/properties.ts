@@ -62,16 +62,11 @@ export type ApiProperty = {
 };
 
 const FALLBACK_IMAGES: Record<string, string> = {
-  studio:
-    "https://images.pexels.com/photos/4392276/pexels-photo-4392276.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  appartement:
-    "https://images.pexels.com/photos/4392270/pexels-photo-4392270.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  maison:
-    "https://images.pexels.com/photos/4392272/pexels-photo-4392272.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  villa:
-    "https://images.pexels.com/photos/4392278/pexels-photo-4392278.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  default:
-    "https://images.pexels.com/photos/4392274/pexels-photo-4392274.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  studio: "/property-fallback.svg",
+  appartement: "/property-fallback.svg",
+  maison: "/property-fallback.svg",
+  villa: "/property-fallback.svg",
+  default: "/property-fallback.svg",
 };
 
 const STATUS_BADGES: Record<string, string> = {

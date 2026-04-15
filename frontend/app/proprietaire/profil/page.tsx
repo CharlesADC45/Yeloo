@@ -193,7 +193,7 @@ export default function ProprietaireProfilPage() {
             </p>
             <Link
               href="/connexion"
-              className="mt-4 inline-flex rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              className="mt-4 inline-flex rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
             >
               Aller à la connexion
             </Link>
@@ -415,7 +415,7 @@ export default function ProprietaireProfilPage() {
                 <div className="mt-4 space-y-3">
                   <Link
                     href="/proprietaire/biens"
-                    className="flex items-center justify-between rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-800 hover:bg-white"
+                    className="flex items-center justify-between rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-800"
                   >
                     <span className="flex items-center gap-3">
                       <FiHome className="text-neutral-500" />
@@ -425,7 +425,7 @@ export default function ProprietaireProfilPage() {
                   </Link>
                   <Link
                     href="/proprietaire"
-                    className="flex items-center justify-between rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-800 hover:bg-white"
+                    className="flex items-center justify-between rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-800"
                   >
                     <span className="flex items-center gap-3">
                       <FiUser className="text-neutral-500" />

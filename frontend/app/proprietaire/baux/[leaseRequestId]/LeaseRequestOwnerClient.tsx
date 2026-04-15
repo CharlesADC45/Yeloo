@@ -163,7 +163,7 @@ export function LeaseRequestOwnerClient({ leaseRequestId }: Props) {
                 <button
                   type="button"
                   onClick={handlePrint}
-                  className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50"
+                  className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700 transition"
                 >
                   <FiDownload />
                   Exporter / PDF
@@ -256,7 +256,7 @@ export function LeaseRequestOwnerClient({ leaseRequestId }: Props) {
                                 setIsActing(false);
                               }
                             }}
-                            className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             <FiCheckCircle />
                             Marquer comme validée
@@ -265,7 +265,7 @@ export function LeaseRequestOwnerClient({ leaseRequestId }: Props) {
                             type="button"
                             disabled={isActing || leaseRequest.status === "rejected"}
                             onClick={handleReject}
-                            className="inline-flex items-center gap-2 rounded-full border border-red-200 px-5 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="inline-flex items-center gap-2 rounded-full border border-red-200 px-5 py-3 text-sm font-semibold text-red-700 transition disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             Refuser
                           </button>
@@ -296,8 +296,8 @@ export function LeaseRequestOwnerClient({ leaseRequestId }: Props) {
                 <section className="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-soft">
                   <h2 className="text-lg font-semibold text-neutral-950">Actions rapides</h2>
                   <div className="mt-4 space-y-3">
-                    <Link href={`/logements/${leaseRequest.property_id}`} className="block rounded-[1.2rem] border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-800 transition hover:bg-white">Voir la fiche logement</Link>
-                    <Link href="/proprietaire" className="block rounded-[1.2rem] border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-800 transition hover:bg-white">Retour au dashboard</Link>
+                    <Link href={`/logements/${leaseRequest.property_id}`} className="block rounded-[1.2rem] border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-800 transition">Voir la fiche logement</Link>
+                    <Link href="/proprietaire" className="block rounded-[1.2rem] border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-800 transition">Retour au dashboard</Link>
                   </div>
                 </section>
               </aside>

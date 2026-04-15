@@ -129,6 +129,9 @@ function LogementsPageContent() {
                     <img
                       src={item.imageUrl}
                       alt={item.city}
+                      onError={(event) => {
+                        event.currentTarget.src = "/property-fallback.svg";
+                      }}
                       className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />

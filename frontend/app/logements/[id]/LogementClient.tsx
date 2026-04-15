@@ -409,6 +409,9 @@ export function LogementClient({ id }: Props) {
                   <img
                     src={image}
                     alt={`${property.title} ${index + 1}`}
+                    onError={(event) => {
+                      event.currentTarget.src = "/property-fallback.svg";
+                    }}
                     className="h-full w-full object-cover"
                   />
                 </div>
@@ -641,6 +644,9 @@ export function LogementClient({ id }: Props) {
                           <img
                             src={tourImage}
                             alt={`Visite 360 ${property.title}`}
+                            onError={(event) => {
+                              event.currentTarget.src = "/property-fallback.svg";
+                            }}
                             className="h-full w-full object-cover"
                           />
                         )}
@@ -673,6 +679,9 @@ export function LogementClient({ id }: Props) {
                           <img
                             src={videoImage}
                             alt={`Vidéo ${property.title}`}
+                            onError={(event) => {
+                              event.currentTarget.src = "/property-fallback.svg";
+                            }}
                             className="h-full w-full object-cover"
                           />
                         )}

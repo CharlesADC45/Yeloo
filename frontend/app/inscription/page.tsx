@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { FiHome, FiUser } from "react-icons/fi";
 import { BottomNav } from "@/components/BottomNav";
 import { TopBar } from "@/components/TopBar";
 import { getApiBaseUrl } from "@/lib/api";
@@ -42,9 +43,13 @@ export default function InscriptionPage() {
 
   const handleChange =
     (field: keyof FormState) =>
-    (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    (event: React.ChangeEvent<HTMLInputElement>) => {
       setForm((prev) => ({ ...prev, [field]: event.target.value }));
     };
+
+  const setRole = (role: FormState["role"]) => {
+    setForm((prev) => ({ ...prev, role }));
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -103,7 +108,7 @@ export default function InscriptionPage() {
             Inscription
           </h1>
           <p className="mt-4 text-sm font-semibold">
-            Creez votre compte Yeloo
+            Créez votre compte Yeloo
           </p>
 
           <form className="mt-4 space-y-3 text-xs text-neutral-600" onSubmit={handleSubmit}>
@@ -155,19 +160,35 @@ export default function InscriptionPage() {
                 onChange={handleChange("password")}
               />
             </label>
-            <label className="flex flex-col gap-1">
+            <div className="flex flex-col gap-2">
               <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
                 Profil
               </span>
-              <select
-                className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-                value={form.role}
-                onChange={handleChange("role")}
-              >
-                <option value="locataire">Locataire</option>
-                <option value="proprietaire">Proprietaire</option>
-              </select>
-            </label>
+              <div className="grid grid-cols-2 gap-2 rounded-2xl bg-neutral-50 p-1.5 ring-1 ring-neutral-100">
+                {[
+                  { value: "locataire" as const, label: "Locataire", Icon: FiUser },
+                  { value: "proprietaire" as const, label: "Propriétaire", Icon: FiHome },
+                ].map(({ value, label, Icon }) => {
+                  const active = form.role === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setRole(value)}
+                      className={`flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-semibold transition ${
+                        active
+                          ? "bg-white text-neutral-950 shadow-[0_10px_30px_rgba(15,23,42,0.10)]"
+                          : "text-neutral-500"
+                      }`}
+                      aria-pressed={active}
+                    >
+                      <Icon className="text-base" />
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
             {error && (
               <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
@@ -185,12 +206,12 @@ export default function InscriptionPage() {
               disabled={isSubmitting}
               className="mt-2 w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-soft hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {isSubmitting ? "Creation..." : "Creer le compte"}
+              {isSubmitting ? "Création..." : "Créer le compte"}
             </motion.button>
           </form>
 
           <p className="mt-4 text-center text-xs text-neutral-500">
-            Deja un compte? {" "}
+            Déjà un compte?{" "}
             <Link href="/connexion" className="font-semibold text-blue-600">
               Se connecter
             </Link>
