@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { FiSearch, FiHeart, FiMapPin, FiMessageCircle, FiUser } from "react-icons/fi";
+import { showDeviceNotification } from "@/lib/deviceNotifications";
 import { fetchConversations } from "@/lib/messages";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -13,10 +14,14 @@ export function BottomNav() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const token = useAuthStore((s) => s.token);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const previousUnreadMessagesRef = useRef(0);
+  const hasLoadedUnreadRef = useRef(false);
 
   useEffect(() => {
     if (!isAuthenticated || !token) {
       setUnreadMessages(0);
+      previousUnreadMessagesRef.current = 0;
+      hasLoadedUnreadRef.current = false;
       return;
     }
 
@@ -26,15 +31,31 @@ export function BottomNav() {
       try {
         const conversations = await fetchConversations(token);
         if (!active) return;
-        setUnreadMessages(
-          conversations.reduce((total, item) => total + item.unread_count, 0)
-        );
+        const nextUnread = conversations.reduce((total, item) => total + item.unread_count, 0);
+        const latestUnreadConversation = conversations.find((item) => item.unread_count > 0);
+
+        if (hasLoadedUnreadRef.current && nextUnread > previousUnreadMessagesRef.current) {
+          void showDeviceNotification({
+            title: latestUnreadConversation?.counterpart_name || "Nouveau message Yeloo",
+            body:
+              latestUnreadConversation?.last_message_preview ||
+              latestUnreadConversation?.property_title ||
+              "Vous avez reçu un nouveau message.",
+            tag: latestUnreadConversation?.id || "yeloo-message",
+            url: latestUnreadConversation ? `/messages/${latestUnreadConversation.id}` : "/messages",
+          });
+        }
+
+        previousUnreadMessagesRef.current = nextUnread;
+        hasLoadedUnreadRef.current = true;
+        setUnreadMessages(nextUnread);
       } catch {
         if (active) setUnreadMessages(0);
       }
     };
 
     void loadUnread();
+    const interval = window.setInterval(loadUnread, 20000);
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
@@ -46,6 +67,7 @@ export function BottomNav() {
 
     return () => {
       active = false;
+      window.clearInterval(interval);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [isAuthenticated, token]);

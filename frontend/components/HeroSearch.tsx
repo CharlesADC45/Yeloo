@@ -30,14 +30,14 @@ export function HeroSearch({ filters, onChange, isOpen, onClose, onSearch }: Pro
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-30 flex items-start justify-center bg-black/30 px-3 pt-20 sm:px-4 sm:pt-24 md:items-center md:pt-0"
+          className="fixed inset-0 z-[1200] flex items-start justify-center bg-black/25 px-3 pt-20 backdrop-blur-md sm:px-4 sm:pt-24 md:items-center md:pt-0"
         >
           <motion.section
             initial={{ y: 40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 40, opacity: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 22 }}
-            className="max-h-[calc(100vh-2rem)] w-full max-w-[min(92vw,42rem)] overflow-y-auto rounded-3xl bg-white p-4 shadow-soft sm:p-6"
+            className="max-h-[calc(100vh-2rem)] w-full max-w-[min(92vw,42rem)] overflow-y-auto rounded-3xl border border-white/70 bg-white/95 p-4 shadow-[0_28px_80px_rgba(15,23,42,0.26)] backdrop-blur-xl sm:p-6"
           >
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-base font-semibold leading-tight sm:text-lg">

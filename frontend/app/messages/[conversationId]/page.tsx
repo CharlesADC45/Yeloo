@@ -60,36 +60,46 @@ export default function MessageConversationPage() {
       return;
     }
     let active = true;
-    const load = async () => {
-      setIsLoading(true);
-      setError(null);
+    const load = async (silent = false) => {
+      if (!silent) {
+        setIsLoading(true);
+        setError(null);
+      }
       try {
         const data = await fetchConversation(token, conversationId);
         if (!active) return;
         setConversation(data);
       } catch (err) {
         if (!active) return;
-        setError(err instanceof Error ? err.message : "Impossible de charger cette conversation.");
+        if (!silent) {
+          setError(err instanceof Error ? err.message : "Impossible de charger cette conversation.");
+        }
       } finally {
-        if (active) setIsLoading(false);
+        if (active && !silent) setIsLoading(false);
       }
     };
     void load();
+    const interval = window.setInterval(() => void load(true), 20000);
     return () => {
       active = false;
+      window.clearInterval(interval);
     };
   }, [conversationId, token]);
 
   useEffect(() => {
     if (!token) return;
     let active = true;
-    fetchConversations(token)
-      .then((data) => {
-        if (active) setConversations(data);
-      })
-      .catch(() => undefined);
+    const load = () =>
+      fetchConversations(token)
+        .then((data) => {
+          if (active) setConversations(data);
+        })
+        .catch(() => undefined);
+    void load();
+    const interval = window.setInterval(load, 20000);
     return () => {
       active = false;
+      window.clearInterval(interval);
     };
   }, [token]);
 

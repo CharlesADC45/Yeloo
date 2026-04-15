@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import {
   FiCheckCircle,
   FiChevronLeft,
+  FiExternalLink,
   FiFileText,
   FiHeart,
   FiHome,
@@ -155,6 +156,55 @@ function PropertyMap({ latitude, longitude, title, isApproximate = false }: MapP
       />
     );
   }
+
+function PropertyStreetView({ latitude, longitude, title, isApproximate = false }: MapProps) {
+  const hasCoordinates = typeof latitude === "number" && typeof longitude === "number";
+  const streetViewUrl = hasCoordinates
+    ? `https://www.google.com/maps?layer=c&cbll=${latitude},${longitude}&cbp=11,0,0,0,0&output=svembed`
+    : "";
+  const mapsUrl = hasCoordinates
+    ? `https://www.google.com/maps?q=${latitude},${longitude}`
+    : "https://www.google.com/maps/search/Abidjan";
+
+  return (
+    <div className="overflow-hidden rounded-[1.6rem] border border-neutral-200 bg-white">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+        <div>
+          <h3 className="text-sm font-semibold text-neutral-950">Street View</h3>
+          <p className="mt-0.5 text-xs text-neutral-500">
+            {hasCoordinates && !isApproximate
+              ? "Aperçu de la zone autour du bien."
+              : "Aperçu approximatif de la zone, selon les informations disponibles."}
+          </p>
+        </div>
+        <a
+          href={mapsUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-2 rounded-full bg-neutral-950 px-3 py-2 text-xs font-semibold text-white"
+        >
+          Ouvrir Maps
+          <FiExternalLink />
+        </a>
+      </div>
+      <div className="relative h-64 bg-neutral-100 sm:h-72">
+        {hasCoordinates ? (
+          <iframe
+            title={`Street View ${title}`}
+            src={streetViewUrl}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            className="h-full w-full border-0"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center px-6 text-center text-sm text-neutral-500">
+            Street View sera disponible quand les coordonnées exactes seront ajoutées.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function LogementClient({ id }: Props) {
   const params = useParams<{ id?: string | string[] }>();
@@ -627,6 +677,12 @@ export function LogementClient({ id }: Props) {
                       </p>
                     )}
                   </div>
+                  <PropertyStreetView
+                    latitude={mapLatitude}
+                    longitude={mapLongitude}
+                    title={property.title}
+                    isApproximate={!hasExactLocation}
+                  />
                 </div>
               </section>
 

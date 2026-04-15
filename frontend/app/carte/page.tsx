@@ -706,7 +706,7 @@ function CartePageContent() {
         <section className="h-full xl:hidden">
           <div className="relative h-full overflow-hidden bg-white">
             <div className="relative h-full w-full overflow-hidden bg-white">
-                <div className="absolute inset-x-4 top-4 z-20 flex items-center gap-3">
+                <div className="absolute inset-x-4 top-4 z-50 flex items-center gap-3">
                   <button
                     type="button"
                     onClick={() => router.back()}
@@ -744,7 +744,7 @@ function CartePageContent() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -8, scale: 0.98 }}
                     transition={{ duration: 0.22 }}
-                    className="absolute inset-x-4 top-[4.9rem] z-20 rounded-[1.75rem] bg-white/96 p-4 shadow-[0_18px_40px_rgba(15,23,42,0.18)] ring-1 ring-black/5 backdrop-blur"
+                    className="absolute inset-x-4 top-[4.9rem] z-50 rounded-[1.75rem] bg-white/95 p-4 shadow-[0_24px_60px_rgba(15,23,42,0.22)] ring-1 ring-white/70 backdrop-blur-xl"
                   >
                     {renderExpandedFilters("grid-cols-1")}
                   </motion.div>

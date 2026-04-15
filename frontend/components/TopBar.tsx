@@ -16,6 +16,7 @@ import {
 } from "react-icons/fi";
 import { adminNavItems } from "@/lib/adminNav";
 import { getApiBaseUrl } from "@/lib/api";
+import { showDeviceNotification } from "@/lib/deviceNotifications";
 import { ownerNavItems } from "@/lib/ownerNav";
 import { useAuthStore } from "@/stores/authStore";
 import {
@@ -144,6 +145,7 @@ function TopBarContent({
   const compactHomeSearch = Boolean(homeSearch?.compact) && (viewportWidth ?? 0) >= 1380;
   const notificationButtonRef = useRef<HTMLButtonElement | null>(null);
   const notificationPanelRef = useRef<HTMLDivElement | null>(null);
+  const lastDeviceNotificationIdRef = useRef<string | null>(null);
 
   const actionHref = isAdminRole
     ? "/admin"
@@ -164,6 +166,19 @@ function TopBarContent({
     if (!notificationsEnabled) return [];
     return getUnreadNotifications(visibleNotifications, readByUser, user?.id);
   }, [notificationsEnabled, readByUser, user?.id, visibleNotifications]);
+
+  useEffect(() => {
+    const [latest] = unreadNotifications;
+    if (!latest || latest.id === lastDeviceNotificationIdRef.current) return;
+    lastDeviceNotificationIdRef.current = latest.id;
+    void showDeviceNotification({
+      title: latest.title,
+      body: latest.message,
+      tag: latest.id,
+      url: `/logements/${latest.propertyId}`,
+      icon: latest.imageUrl || "/icons/icon-192.png",
+    });
+  }, [unreadNotifications]);
 
   useEffect(() => {
     if (!token || !user?.id) return;

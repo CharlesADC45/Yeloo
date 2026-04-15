@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import { AuthSync } from "@/components/AuthSync";
+import { YelooSplash } from "@/components/YelooSplash";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -43,6 +44,7 @@ export default function RootLayout({
     <html lang="fr" className={poppins.variable}>
       <body className="min-h-screen bg-white text-neutral-900">
         <AuthSync />
+        <YelooSplash />
         {children}
       </body>
     </html>

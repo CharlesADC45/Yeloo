@@ -47,10 +47,39 @@ export const useProperties = () => {
     return () => controller.abort();
   }, [fetchProperties]);
 
+  const refreshSilently = useCallback(() => {
+    const controller = new AbortController();
+
+    fetchProperties(controller.signal)
+      .then((data) => {
+        setProperties(data);
+        setError(null);
+      })
+      .catch((err: Error) => {
+        if (err.name !== "AbortError") {
+          // Keep the current UI stable; the next foreground refresh can show errors.
+        }
+      });
+
+    return () => controller.abort();
+  }, [fetchProperties]);
+
   useEffect(() => {
     const abort = refetch();
     return () => abort?.();
   }, [refetch]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        refreshSilently();
+      }
+    }, 20000);
+
+    return () => window.clearInterval(interval);
+  }, [refreshSilently]);
 
   return {
     properties,
@@ -58,6 +87,7 @@ export const useProperties = () => {
     error,
     apiBaseUrl,
     refetch,
+    refreshSilently,
   };
 };
 

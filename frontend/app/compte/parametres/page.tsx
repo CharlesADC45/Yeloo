@@ -14,6 +14,10 @@ import {
 import { motion } from "framer-motion";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
+import {
+  getDeviceNotificationPermission,
+  requestDeviceNotificationPermission,
+} from "@/lib/deviceNotifications";
 import { useAuthStore } from "@/stores/authStore";
 import {
   getNotificationPrefs,
@@ -29,6 +33,17 @@ export default function ParametresPage() {
   );
   const notificationsEnabled = getNotificationPrefs(prefsByUser, user?.id)
     .ownerPostNotifications;
+  const devicePermission = getDeviceNotificationPermission();
+
+  const toggleNotifications = async () => {
+    if (!user?.id) return;
+
+    const nextEnabled = !notificationsEnabled;
+    if (nextEnabled) {
+      await requestDeviceNotificationPermission();
+    }
+    setOwnerPostNotifications(user.id, nextEnabled);
+  };
 
   return (
     <div className="min-h-screen bg-transparent">
@@ -102,10 +117,7 @@ export default function ParametresPage() {
                   type="button"
                   role="switch"
                   aria-checked={notificationsEnabled}
-                  onClick={() =>
-                    user?.id &&
-                    setOwnerPostNotifications(user.id, !notificationsEnabled)
-                  }
+                  onClick={() => void toggleNotifications()}
                   className={`relative inline-flex h-8 w-14 items-center rounded-full transition ${
                     notificationsEnabled ? "bg-blue-600" : "bg-neutral-300"
                   }`}
@@ -117,6 +129,18 @@ export default function ParametresPage() {
                   />
                 </button>
               </div>
+              <p className="px-1 text-[11px] leading-5 text-neutral-500">
+                Notifications appareil :{" "}
+                <span className="font-semibold text-neutral-700">
+                  {devicePermission === "unsupported"
+                    ? "non supportées"
+                    : devicePermission === "granted"
+                      ? "autorisées"
+                      : devicePermission === "denied"
+                        ? "bloquées par le navigateur"
+                        : "à autoriser"}
+                </span>
+              </p>
 
               {[
                 {

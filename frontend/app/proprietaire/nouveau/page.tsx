@@ -1,10 +1,17 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { FiCheckCircle, FiFileText, FiUploadCloud } from "react-icons/fi";
+import {
+  FiCamera,
+  FiCheckCircle,
+  FiFileText,
+  FiImage,
+  FiUploadCloud,
+  FiX,
+} from "react-icons/fi";
 import { BottomNav } from "@/components/BottomNav";
 import { CelebrationModal } from "@/components/CelebrationModal";
 import { OwnerSidebar } from "@/components/OwnerSidebar";
@@ -32,18 +39,98 @@ type OwnerFormState = {
   accountHolder: string;
 };
 
+type OwnerDraftPayload = {
+  stepIndex: number;
+  formValues: OwnerFormState;
+  updatedAt: string;
+};
+
 const STEPS: Step[] = [
   { title: "Infos propriétaire", subtitle: "Identité et contact" },
   { title: "Justificatifs", subtitle: "Documents et preuves" },
   { title: "Paiement", subtitle: "Coordonnées bancaires" },
 ];
 
+const EMPTY_FORM_VALUES: OwnerFormState = {
+  fullName: "",
+  phone: "",
+  email: "",
+  city: "",
+  identityFile: null,
+  selfieFile: null,
+  propertyFile: null,
+  address: "",
+  bankName: "",
+  accountNumber: "",
+  mobileMoney: "",
+  accountHolder: "",
+};
+
+const OWNER_DRAFT_DB_NAME = "yeloo-owner-onboarding";
+const OWNER_DRAFT_STORE = "drafts";
+
+function openOwnerDraftDb() {
+  return new Promise<IDBDatabase>((resolve, reject) => {
+    if (typeof indexedDB === "undefined") {
+      reject(new Error("IndexedDB indisponible"));
+      return;
+    }
+
+    const request = indexedDB.open(OWNER_DRAFT_DB_NAME, 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(OWNER_DRAFT_STORE)) {
+        db.createObjectStore(OWNER_DRAFT_STORE);
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error ?? new Error("Brouillon inaccessible"));
+  });
+}
+
+async function readOwnerDraft(key: string) {
+  const db = await openOwnerDraftDb();
+  return new Promise<OwnerDraftPayload | null>((resolve, reject) => {
+    const transaction = db.transaction(OWNER_DRAFT_STORE, "readonly");
+    const store = transaction.objectStore(OWNER_DRAFT_STORE);
+    const request = store.get(key);
+    request.onsuccess = () => resolve((request.result as OwnerDraftPayload | undefined) ?? null);
+    request.onerror = () => reject(request.error ?? new Error("Lecture du brouillon impossible"));
+    transaction.oncomplete = () => db.close();
+  });
+}
+
+async function writeOwnerDraft(key: string, payload: OwnerDraftPayload) {
+  const db = await openOwnerDraftDb();
+  return new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(OWNER_DRAFT_STORE, "readwrite");
+    const store = transaction.objectStore(OWNER_DRAFT_STORE);
+    const request = store.put(payload, key);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error ?? new Error("Sauvegarde du brouillon impossible"));
+    transaction.oncomplete = () => db.close();
+  });
+}
+
+async function removeOwnerDraft(key: string) {
+  const db = await openOwnerDraftDb();
+  return new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(OWNER_DRAFT_STORE, "readwrite");
+    const store = transaction.objectStore(OWNER_DRAFT_STORE);
+    const request = store.delete(key);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error ?? new Error("Nettoyage du brouillon impossible"));
+    transaction.oncomplete = () => db.close();
+  });
+}
+
 type FileUploadFieldProps = {
   label: string;
   file: File | null;
   error?: string;
   accept?: string;
-  capture?: "user" | "environment";
+  cameraCapture?: "user" | "environment";
+  allowCamera?: boolean;
   onChange: (file: File | null) => void;
 };
 
@@ -52,23 +139,44 @@ function FileUploadField({
   file,
   error,
   accept,
-  capture,
+  cameraCapture = "environment",
+  allowCamera = true,
   onChange,
 }: FileUploadFieldProps) {
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const uploadInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleFile = (nextFile: File | null) => {
+    onChange(nextFile);
+    setIsPickerOpen(false);
+  };
+
   return (
-    <label className="block min-w-0 text-xs text-neutral-600">
+    <div className="block min-w-0 text-xs text-neutral-600">
       <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
         {label}
       </span>
       <input
+        ref={uploadInputRef}
         type="file"
         accept={accept}
-        capture={capture}
-        onChange={(event) => onChange(event.target.files?.[0] ?? null)}
+        onChange={(event) => handleFile(event.target.files?.[0] ?? null)}
         className="sr-only"
         aria-invalid={Boolean(error)}
       />
-      <span
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture={cameraCapture}
+        onChange={(event) => handleFile(event.target.files?.[0] ?? null)}
+        className="sr-only"
+        aria-invalid={Boolean(error)}
+      />
+      <button
+        type="button"
+        onClick={() => setIsPickerOpen((value) => !value)}
         className={`mt-2 flex w-full min-w-0 cursor-pointer items-center gap-3 rounded-2xl border bg-white px-3 py-3 transition active:scale-[0.99] ${
           error
             ? "border-red-300 ring-2 ring-red-100"
@@ -99,9 +207,51 @@ function FileUploadField({
         >
           {file ? "OK" : "Choisir"}
         </span>
-      </span>
+      </button>
+      {isPickerOpen && (
+        <motion.div
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-2 grid gap-2 rounded-2xl bg-neutral-50 p-2"
+        >
+          {allowCamera && (
+            <button
+              type="button"
+              onClick={() => cameraInputRef.current?.click()}
+              className="flex items-center gap-3 rounded-xl bg-white px-3 py-3 text-left text-xs font-semibold text-neutral-800"
+            >
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                <FiCamera />
+              </span>
+              Prendre une photo
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => uploadInputRef.current?.click()}
+            className="flex items-center gap-3 rounded-xl bg-white px-3 py-3 text-left text-xs font-semibold text-neutral-800"
+          >
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-100 text-neutral-600">
+              <FiImage />
+            </span>
+            Uploader depuis le téléphone
+          </button>
+          {file && (
+            <button
+              type="button"
+              onClick={() => handleFile(null)}
+              className="flex items-center gap-3 rounded-xl bg-white px-3 py-3 text-left text-xs font-semibold text-red-600"
+            >
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 text-red-600">
+                <FiX />
+              </span>
+              Retirer le fichier
+            </button>
+          )}
+        </motion.div>
+      )}
       {error && <span className="mt-1 block text-[11px] text-red-500">{error}</span>}
-    </label>
+    </div>
   );
 }
 
@@ -111,21 +261,10 @@ export default function NouveauBienPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [shouldRedirect, setShouldRedirect] = useState(false);
+  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
+  const [draftStatus, setDraftStatus] = useState<"idle" | "saved" | "unavailable">("idle");
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const [formValues, setFormValues] = useState<OwnerFormState>({
-    fullName: "",
-    phone: "",
-    email: "",
-    city: "",
-    identityFile: null,
-    selfieFile: null,
-    propertyFile: null,
-    address: "",
-    bankName: "",
-    accountNumber: "",
-    mobileMoney: "",
-    accountHolder: "",
-  });
+  const [formValues, setFormValues] = useState<OwnerFormState>(EMPTY_FORM_VALUES);
   const [errors, setErrors] = useState<Partial<Record<keyof OwnerFormState, string>>>(
     {},
   );
@@ -135,6 +274,10 @@ export default function NouveauBienPage() {
   const router = useRouter();
   const isOwnerRole = user?.role === "proprietaire" || user?.role === "admin";
   const isVerifiedOwner = isOwnerRole && Boolean(user?.is_verified);
+  const draftKey = useMemo(
+    () => `owner-onboarding:${user?.id || user?.email || "guest"}`,
+    [user?.email, user?.id]
+  );
 
   const updateField = <Key extends keyof OwnerFormState>(
     field: Key,
@@ -150,14 +293,65 @@ export default function NouveauBienPage() {
   };
 
   useEffect(() => {
-    if (!user) return;
+    let active = true;
+    setIsDraftLoaded(false);
+    setDraftStatus("idle");
+
+    const loadDraft = async () => {
+      try {
+        const draft = await readOwnerDraft(draftKey);
+        if (!active) return;
+
+        if (draft) {
+          setFormValues({ ...EMPTY_FORM_VALUES, ...draft.formValues });
+          setStepIndex(Math.min(Math.max(draft.stepIndex, 0), STEPS.length - 1));
+          setDraftStatus("saved");
+        } else {
+          setFormValues(EMPTY_FORM_VALUES);
+        }
+      } catch {
+        if (active) {
+          setDraftStatus("unavailable");
+        }
+      } finally {
+        if (active) {
+          setIsDraftLoaded(true);
+        }
+      }
+    };
+
+    void loadDraft();
+
+    return () => {
+      active = false;
+    };
+  }, [draftKey]);
+
+  useEffect(() => {
+    if (!user || !isDraftLoaded) return;
     setFormValues((prev) => ({
       ...prev,
       fullName: prev.fullName || user.full_name || "",
       email: prev.email || user.email || "",
       phone: prev.phone || user.phone || "",
     }));
-  }, [user]);
+  }, [isDraftLoaded, user]);
+
+  useEffect(() => {
+    if (!isDraftLoaded || isCompleted) return;
+
+    const timer = window.setTimeout(() => {
+      void writeOwnerDraft(draftKey, {
+        stepIndex,
+        formValues,
+        updatedAt: new Date().toISOString(),
+      })
+        .then(() => setDraftStatus("saved"))
+        .catch(() => setDraftStatus("unavailable"));
+    }, 450);
+
+    return () => window.clearTimeout(timer);
+  }, [draftKey, formValues, isCompleted, isDraftLoaded, stepIndex]);
 
   useEffect(() => {
     if (!shouldRedirect) return;
@@ -238,6 +432,7 @@ export default function NouveauBienPage() {
       }
 
       await response.json();
+      await removeOwnerDraft(draftKey).catch(() => undefined);
 
       const meResponse = await fetch(`${getApiBaseUrl()}/api/users/me`, {
         headers: {
@@ -311,6 +506,17 @@ export default function NouveauBienPage() {
               </h1>
               <p className="mt-1 text-xs text-neutral-600">
                 Complétez les informations avant de publier un bien.
+              </p>
+              <p
+                className={`mt-2 inline-flex rounded-full px-3 py-1 text-[11px] font-semibold ${
+                  draftStatus === "unavailable"
+                    ? "bg-amber-50 text-amber-700"
+                    : "bg-blue-50 text-blue-700"
+                }`}
+              >
+                {draftStatus === "unavailable"
+                  ? "Sauvegarde locale indisponible"
+                  : "Brouillon sauvegardé automatiquement"}
               </p>
             </div>
             {user?.is_verified && (
@@ -490,6 +696,8 @@ export default function NouveauBienPage() {
                     label="Pièce d'identité"
                     file={formValues.identityFile}
                     error={errors.identityFile}
+                    accept="image/*,.pdf"
+                    cameraCapture="environment"
                     onChange={(file) => updateField("identityFile", file)}
                   />
                   <FileUploadField
@@ -497,13 +705,15 @@ export default function NouveauBienPage() {
                     file={formValues.selfieFile}
                     error={errors.selfieFile}
                     accept="image/*"
-                    capture="user"
+                    cameraCapture="user"
                     onChange={(file) => updateField("selfieFile", file)}
                   />
                   <FileUploadField
                     label="Justificatif de propriété"
                     file={formValues.propertyFile}
                     error={errors.propertyFile}
+                    accept="image/*,.pdf"
+                    cameraCapture="environment"
                     onChange={(file) => updateField("propertyFile", file)}
                   />
                   <label className="flex flex-col gap-1 text-xs text-neutral-600 sm:col-span-2">

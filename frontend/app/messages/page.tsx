@@ -34,23 +34,29 @@ export default function MessagesPage() {
       return;
     }
     let active = true;
-    const load = async () => {
-      setIsLoading(true);
-      setError(null);
+    const load = async (silent = false) => {
+      if (!silent) {
+        setIsLoading(true);
+        setError(null);
+      }
       try {
         const data = await fetchConversations(token);
         if (!active) return;
         setItems(data);
       } catch (err) {
         if (!active) return;
-        setError(err instanceof Error ? err.message : "Impossible de charger les conversations.");
+        if (!silent) {
+          setError(err instanceof Error ? err.message : "Impossible de charger les conversations.");
+        }
       } finally {
-        if (active) setIsLoading(false);
+        if (active && !silent) setIsLoading(false);
       }
     };
     void load();
+    const interval = window.setInterval(() => void load(true), 20000);
     return () => {
       active = false;
+      window.clearInterval(interval);
     };
   }, [token]);
 
