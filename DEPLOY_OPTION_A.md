@@ -12,6 +12,8 @@ Stack recommandée pour ce mode :
 
 > Note honnête : le chat actuel est une messagerie interne YELOO v1. Il n'utilise pas encore Matrix et n'est pas encore en temps réel complet.
 
+> Important : le frontend principal doit rester sur Vercel. Render sert uniquement l'API backend, afin d'éviter la page de réveil `Application loading` sur l'interface utilisateur.
+
 ---
 
 ## 1. Préparer la base Neon
@@ -77,7 +79,7 @@ Configuration recommandée :
 - Dockerfile path : `Dockerfile`
 - Health check path : `/health`
 
-Le fichier `render.yaml` à la racine donne aussi une base de Blueprint Render pour ce service.
+Le fichier `render.yaml` à la racine donne aussi une base de Blueprint Render pour ce service backend uniquement.
 Si tu utilises le Blueprint, Render te demandera quand même de remplir les variables marquées `sync: false`.
 
 Variables à ajouter dans Render :
@@ -139,17 +141,17 @@ NEXT_PUBLIC_API_BASE_URL=https://yeloo-api.onrender.com
 
 Le fichier `frontend/.vercelignore` évite d'envoyer les caches locaux inutiles.
 
-Après le déploiement Vercel, récupérer l'URL frontend, par exemple :
+Après le déploiement Vercel, utiliser l'URL frontend principale, par exemple :
 
 ```text
-https://yeloo.vercel.app
+https://project-svxlr.vercel.app
 ```
 
 Puis retourner dans Render et remplacer :
 
 ```env
-FRONTEND_ORIGIN=https://yeloo.vercel.app
-FRONTEND_ORIGINS=https://yeloo.vercel.app,http://localhost:3000,http://127.0.0.1:3000
+FRONTEND_ORIGIN=https://project-svxlr.vercel.app
+FRONTEND_ORIGINS=https://project-svxlr.vercel.app,http://localhost:3000,http://127.0.0.1:3000
 ```
 
 Ensuite redéployer le backend.

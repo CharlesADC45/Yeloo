@@ -1,19 +1,5 @@
 services:
   - type: web
-    name: yeloo-web
-    env: node
-    rootDir: frontend
-    plan: free
-    buildCommand: npm ci --include=dev && npm run build
-    startCommand: npm run start
-    autoDeploy: true
-    envVars:
-      - key: NEXT_PUBLIC_API_BASE_URL
-        value: https://yeloo-api.onrender.com
-      - key: NEXT_ENABLE_PWA
-        value: true
-
-  - type: web
     name: yeloo-api
     env: docker
     rootDir: backend
@@ -29,7 +15,7 @@ services:
       - key: FRONTEND_ORIGIN
         value: https://project-svxlr.vercel.app
       - key: FRONTEND_ORIGINS
-        value: https://project-svxlr.vercel.app,https://yeloo-web.onrender.com
+        value: https://project-svxlr.vercel.app,http://localhost:3000,http://127.0.0.1:3000
       - key: BOOTSTRAP_ADMIN_EMAIL
         value: admin@yeloo.ci
       - key: BOOTSTRAP_ADMIN_PASSWORD
