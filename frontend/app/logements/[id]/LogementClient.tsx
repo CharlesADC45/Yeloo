@@ -152,7 +152,7 @@ function PropertyMap({ latitude, longitude, title, isApproximate = false }: MapP
     return (
       <div
         ref={containerRef}
-        className="relative h-64 w-full overflow-hidden rounded-[1.6rem] border border-neutral-200 bg-neutral-100 sm:h-72"
+        className="yeloo-detail-map relative block h-64 min-h-64 w-full overflow-hidden rounded-[1.6rem] border border-neutral-200 bg-neutral-100 sm:h-72 sm:min-h-72"
       />
     );
   }

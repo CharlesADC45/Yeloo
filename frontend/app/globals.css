@@ -378,6 +378,31 @@ body {
   min-width: 0;
 }
 
+.yeloo-detail-map {
+  min-height: 16rem;
+}
+
+.yeloo-detail-map .leaflet-container {
+  display: block;
+  min-height: 100%;
+}
+
+.yeloo-detail-map .leaflet-top.leaflet-left {
+  left: 12px !important;
+  right: auto !important;
+  top: 12px !important;
+}
+
+.yeloo-detail-map .leaflet-top.leaflet-right {
+  right: 12px !important;
+  top: 12px !important;
+}
+
+.yeloo-detail-map .leaflet-bottom.leaflet-right,
+.yeloo-detail-map .leaflet-bottom.leaflet-left {
+  bottom: 8px !important;
+}
+
 .leaflet-pane,
 .leaflet-map-pane,
 .leaflet-tile-pane,

@@ -40,6 +40,8 @@ type TopBarProps = {
   homeSearch?: HomeSearchConfig;
   homeTitle?: ReactNode;
   homeSubtitle?: ReactNode;
+  ownerShell?: boolean;
+  adminShell?: boolean;
 };
 
 type ReverseGeocodeResponse = {
@@ -122,6 +124,8 @@ function TopBarContent({
   homeSearch,
   homeTitle,
   homeSubtitle,
+  ownerShell = false,
+  adminShell = false,
 }: TopBarProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -137,8 +141,10 @@ function TopBarContent({
   const isAdminRole = user?.role === "admin";
   const isOwnerRole = user?.role === "proprietaire";
   const isVerifiedOwner = isOwnerRole && Boolean(user?.is_verified);
-  const isOwnerRoute = isOwnerRole && pathname?.startsWith("/proprietaire");
-  const isAdminRoute = isAdminRole && pathname?.startsWith("/admin");
+  const isOwnerRoute =
+    isOwnerRole && (Boolean(ownerShell) || Boolean(pathname?.startsWith("/proprietaire")));
+  const isAdminRoute =
+    isAdminRole && (Boolean(adminShell) || Boolean(pathname?.startsWith("/admin")));
   const isHomeRoute = pathname === "/";
   const showHomeSearch = isHomeRoute && Boolean(homeSearch);
   const [viewportWidth, setViewportWidth] = useState<number | null>(null);

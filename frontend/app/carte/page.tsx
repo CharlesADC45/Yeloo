@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import {
@@ -272,14 +271,14 @@ function CartePageContent() {
     return (
     <article
       key={`mobile-${property.id}`}
-      onClick={() => setSelectedId(property.id)}
+      onClick={() => router.push(`/logements/${property.id}`)}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
-          setSelectedId(property.id);
+          router.push(`/logements/${property.id}`);
         }
       }}
-      role="button"
+      role="link"
       tabIndex={0}
       className="overflow-hidden rounded-[1.75rem] bg-white focus:outline-none"
     >
@@ -338,9 +337,9 @@ function CartePageContent() {
           />
         </motion.button>
       </div>
-      <div className="space-y-2.5 px-1 pb-1 pt-3">
+      <div className="space-y-1.5 px-1 pb-1 pt-3">
         <div className="flex items-start justify-between gap-3">
-          <p className="text-[1.08rem] font-semibold leading-snug text-neutral-950">
+          <p className="text-[1.08rem] font-semibold leading-tight text-neutral-950">
             {property.title}
           </p>
           <span className="shrink-0 rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] font-semibold text-neutral-600">
@@ -348,18 +347,18 @@ function CartePageContent() {
           </span>
         </div>
         {(property.neighborhood || property.city) && (
-          <p className="text-sm leading-5 text-neutral-600">
+          <p className="text-sm leading-4 text-neutral-600">
             {property.neighborhood || property.city}
           </p>
         )}
         {facts.length > 0 && (
-          <p className="text-sm leading-5 text-neutral-600">{facts.join(" · ")}</p>
+          <p className="text-sm leading-4 text-neutral-600">{facts.join(" · ")}</p>
         )}
         <p className="text-[0.98rem] leading-5 text-neutral-900">
           <span className="font-semibold">{property.price.toLocaleString("fr-FR")} F</span>
           <span className="text-neutral-500"> / {property.pricePeriod}</span>
         </p>
-        <div className="grid grid-cols-2 gap-2 pt-1">
+        <div className="pt-2">
           <button
             type="button"
             onClick={(event) => {
@@ -367,17 +366,10 @@ function CartePageContent() {
               setSelectedId(property.id);
               handleShowMap();
             }}
-            className="rounded-full bg-neutral-950 px-4 py-2.5 text-center text-xs font-semibold text-white"
+            className="w-full rounded-full bg-neutral-950 px-4 py-2.5 text-center text-xs font-semibold text-white"
           >
             Voir sur map
           </button>
-          <Link
-            href={`/logements/${property.id}`}
-            onClick={(event) => event.stopPropagation()}
-            className="rounded-full border border-neutral-200 px-4 py-2.5 text-center text-xs font-semibold text-neutral-900"
-          >
-            Voir les détails
-          </Link>
         </div>
       </div>
     </article>
@@ -1127,14 +1119,14 @@ function CartePageContent() {
                       <article
                         key={property.id}
                         data-result-card="true"
-                        onClick={() => setSelectedId(property.id)}
+                        onClick={() => router.push(`/logements/${property.id}`)}
                         onKeyDown={(event) => {
                           if (event.key === "Enter" || event.key === " ") {
                             event.preventDefault();
-                            setSelectedId(property.id);
+                            router.push(`/logements/${property.id}`);
                           }
                         }}
-                        role="button"
+                        role="link"
                         tabIndex={0}
                         className={`group relative overflow-hidden rounded-[1.55rem] border bg-white text-left transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-neutral-300/70 ${
                           selected?.id === property.id
@@ -1204,20 +1196,20 @@ function CartePageContent() {
                             />
                           </motion.button>
                         </div>
-                        <div className="space-y-2.5 p-4">
+                        <div className="space-y-1.5 p-4">
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
                               <p className="text-base font-semibold tracking-tight text-neutral-950">
                                 {property.price.toLocaleString("fr-FR")} F
                                 <span className="font-normal text-neutral-500"> / {property.pricePeriod}</span>
                               </p>
-                              <p className="mt-1 line-clamp-1 text-sm font-semibold text-neutral-900">
+                              <p className="mt-0.5 line-clamp-1 text-sm font-semibold text-neutral-900">
                                 {property.title}
                               </p>
                             </div>
                           </div>
                           {(property.neighborhood || property.city) && (
-                            <div className="flex items-center gap-2 text-sm text-neutral-500">
+                            <div className="flex items-center gap-2 text-sm leading-4 text-neutral-500">
                               <FiMapPin className="text-neutral-400" />
                               <p className="line-clamp-1">
                                 {property.neighborhood || property.city}
@@ -1225,28 +1217,21 @@ function CartePageContent() {
                             </div>
                           )}
                           {facts.length > 0 && (
-                            <div className="text-xs leading-5 text-neutral-500">
+                            <div className="text-xs leading-4 text-neutral-500">
                               {facts.join(" · ")}
                             </div>
                           )}
-                          <div className="grid grid-cols-2 gap-2 pt-1">
+                          <div className="pt-2">
                             <button
                               type="button"
                               onClick={(event) => {
                                 event.stopPropagation();
                                 setSelectedId(property.id);
                               }}
-                              className="rounded-full bg-neutral-950 px-4 py-2.5 text-center text-xs font-semibold text-white"
+                              className="w-full rounded-full bg-neutral-950 px-4 py-2.5 text-center text-xs font-semibold text-white"
                             >
                               Voir sur map
                             </button>
-                            <Link
-                              href={`/logements/${property.id}`}
-                              onClick={(event) => event.stopPropagation()}
-                              className="rounded-full border border-neutral-200 px-4 py-2.5 text-center text-xs font-semibold text-neutral-900"
-                            >
-                              Voir les détails
-                            </Link>
                           </div>
                         </div>
                       </article>

@@ -145,7 +145,7 @@ function MessageConversationPageContent() {
 
   return (
     <div className="min-h-screen bg-white">
-      <TopBar />
+      <TopBar adminShell={isAdmin} ownerShell={isOwnerDashboard} />
       {isAdmin && <AdminSidebar />}
       {isOwnerDashboard && <OwnerSidebar />}
       <main

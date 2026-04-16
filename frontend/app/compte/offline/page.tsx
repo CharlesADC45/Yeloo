@@ -22,31 +22,38 @@ export default function OfflineStatusPage() {
   const [cachesInfo, setCachesInfo] = useState<CacheInfo[]>([]);
   const [storageUsage, setStorageUsage] = useState(0);
   const [pendingActions, setPendingActions] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const refreshStatus = async () => {
-    setIsOnline(typeof navigator === "undefined" ? true : navigator.onLine);
+    setIsRefreshing(true);
 
-    if ("caches" in window) {
-      const names = await caches.keys();
-      const nextInfo = await Promise.all(
-        names.map(async (name) => {
-          const cache = await caches.open(name);
-          const keys = await cache.keys();
-          return { name, count: keys.length };
-        })
+    try {
+      setIsOnline(typeof navigator === "undefined" ? true : navigator.onLine);
+
+      if ("caches" in window) {
+        const names = await caches.keys();
+        const nextInfo = await Promise.all(
+          names.map(async (name) => {
+            const cache = await caches.open(name);
+            const keys = await cache.keys();
+            return { name, count: keys.length };
+          })
+        );
+        setCachesInfo(nextInfo);
+      }
+
+      if (navigator.storage?.estimate) {
+        const estimate = await navigator.storage.estimate();
+        setStorageUsage(estimate.usage || 0);
+      }
+
+      const queuedKeys = Object.keys(localStorage).filter((key) =>
+        key.toLowerCase().includes("offline")
       );
-      setCachesInfo(nextInfo);
+      setPendingActions(queuedKeys.length);
+    } finally {
+      setIsRefreshing(false);
     }
-
-    if (navigator.storage?.estimate) {
-      const estimate = await navigator.storage.estimate();
-      setStorageUsage(estimate.usage || 0);
-    }
-
-    const queuedKeys = Object.keys(localStorage).filter((key) =>
-      key.toLowerCase().includes("offline")
-    );
-    setPendingActions(queuedKeys.length);
   };
 
   useEffect(() => {
@@ -89,9 +96,20 @@ export default function OfflineStatusPage() {
             <button
               type="button"
               onClick={() => void refreshStatus()}
-              className="flex h-10 items-center gap-2 rounded-full bg-blue-600 px-4 text-xs font-semibold text-white"
+              disabled={isRefreshing}
+              className="flex h-10 items-center gap-2 rounded-full bg-blue-600 px-4 text-xs font-semibold text-white disabled:cursor-wait disabled:opacity-80"
             >
-              <FiRefreshCw />
+              <motion.span
+                animate={isRefreshing ? { rotate: 360 } : { rotate: 0 }}
+                transition={
+                  isRefreshing
+                    ? { repeat: Infinity, duration: 0.75, ease: "linear" }
+                    : { duration: 0.2 }
+                }
+                className="inline-flex"
+              >
+                <FiRefreshCw />
+              </motion.span>
               Actualiser
             </button>
           </div>

@@ -96,7 +96,7 @@ function MessagesPageContent() {
 
   return (
     <div className="min-h-screen bg-transparent">
-      <TopBar />
+      <TopBar adminShell={isAdmin} ownerShell={isOwnerDashboard} />
       {isAdmin && <AdminSidebar />}
       {isOwnerDashboard && <OwnerSidebar />}
       <main
