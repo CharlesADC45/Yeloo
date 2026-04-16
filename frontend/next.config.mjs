@@ -80,6 +80,9 @@ const nextConfig = {
 export default withPWA({
   dest: 'public',
   disable: disablePWA,
+  fallbacks: {
+    document: '/offline',
+  },
   importScripts: ['/notification-worker.js'],
   register: true,
   skipWaiting: true,
