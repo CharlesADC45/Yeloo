@@ -214,7 +214,7 @@ export default function ComptePage() {
                 </h3>
                 <div className="mt-4 space-y-3">
                   {[
-                    { label: "Statut de synchro offline", icon: FiWifiOff },
+                    { label: "Statut de synchro offline", icon: FiWifiOff, href: "/compte/offline" },
                     { label: "Informations personnelles", icon: FiUser, href: "/compte/informations-personnelles" },
                     { label: "Parametres", icon: FiSettings, href: "/compte/parametres" },
                     { label: "Aide & Support", icon: FiHelpCircle, href: "/compte/aide-support" },

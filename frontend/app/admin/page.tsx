@@ -106,9 +106,11 @@ export default function AdminPage() {
     if (!token || user?.role !== "admin") return;
     let active = true;
 
-    const load = async () => {
-      setIsLoading(true);
-      setError(null);
+    const load = async (silent = false) => {
+      if (!silent) {
+        setIsLoading(true);
+        setError(null);
+      }
       try {
         const [dashboardData, kycData] = await Promise.all([
           fetchAdminDashboard(token),
@@ -119,15 +121,21 @@ export default function AdminPage() {
         setKycQueue(kycData);
       } catch (err) {
         if (!active) return;
-        setError(err instanceof Error ? err.message : "Impossible de charger le dashboard super admin.");
+        if (!silent) {
+          setError(err instanceof Error ? err.message : "Impossible de charger le dashboard super admin.");
+        }
       } finally {
-        if (active) setIsLoading(false);
+        if (active && !silent) setIsLoading(false);
       }
     };
 
     void load();
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === "visible") void load(true);
+    }, 20000);
     return () => {
       active = false;
+      window.clearInterval(interval);
     };
   }, [token, user?.role]);
 

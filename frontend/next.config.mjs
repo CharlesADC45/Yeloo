@@ -12,7 +12,7 @@ const csp = [
   "object-src 'none'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://images.pexels.com https://a0.muscache.com https://*.r2.dev https://*.cloudflarestorage.com",
+  "img-src 'self' data: blob: https://images.pexels.com https://a0.muscache.com https://*.tile.openstreetmap.org https://*.r2.dev https://*.cloudflarestorage.com",
   "font-src 'self' data:",
   "connect-src 'self' https://yeloo-api.onrender.com https://*.onrender.com",
   "media-src 'self' blob: https://*.r2.dev https://*.cloudflarestorage.com",
@@ -83,5 +83,21 @@ export default withPWA({
   importScripts: ['/notification-worker.js'],
   register: true,
   skipWaiting: true,
+  runtimeCaching: [
+    {
+      urlPattern: /^https:\/\/[abc]\.tile\.openstreetmap\.org\/.*$/i,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'yeloo-osm-map-tiles',
+        expiration: {
+          maxEntries: 900,
+          maxAgeSeconds: 7 * 24 * 60 * 60,
+        },
+        cacheableResponse: {
+          statuses: [0, 200],
+        },
+      },
+    },
+  ],
 })(nextConfig);
 

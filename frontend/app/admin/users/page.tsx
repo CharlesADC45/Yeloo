@@ -71,9 +71,11 @@ export default function AdminUsersPage() {
     if (!token) return;
     let active = true;
 
-    const load = async () => {
-      setIsLoading(true);
-      setError(null);
+    const load = async (silent = false) => {
+      if (!silent) {
+        setIsLoading(true);
+        setError(null);
+      }
       try {
         const [userData, kycData] = await Promise.all([
           fetchAdminUsers(token, role === "all" ? undefined : role),
@@ -84,15 +86,21 @@ export default function AdminUsersPage() {
         setOwnerProfiles(kycData);
       } catch (err) {
         if (!active) return;
-        setError(err instanceof Error ? err.message : "Impossible de charger les utilisateurs.");
+        if (!silent) {
+          setError(err instanceof Error ? err.message : "Impossible de charger les utilisateurs.");
+        }
       } finally {
-        if (active) setIsLoading(false);
+        if (active && !silent) setIsLoading(false);
       }
     };
 
     void load();
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === "visible") void load(true);
+    }, 20000);
     return () => {
       active = false;
+      window.clearInterval(interval);
     };
   }, [role, token]);
 

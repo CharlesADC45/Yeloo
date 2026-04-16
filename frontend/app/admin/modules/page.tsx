@@ -17,23 +17,31 @@ export default function AdminModulesPage() {
   useEffect(() => {
     if (!token) return;
     let active = true;
-    const load = async () => {
-      setIsLoading(true);
-      setError(null);
+    const load = async (silent = false) => {
+      if (!silent) {
+        setIsLoading(true);
+        setError(null);
+      }
       try {
         const data = await fetchAdminDashboard(token);
         if (!active) return;
         setModules(data.modules);
       } catch (err) {
         if (!active) return;
-        setError(err instanceof Error ? err.message : "Impossible de charger les modules.");
+        if (!silent) {
+          setError(err instanceof Error ? err.message : "Impossible de charger les modules.");
+        }
       } finally {
-        if (active) setIsLoading(false);
+        if (active && !silent) setIsLoading(false);
       }
     };
     void load();
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === "visible") void load(true);
+    }, 20000);
     return () => {
       active = false;
+      window.clearInterval(interval);
     };
   }, [token]);
 

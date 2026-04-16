@@ -209,25 +209,33 @@ export default function AdminPublicationsPage() {
     if (!token) return;
     let active = true;
 
-    const load = async () => {
-      setIsLoading(true);
-      setError(null);
+    const load = async (silent = false) => {
+      if (!silent) {
+        setIsLoading(true);
+        setError(null);
+      }
       try {
         const data = await fetchAdminProperties(token, status === "all" ? undefined : status);
         if (!active) return;
         setProperties(data);
-        setSelectedId(null);
+        if (!silent) setSelectedId(null);
       } catch (err) {
         if (!active) return;
-        setError(err instanceof Error ? err.message : "Impossible de charger les publications.");
+        if (!silent) {
+          setError(err instanceof Error ? err.message : "Impossible de charger les publications.");
+        }
       } finally {
-        if (active) setIsLoading(false);
+        if (active && !silent) setIsLoading(false);
       }
     };
 
     void load();
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === "visible") void load(true);
+    }, 20000);
     return () => {
       active = false;
+      window.clearInterval(interval);
     };
   }, [status, token]);
 

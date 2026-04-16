@@ -9,7 +9,6 @@ import {
   FiMap,
   FiMoon,
   FiSmartphone,
-  FiZap,
 } from "react-icons/fi";
 import { motion } from "framer-motion";
 import { TopBar } from "@/components/TopBar";
@@ -80,7 +79,10 @@ export default function ParametresPage() {
 
           <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft">
             <h3 className="text-sm font-semibold text-neutral-900">Sécurité</h3>
-            <div className="mt-4 flex items-center justify-between rounded-2xl border border-neutral-100 bg-neutral-50 px-4 py-3">
+            <Link
+              href="/compte/changer-mot-de-passe"
+              className="mt-4 flex items-center justify-between rounded-2xl border border-neutral-100 bg-neutral-50 px-4 py-3"
+            >
               <span className="flex items-center gap-3">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
                   <FiKey />
@@ -95,7 +97,7 @@ export default function ParametresPage() {
                 </span>
               </span>
               <FiChevronRight className="text-neutral-400" />
-            </div>
+            </Link>
           </div>
 
           <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft">
@@ -118,15 +120,21 @@ export default function ParametresPage() {
                   role="switch"
                   aria-checked={notificationsEnabled}
                   onClick={() => void toggleNotifications()}
-                  className={`relative inline-flex h-8 w-14 items-center rounded-full transition ${
-                    notificationsEnabled ? "bg-blue-600" : "bg-neutral-300"
+                  className={`relative inline-flex h-9 w-16 shrink-0 items-center rounded-full border p-1 transition ${
+                    notificationsEnabled
+                      ? "border-blue-600 bg-blue-600"
+                      : "border-neutral-200 bg-white"
                   }`}
                 >
                   <span
-                    className={`inline-block h-6 w-6 transform rounded-full bg-white shadow transition ${
-                      notificationsEnabled ? "translate-x-7" : "translate-x-1"
+                    className={`inline-flex h-7 w-7 transform items-center justify-center rounded-full transition ${
+                      notificationsEnabled
+                        ? "translate-x-7 bg-white text-blue-600"
+                        : "translate-x-0 bg-neutral-100 text-neutral-500"
                     }`}
-                  />
+                  >
+                    <span className="h-2 w-2 rounded-full bg-current" />
+                  </span>
                 </button>
               </div>
               <p className="px-1 text-[11px] leading-5 text-neutral-500">
@@ -153,11 +161,6 @@ export default function ParametresPage() {
                   description: "Informations sur l'appareil",
                   icon: FiSmartphone,
                 },
-                {
-                  label: "Debug tracking",
-                  description: "Diagnostics GPS, queue & API",
-                  icon: FiZap,
-                },
               ].map((item) => (
                 <div
                   key={item.label}
@@ -178,7 +181,10 @@ export default function ParametresPage() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft">
+          <Link
+            href="/compte/offline"
+            className="block rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft"
+          >
             <div className="flex items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
                 <FiMap />
@@ -189,9 +195,9 @@ export default function ParametresPage() {
               </div>
             </div>
             <p className="mt-3 text-xs text-neutral-500">
-              Aucune zone téléchargée
+              Tuiles de carte récemment consultées et statut de synchronisation.
             </p>
-          </div>
+          </Link>
         </motion.section>
       </main>
       {bottomNav}

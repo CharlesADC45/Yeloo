@@ -76,7 +76,7 @@ def _get_accessible_conversation(db: Session, conversation_id: uuid.UUID, curren
     )
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation introuvable.")
-    if current_user.role != "admin" and current_user.id not in {conversation.owner_id, conversation.tenant_id}:
+    if current_user.id not in {conversation.owner_id, conversation.tenant_id}:
         raise HTTPException(status_code=403, detail="Acces interdit a cette conversation.")
     return conversation
 
@@ -97,10 +97,9 @@ def list_my_conversations(
         )
         .order_by(Conversation.updated_at.desc())
     )
-    if current_user.role != "admin":
-        query = query.filter(
-            (Conversation.owner_id == current_user.id) | (Conversation.tenant_id == current_user.id)
-        )
+    query = query.filter(
+        (Conversation.owner_id == current_user.id) | (Conversation.tenant_id == current_user.id)
+    )
     conversations = query.limit(100).all()
     return [_serialize_conversation(item, current_user) for item in conversations]
 

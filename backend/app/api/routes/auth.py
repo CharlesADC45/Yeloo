@@ -6,10 +6,10 @@ from jose import jwt
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.security import hash_password, verify_password
+from app.core.security import get_current_user, hash_password, verify_password
 from app.db.deps import get_db
 from app.models.user import User
-from app.schemas.auth import Token
+from app.schemas.auth import ChangePasswordPayload, Token
 from app.schemas.user import UserCreate, UserPublic
 
 
@@ -52,4 +52,21 @@ def login(email: str = Form(...), password: str = Form(...), db: Session = Depen
 
     token = _create_access_token(str(user.id))
     return {"access_token": token, "token_type": "bearer"}
+
+
+@router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
+def change_password(
+    payload: ChangePasswordPayload,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if not verify_password(payload.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Mot de passe actuel incorrect.")
+    if len(payload.new_password.strip()) < 8:
+        raise HTTPException(status_code=400, detail="Le nouveau mot de passe doit contenir au moins 8 caractères.")
+
+    current_user.hashed_password = hash_password(payload.new_password)
+    db.add(current_user)
+    db.commit()
+    return None
 

@@ -70,11 +70,13 @@ export default function ProprietairePage() {
     if (!isAuthenticated || !token) return;
     let isMounted = true;
 
-    const fetchDashboard = async () => {
-      setIsLoading(true);
-      setError(null);
-      setCanViewDashboard(null);
-      setRedirectTarget(null);
+    const fetchDashboard = async (silent = false) => {
+      if (!silent) {
+        setIsLoading(true);
+        setError(null);
+        setCanViewDashboard(null);
+        setRedirectTarget(null);
+      }
       try {
         const meResponse = await fetch(`${getApiBaseUrl()}/api/users/me`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -154,19 +156,23 @@ export default function ProprietairePage() {
         if (!isMounted) return;
         const message =
           err instanceof Error ? err.message : "Impossible de charger le dashboard.";
-        setError(message);
+        if (!silent) setError(message);
         setCanViewDashboard(true);
       } finally {
-        if (isMounted) {
+        if (isMounted && !silent) {
           setIsLoading(false);
         }
       }
     };
 
     void fetchDashboard();
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === "visible") void fetchDashboard(true);
+    }, 20000);
 
     return () => {
       isMounted = false;
+      window.clearInterval(interval);
     };
   }, [isAuthenticated, router, setUser, token]);
 
