@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import { AuthSync } from "@/components/AuthSync";
+import { AppInteractionGuards } from "@/components/AppInteractionGuards";
 import { YelooSplash } from "@/components/YelooSplash";
 
 const poppins = Poppins({
@@ -32,6 +33,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   themeColor: "#ffffff",
 };
 
@@ -44,6 +49,7 @@ export default function RootLayout({
     <html lang="fr" className={poppins.variable}>
       <body className="min-h-screen bg-white text-neutral-900">
         <AuthSync />
+        <AppInteractionGuards />
         <YelooSplash />
         {children}
       </body>

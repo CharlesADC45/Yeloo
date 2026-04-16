@@ -17,7 +17,6 @@ import {
 } from "react-icons/fi";
 import { useParams, useSearchParams } from "next/navigation";
 import { AdminSidebar } from "@/components/AdminSidebar";
-import { BottomNav } from "@/components/BottomNav";
 import { OwnerSidebar } from "@/components/OwnerSidebar";
 import { TopBar } from "@/components/TopBar";
 import {
@@ -140,7 +139,6 @@ function MessageConversationPageContent() {
     .toUpperCase();
   const isAdmin = user?.role === "admin";
   const isOwnerDashboard = user?.role === "proprietaire" && searchParams.get("mode") === "owner";
-  const hasDashboardShell = isAdmin || isOwnerDashboard;
   const messageHrefSuffix = isOwnerDashboard ? "?mode=owner" : "";
 
   return (
@@ -154,7 +152,7 @@ function MessageConversationPageContent() {
             ? "w-full pb-16 lg:ml-72 lg:max-w-[calc(100%-18rem)]"
             : isOwnerDashboard
               ? "w-full pb-16 lg:ml-64 lg:max-w-[calc(100%-16rem)]"
-            : "max-w-7xl pb-28"
+            : "max-w-7xl pb-6"
         }`}
       >
         <motion.section
@@ -389,7 +387,6 @@ function MessageConversationPageContent() {
           )}
         </motion.section>
       </main>
-      {!hasDashboardShell && <BottomNav />}
     </div>
   );
 }
