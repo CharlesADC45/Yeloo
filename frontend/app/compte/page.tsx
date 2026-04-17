@@ -191,7 +191,7 @@ export default function ComptePage() {
 
               <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft">
                 <h3 className="text-sm font-semibold text-neutral-900">
-                  Favoris enregistrés
+                  Favoris enregistrés donc pas de probleme pour les retrouver
                 </h3>
                 <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-5 text-center">
                   <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">
