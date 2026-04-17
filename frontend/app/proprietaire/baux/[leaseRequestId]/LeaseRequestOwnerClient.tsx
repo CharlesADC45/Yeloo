@@ -222,55 +222,43 @@ export function LeaseRequestOwnerClient({ leaseRequestId }: Props) {
                 </section>
 
                 <section className="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-soft print:shadow-none">
-                  <h2 className="text-lg font-semibold text-neutral-950">Signatures</h2>
-                  <div className="mt-5 grid gap-4 lg:grid-cols-2">
-                    <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Signature locataire</p>
-                      {leaseRequest.tenant_signature_data ? (
-                        <img src={leaseRequest.tenant_signature_data} alt={`Signature ${leaseRequest.tenant_full_name}`} className="mt-4 w-full rounded-xl bg-white object-contain" />
-                      ) : (
-                        <p className="mt-4 text-sm text-neutral-500">Aucune signature reçue.</p>
-                      )}
-                    </div>
-                    <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Suivi propriétaire</p>
-                      <div className="mt-4 space-y-4 print:hidden">
-                        <p className="text-sm text-neutral-600">
-                          La signature en ligne est retirée pour le moment. Vous pouvez toutefois
-                          classer cette demande pendant que nous redéfinissons le process de bail.
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            disabled={isActing || leaseRequest.status === "approved"}
-                            onClick={async () => {
-                              if (!token || !leaseRequest) return;
-                              setIsActing(true);
-                              setError(null);
-                              try {
-                                const updated = await updateLeaseRequestStatus(leaseRequest.id, "approved", token);
-                                setLeaseRequest(updated);
-                              } catch (err) {
-                                setError(err instanceof Error ? err.message : "Impossible de valider cette demande.");
-                              } finally {
-                                setIsActing(false);
-                              }
-                            }}
-                            className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            <FiCheckCircle />
-                            Marquer comme validée
-                          </button>
-                          <button
-                            type="button"
-                            disabled={isActing || leaseRequest.status === "rejected"}
-                            onClick={handleReject}
-                            className="inline-flex items-center gap-2 rounded-full border border-red-200 px-5 py-3 text-sm font-semibold text-red-700 transition disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            Refuser
-                          </button>
-                        </div>
-                      </div>
+                  <h2 className="text-lg font-semibold text-neutral-950">Validation physique</h2>
+                  <div className="mt-5 rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-4">
+                    <p className="text-sm leading-7 text-neutral-600">
+                      La signature du bail se fait physiquement entre le propriétaire et le
+                      locataire. Cette interface sert uniquement à classer le dossier après
+                      vérification hors ligne.
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2 print:hidden">
+                      <button
+                        type="button"
+                        disabled={isActing || leaseRequest.status === "approved"}
+                        onClick={async () => {
+                          if (!token || !leaseRequest) return;
+                          setIsActing(true);
+                          setError(null);
+                          try {
+                            const updated = await updateLeaseRequestStatus(leaseRequest.id, "approved", token);
+                            setLeaseRequest(updated);
+                          } catch (err) {
+                            setError(err instanceof Error ? err.message : "Impossible de valider cette demande.");
+                          } finally {
+                            setIsActing(false);
+                          }
+                        }}
+                        className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <FiCheckCircle />
+                        Marquer comme validée
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isActing || leaseRequest.status === "rejected"}
+                        onClick={handleReject}
+                        className="inline-flex items-center gap-2 rounded-full border border-red-200 px-5 py-3 text-sm font-semibold text-red-700 transition disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Refuser
+                      </button>
                     </div>
                   </div>
                 </section>

@@ -9,12 +9,7 @@ from app.db.deps import get_db
 from app.models.lease_request import LeaseRequest
 from app.models.property import Property
 from app.models.user import User
-from app.schemas.lease_request import (
-    LeaseRequestOwnerSign,
-    LeaseRequestPublic,
-    LeaseRequestStatusUpdate,
-    LeaseRequestSubmit,
-)
+from app.schemas.lease_request import LeaseRequestPublic, LeaseRequestStatusUpdate
 
 router = APIRouter()
 
@@ -49,7 +44,7 @@ def _build_contract_text(property_obj: Property, tenant: User, owner: User) -> s
             "2. Le montant affiche sert de base de discussion pour la conclusion du bail.",
             "3. Le proprietaire reste libre de valider ou refuser la demande apres verification.",
             "4. Toute occupation du logement reste soumise a la validation finale du proprietaire.",
-            "5. Cette version numerique sert de demande signee et de trace des engagements initiaux.",
+            "5. La signature finale se fait physiquement sur document papier.",
         ]
     )
 
@@ -174,29 +169,6 @@ def get_lease_request(
     return _serialize_lease_request(lease_request)
 
 
-@router.post("/{lease_request_id}/submit", response_model=LeaseRequestPublic)
-def submit_lease_request(
-    lease_request_id: uuid.UUID,
-    payload: LeaseRequestSubmit,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    lease_request = db.query(LeaseRequest).filter(LeaseRequest.id == lease_request_id).first()
-    if not lease_request:
-        raise HTTPException(status_code=404, detail="Demande de bail introuvable.")
-    if current_user.role != "admin" and lease_request.tenant_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Action interdite.")
-    if lease_request.status in ("approved", "rejected"):
-        raise HTTPException(status_code=400, detail="Cette demande est deja finalisee.")
-
-    lease_request.tenant_signature_data = payload.tenant_signature_data
-    lease_request.status = "submitted"
-    lease_request.submitted_at = datetime.utcnow()
-    db.commit()
-    db.refresh(lease_request)
-    return _serialize_lease_request(lease_request)
-
-
 @router.patch("/{lease_request_id}/status", response_model=LeaseRequestPublic)
 def update_lease_request_status(
     lease_request_id: uuid.UUID,
@@ -210,12 +182,6 @@ def update_lease_request_status(
     if current_user.role != "admin" and lease_request.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Action interdite.")
 
-    if payload.status == "approved" and not lease_request.owner_signature_data:
-        raise HTTPException(
-            status_code=400,
-            detail="La contre-signature propriétaire est requise pour valider ce bail.",
-        )
-
     lease_request.status = payload.status
     lease_request.reviewed_at = datetime.utcnow()
     db.commit()
@@ -226,10 +192,13 @@ def update_lease_request_status(
 @router.post("/{lease_request_id}/owner-sign", response_model=LeaseRequestPublic)
 def owner_sign_lease_request(
     lease_request_id: uuid.UUID,
-    payload: LeaseRequestOwnerSign,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    raise HTTPException(
+        status_code=410,
+        detail="La signature numerique est retiree. Le bail doit etre signe physiquement.",
+    )
     lease_request = db.query(LeaseRequest).filter(LeaseRequest.id == lease_request_id).first()
     if not lease_request:
         raise HTTPException(status_code=404, detail="Demande de bail introuvable.")

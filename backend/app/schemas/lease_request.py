@@ -20,25 +20,14 @@ class LeaseRequestPublic(BaseModel):
     tenant_email: str
     tenant_phone: str | None = None
     contract_text: str
-    tenant_signature_data: str | None = None
-    owner_signature_data: str | None = None
     status: str
     created_at: datetime
     updated_at: datetime
     submitted_at: datetime | None = None
-    owner_signed_at: datetime | None = None
     reviewed_at: datetime | None = None
 
     class Config:
         from_attributes = True
-
-
-class LeaseRequestSubmit(BaseModel):
-    tenant_signature_data: str = Field(min_length=50)
-
-
-class LeaseRequestOwnerSign(BaseModel):
-    owner_signature_data: str = Field(min_length=50)
 
 
 class LeaseRequestStatusUpdate(BaseModel):

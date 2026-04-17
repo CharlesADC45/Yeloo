@@ -68,8 +68,8 @@ export function ContractClient({ id }: Props) {
               Contrat de bail en pause pour {property.title}
             </h1>
             <p className="mt-3 text-sm text-neutral-600">
-              Nous avons retiré le contrat de bail et la signature en ligne du parcours locataire
-              pour reprendre le process sur de meilleures bases.
+              Le bail numérique est en pause. La signature se fera physiquement entre les deux
+              parties pendant que nous gardons cette page comme repère d'information.
             </p>
           </div>
 
@@ -94,8 +94,8 @@ export function ContractClient({ id }: Props) {
                 Prochaine étape
               </p>
               <p className="mt-2 text-sm leading-7 text-neutral-600">
-                Le module de contrat reste visible côté propriétaire uniquement pour le moment.
-                Nous reviendrons ensuite avec un flow plus propre pour le locataire.
+                Le module reste visible côté propriétaire pour le suivi, mais la signature finale
+                se fait désormais hors ligne, sur document physique.
               </p>
             </div>
           </div>
@@ -107,8 +107,8 @@ export function ContractClient({ id }: Props) {
             </div>
             <div className="mt-4 space-y-3 text-sm leading-7 text-neutral-700">
               <p>
-                Nous avons volontairement retiré le bail numérique, les signatures en ligne et la
-                soumission locataire pour éviter un flow incomplet.
+                Nous gardons une decision claire: tout bail sera signe physiquement, sur
+                document papier.
               </p>
               <p>
                 Le propriétaire garde un emplacement dédié dans son espace pendant que nous

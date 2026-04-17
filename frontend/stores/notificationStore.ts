@@ -107,9 +107,7 @@ export const useNotificationStore = create<NotificationState>()(
         if (!userId) return;
         set((state) => {
           const current = state.readByUser[userId] ?? [];
-          if (current.includes(notificationId)) {
-            return state;
-          }
+          if (current.includes(notificationId)) return state;
           return {
             readByUser: {
               ...state.readByUser,

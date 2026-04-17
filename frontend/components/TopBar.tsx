@@ -520,7 +520,9 @@ function TopBarContent({
                           </div>
                         ) : visibleNotifications.length === 0 ? (
                           <div className="rounded-2xl bg-neutral-50 px-4 py-5 text-sm text-neutral-600">
-                            Aucune nouvelle annonce pour le moment.
+                            {isOwnerRole
+                              ? "Aucune notification propriétaire pour le moment."
+                              : "Aucune nouvelle annonce pour le moment."}
                           </div>
                         ) : (
                           <div className="space-y-2">

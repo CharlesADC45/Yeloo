@@ -10,6 +10,7 @@ import { OwnerSidebar } from "@/components/OwnerSidebar";
 import { OwnerDashboardSkeleton } from "@/components/Skeleton";
 import { TopBar } from "@/components/TopBar";
 import { getApiBaseUrl } from "@/lib/api";
+import { showDeviceNotification } from "@/lib/deviceNotifications";
 import { fetchConversations, type ConversationSummary } from "@/lib/messages";
 import { useAuthStore } from "@/stores/authStore";
 import { useNotificationStore } from "@/stores/notificationStore";
@@ -70,6 +71,7 @@ export default function ProprietairePage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [redirectTarget, setRedirectTarget] = useState<string | null>(null);
   const dashboardRootRef = useRef<HTMLDivElement | null>(null);
+  const rejectedNotificationTagRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated || !token) return;
@@ -156,14 +158,6 @@ export default function ProprietairePage() {
           setConversations(Array.isArray(conversationData) ? conversationData : []);
           setProfile(profileData);
           setCanViewDashboard(true);
-          if (profileData?.verification_status === "rejected") {
-            pushOwnerVerificationRejection({
-              profileId: profileData.id,
-              userId: String(profileData.user_id || nextUser.id),
-              notes: profileData.verification_notes,
-              reviewedAt: profileData.reviewed_at,
-            });
-          }
         }
       } catch (err) {
         if (!isMounted) return;
@@ -187,7 +181,7 @@ export default function ProprietairePage() {
       isMounted = false;
       window.clearInterval(interval);
     };
-  }, [isAuthenticated, pushOwnerVerificationRejection, router, setUser, token]);
+  }, [isAuthenticated, router, setUser, token]);
 
   useEffect(() => {
     if (!redirectTarget) return;
@@ -252,6 +246,29 @@ export default function ProprietairePage() {
       context.revert();
     };
   }, [canViewDashboard, isLoading]);
+
+  useEffect(() => {
+    if (!profile || !user?.id || profile.verification_status !== "rejected") return;
+
+    const tag = `owner-verification-rejected:${profile.id}:${profile.reviewed_at || "latest"}`;
+    pushOwnerVerificationRejection({
+      profileId: profile.id,
+      userId: user.id,
+      notes: profile.verification_notes,
+      reviewedAt: profile.reviewed_at,
+    });
+    if (rejectedNotificationTagRef.current !== tag) {
+      rejectedNotificationTagRef.current = tag;
+      void showDeviceNotification({
+        title: "Vérification refusée",
+        body:
+          profile.verification_notes ||
+          "Votre dossier propriétaire a été refusé. Ouvrez votre espace pour le corriger.",
+        tag,
+        url: "/proprietaire",
+      });
+    }
+  }, [profile, pushOwnerVerificationRejection, user?.id]);
 
   if (!isAuthenticated) {
     return (
@@ -662,9 +679,8 @@ export default function ProprietairePage() {
                   </span>
                 </div>
                 <div className="mt-4 rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-5 text-sm text-neutral-600">
-                  Le contrat de bail et la signature en ligne sont retirés du parcours public
-                  pour le moment. Cette zone reste dans l’espace propriétaire pour préparer la
-                  prochaine version du process.
+                  Le contrat de bail reste visible pour le suivi propriétaire, mais la signature
+                  se fera physiquement. Cette zone prépare la prochaine version du process.
                 </div>
               </div>
             </>

@@ -18,13 +18,10 @@ export type LeaseRequest = {
   tenant_email: string;
   tenant_phone?: string | null;
   contract_text: string;
-  tenant_signature_data?: string | null;
-  owner_signature_data?: string | null;
   status: "draft" | "submitted" | "approved" | "rejected";
   created_at: string;
   updated_at: string;
   submitted_at?: string | null;
-  owner_signed_at?: string | null;
   reviewed_at?: string | null;
 };
 
@@ -61,22 +58,6 @@ export async function createLeaseRequestForProperty(propertyId: string, token: s
   return (await parseResponse(response)) as LeaseRequest;
 }
 
-export async function submitLeaseRequest(
-  leaseRequestId: string,
-  tenantSignatureData: string,
-  token: string
-) {
-  const response = await fetch(
-    `${getApiBaseUrl()}/api/lease-requests/${leaseRequestId}/submit`,
-    {
-      method: "POST",
-      headers: authHeaders(token),
-      body: JSON.stringify({ tenant_signature_data: tenantSignatureData }),
-    }
-  );
-  return (await parseResponse(response)) as LeaseRequest;
-}
-
 export async function getLeaseRequestById(leaseRequestId: string, token: string) {
   const response = await fetch(`${getApiBaseUrl()}/api/lease-requests/${leaseRequestId}`, {
     headers: authHeaders(token),
@@ -102,22 +83,6 @@ export async function updateLeaseRequestStatus(
       method: "PATCH",
       headers: authHeaders(token),
       body: JSON.stringify({ status }),
-    }
-  );
-  return (await parseResponse(response)) as LeaseRequest;
-}
-
-export async function ownerSignLeaseRequest(
-  leaseRequestId: string,
-  ownerSignatureData: string,
-  token: string
-) {
-  const response = await fetch(
-    `${getApiBaseUrl()}/api/lease-requests/${leaseRequestId}/owner-sign`,
-    {
-      method: "POST",
-      headers: authHeaders(token),
-      body: JSON.stringify({ owner_signature_data: ownerSignatureData }),
     }
   );
   return (await parseResponse(response)) as LeaseRequest;
