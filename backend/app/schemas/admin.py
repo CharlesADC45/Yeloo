@@ -138,5 +138,13 @@ class AdminUserSuspensionUpdate(BaseModel):
     is_suspended: bool
 
 
+class AdminUserUpdate(BaseModel):
+    full_name: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    role: str | None = None
+    is_verified: bool | None = None
+
+
 class AdminPropertyStatusUpdate(BaseModel):
     status: str

@@ -42,6 +42,14 @@ export type AdminUserSummary = {
   owner_verification_status?: string | null;
 };
 
+export type AdminUserUpdatePayload = {
+  full_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  role?: string | null;
+  is_verified?: boolean | null;
+};
+
 export type AdminPropertySummary = {
   id: string;
   title: string;
@@ -199,6 +207,10 @@ export function updateAdminUserSuspension(token: string, userId: string, isSuspe
   return apiPatch<AdminUserSummary>(`/api/admin/users/${userId}/suspension`, token, {
     is_suspended: isSuspended,
   });
+}
+
+export function updateAdminUser(token: string, userId: string, payload: AdminUserUpdatePayload) {
+  return apiPatch<AdminUserSummary>(`/api/admin/users/${userId}`, token, payload);
 }
 
 export function deleteAdminUser(token: string, userId: string) {

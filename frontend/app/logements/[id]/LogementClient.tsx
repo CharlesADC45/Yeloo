@@ -9,17 +9,20 @@ import { motion } from "framer-motion";
 import {
   FiCheckCircle,
   FiChevronLeft,
+  FiChevronRight,
+  FiClock,
   FiExternalLink,
   FiFileText,
   FiHeart,
   FiHome,
+  FiLayers,
   FiMapPin,
   FiMessageCircle,
   FiPhone,
   FiPlay,
   FiShare2,
   FiShield,
-  FiStar,
+  FiTool,
 } from "react-icons/fi";
 import { BottomNav } from "@/components/BottomNav";
 import { PannellumViewer } from "@/components/PannellumViewer";
@@ -61,6 +64,9 @@ function PropertyMap({ latitude, longitude, title, isApproximate = false }: MapP
   const mapRef = useRef<import("leaflet").Map | null>(null);
   const markerRef = useRef<import("leaflet").Marker | null>(null);
   const leafletRef = useRef<typeof import("leaflet") | null>(null);
+  const streetLayerRef = useRef<import("leaflet").TileLayer | null>(null);
+  const satelliteLayerRef = useRef<import("leaflet").TileLayer | null>(null);
+  const [isSatellite, setIsSatellite] = useState(false);
 
   useEffect(() => {
     if (typeof latitude !== "number" || typeof longitude !== "number") return;
@@ -77,11 +83,18 @@ function PropertyMap({ latitude, longitude, title, isApproximate = false }: MapP
           .map(containerRef.current, { zoomControl: true, attributionControl: false })
           .setView([latitude, longitude], 13);
 
-        leaflet
+        streetLayerRef.current = leaflet
           .tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
             maxZoom: 19,
           })
           .addTo(mapRef.current);
+
+        satelliteLayerRef.current = leaflet.tileLayer(
+          "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+          {
+            maxZoom: 19,
+          }
+        );
       } else {
         mapRef.current.setView([latitude, longitude], 13);
       }
@@ -149,12 +162,39 @@ function PropertyMap({ latitude, longitude, title, isApproximate = false }: MapP
     };
   }, [latitude, longitude, title, isApproximate]);
 
-    return (
+  useEffect(() => {
+    const map = mapRef.current;
+    const streetLayer = streetLayerRef.current;
+    const satelliteLayer = satelliteLayerRef.current;
+    if (!map || !streetLayer || !satelliteLayer) return;
+
+    if (isSatellite) {
+      if (map.hasLayer(streetLayer)) map.removeLayer(streetLayer);
+      if (!map.hasLayer(satelliteLayer)) satelliteLayer.addTo(map);
+      return;
+    }
+
+    if (map.hasLayer(satelliteLayer)) map.removeLayer(satelliteLayer);
+    if (!map.hasLayer(streetLayer)) streetLayer.addTo(map);
+  }, [isSatellite]);
+
+  return (
+    <div className="relative overflow-hidden rounded-[1.6rem] border border-neutral-200 bg-neutral-100">
       <div
         ref={containerRef}
-        className="yeloo-detail-map relative block h-64 min-h-64 w-full overflow-hidden rounded-[1.6rem] border border-neutral-200 bg-neutral-100 sm:h-72 sm:min-h-72"
+        className="yeloo-detail-map relative block h-64 min-h-64 w-full overflow-hidden sm:h-72 sm:min-h-72"
       />
-    );
+      <button
+        type="button"
+        onClick={() => setIsSatellite((value) => !value)}
+        className="absolute right-4 top-4 z-[500] inline-flex h-12 w-12 items-center justify-center rounded-full bg-white text-neutral-800 shadow-[0_14px_34px_rgba(15,23,42,0.18)]"
+        aria-label={isSatellite ? "Afficher le plan" : "Afficher en mode satellite"}
+        title={isSatellite ? "Plan" : "Satellite"}
+      >
+        <FiLayers className="text-lg" />
+      </button>
+    </div>
+  );
   }
 
 function PropertyStreetView({ latitude, longitude, title, isApproximate = false }: MapProps) {
@@ -225,6 +265,8 @@ export function LogementClient({ id }: Props) {
   const [chatError, setChatError] = useState<string | null>(null);
   const [isOpeningChat, setIsOpeningChat] = useState(false);
   const [isChatEnabled, setIsChatEnabled] = useState(true);
+  const [commentDraft, setCommentDraft] = useState("");
+  const [commentSaved, setCommentSaved] = useState(false);
 
   const gallery = useMemo(() => {
     if (!property) return [];
@@ -260,6 +302,75 @@ export function LogementClient({ id }: Props) {
   const isOwnerViewer = user?.role === "proprietaire" || user?.role === "admin";
   const ownerLabel = property?.ownerIsVerified ? "Propriétaire vérifié" : "Propriétaire Yeloo";
   const ownerInitial = ownerLabel.charAt(0).toUpperCase();
+  const pricePeriodLabel = property?.pricePeriod || "mois";
+  const detailStats = property
+    ? [
+        { label: "Pièces", value: property.rooms ? `${property.rooms}` : "Non renseigné" },
+        { label: "Bains", value: property.bathrooms ? `${property.bathrooms}` : "Non renseigné" },
+        {
+          label: "Surface",
+          value: property.surfaceM2 ? `${property.surfaceM2} m²` : "Non renseignée",
+        },
+        {
+          label: "Caution",
+          value: property.depositMonths ? `${property.depositMonths} mois` : "Non renseignée",
+        },
+      ]
+    : [];
+  const featureItems = property
+    ? [
+        {
+          icon: FiHome,
+          label: "Type de logement",
+          value: property.propertyType || "Logement",
+        },
+        {
+          icon: FiCheckCircle,
+          label: "Meublé",
+          value: property.isFurnished ? "Oui" : "Non",
+        },
+        {
+          icon: FiMapPin,
+          label: "Quartier",
+          value: property.neighborhood || "Non renseigné",
+        },
+        {
+          icon: FiShield,
+          label: "Statut",
+          value: property.isVerified ? "Annonce vérifiée" : "Annonce en cours",
+        },
+      ]
+    : [];
+  const knowItems = [
+    {
+      icon: FiClock,
+      title: "Conditions d'annulation",
+      lines: [
+        "Confirmez les modalités avec le propriétaire avant toute avance.",
+        "Gardez vos échanges dans Yeloo pour conserver une trace claire.",
+      ],
+    },
+    {
+      icon: FiTool,
+      title: "Règlement intérieur",
+      lines: [
+        "Heure d'arrivée, départ et nombre d'occupants à confirmer.",
+        "Les règles précises sont validées avant la décision finale.",
+      ],
+    },
+    {
+      icon: FiShield,
+      title: "Sécurité et logement",
+      lines: [
+        property?.isVerified
+          ? "Annonce vérifiée par la plateforme."
+          : "Annonce en cours de vérification.",
+        property?.ownerIsVerified
+          ? "Profil propriétaire vérifié."
+          : "Profil propriétaire à vérifier avant engagement.",
+      ],
+    },
+  ];
 
   const handleOpenChat = async () => {
     if (!resolvedId) return;
@@ -276,6 +387,19 @@ export function LogementClient({ id }: Props) {
       setChatError(err instanceof Error ? err.message : "Impossible d'ouvrir la conversation.");
     } finally {
       setIsOpeningChat(false);
+    }
+  };
+
+  const handleSaveComment = () => {
+    if (!resolvedId) return;
+    try {
+      window.localStorage.setItem(
+        `yeloo:listing-comment:${resolvedId}`,
+        commentDraft.trim()
+      );
+      setCommentSaved(true);
+    } catch {
+      setCommentSaved(false);
     }
   };
 
@@ -299,6 +423,16 @@ export function LogementClient({ id }: Props) {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!resolvedId || typeof window === "undefined") return;
+    try {
+      setCommentDraft(window.localStorage.getItem(`yeloo:listing-comment:${resolvedId}`) || "");
+      setCommentSaved(false);
+    } catch {
+      setCommentDraft("");
+    }
+  }, [resolvedId]);
 
   useEffect(() => {
     setActiveSlide(0);
@@ -474,65 +608,39 @@ export function LogementClient({ id }: Props) {
 
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_380px]">
             <div className="space-y-6">
-              <section
-                data-detail-reveal="true"
-                className="bg-white py-6"
-              >
-                <div className="grid gap-4 sm:grid-cols-4">
-                  <div className="bg-neutral-50 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                      Prix
-                    </p>
-                    <p className="mt-2 text-2xl font-semibold text-neutral-900">
+              <section data-detail-reveal="true" className="bg-white py-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-500">
+                  Prix et aperçu
+                </p>
+                <div className="mt-3 flex flex-col gap-5 border-b border-neutral-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-3xl font-semibold tracking-[-0.04em] text-neutral-950">
                       {property.price.toLocaleString("fr-FR")} FCFA
                     </p>
-                    <p className="text-sm text-neutral-500">/ {property.pricePeriod}</p>
+                    <p className="mt-1 text-sm text-neutral-500">par {pricePeriodLabel}</p>
                   </div>
-                  <div className="bg-neutral-50 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                      Pièces
-                    </p>
-                    <p className="mt-2 text-2xl font-semibold text-neutral-900">
-                      {property.rooms ?? "N/A"}
-                    </p>
-                  </div>
-                  <div className="bg-neutral-50 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                      Bains
-                    </p>
-                    <p className="mt-2 text-2xl font-semibold text-neutral-900">
-                      {property.bathrooms ?? "N/A"}
-                    </p>
-                  </div>
-                  <div className="bg-neutral-50 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                      Surface
-                    </p>
-                    <p className="mt-2 text-2xl font-semibold text-neutral-900">
-                      {property.surfaceM2 ?? "N/A"}
-                    </p>
-                    <p className="text-sm text-neutral-500">m²</p>
-                  </div>
-                  <div className="bg-neutral-50 p-4 sm:col-span-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                      Caution
-                    </p>
-                    <p className="mt-2 text-xl font-semibold text-neutral-900">
-                      {property.depositMonths ? `${property.depositMonths} mois` : "Caution non renseignée"}
-                    </p>
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-4">
+                    {detailStats.map((item) => (
+                      <div key={item.label}>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+                          {item.label}
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-neutral-900">{item.value}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </section>
 
                <section
                  data-detail-reveal="true"
-                 className="border-t border-neutral-200 bg-white py-6"
+                 className="border-b border-neutral-200 bg-white py-6"
                >
                 <div className="flex items-center gap-2">
                   <FiFileText className="text-blue-600" />
                   <h2 className="text-xl font-semibold text-neutral-900">Description</h2>
                 </div>
-                <p className="mt-4 text-sm leading-7 text-neutral-700">
+                <p className="mt-4 max-w-3xl text-[15px] leading-8 text-neutral-700">
                   {property.description ||
                     "Cette annonce n'a pas encore de description détaillée. Utilisez le flow de demande pour échanger avec le propriétaire et confirmer les derniers détails."}
                 </p>
@@ -540,25 +648,24 @@ export function LogementClient({ id }: Props) {
 
                <section
                  data-detail-reveal="true"
-                 className="border-t border-neutral-200 bg-white py-6"
+                 className="border-b border-neutral-200 bg-white py-6"
                >
-                <h2 className="text-xl font-semibold text-neutral-900">Caractéristiques</h2>
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  {[
-                    ["Type", property.propertyType],
-                    ["Meublé", property.isFurnished ? "Oui" : "Non"],
-                    ["Ville", property.city],
-                    ["Quartier", property.neighborhood || "Non renseigné"],
-                    ["Adresse", property.address || "Communiquée après demande"],
-                    ["Statut", property.isVerified ? "Annonce vérifiée" : "Annonce en cours"],
-                  ].map(([label, value]) => (
-                    <div key={label} className="border border-neutral-200 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                        {label}
-                      </p>
-                      <p className="mt-2 text-sm font-medium text-neutral-800">{value}</p>
-                    </div>
-                  ))}
+                <h2 className="text-xl font-semibold text-neutral-900">
+                  Ce que propose ce logement
+                </h2>
+                <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                  {featureItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <div key={item.label} className="flex items-center gap-4">
+                        <Icon className="text-xl text-neutral-700" />
+                        <div>
+                          <p className="text-sm font-semibold text-neutral-900">{item.label}</p>
+                          <p className="mt-0.5 text-sm text-neutral-500">{item.value}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
 
@@ -661,7 +768,12 @@ export function LogementClient({ id }: Props) {
                  data-detail-reveal="true"
                  className="border-t border-neutral-200 bg-white py-6"
                >
-                <h2 className="text-xl font-semibold text-neutral-900">Localisation</h2>
+                <h2 className="text-xl font-semibold text-neutral-900">
+                  Voici où se trouve le logement
+                </h2>
+                <p className="mt-2 text-sm text-neutral-600">
+                  Adresse: {property.address || "Adresse communiquée après contact"}
+                </p>
                 <div className="mt-4 space-y-4">
                   <PropertyMap
                     latitude={mapLatitude}
@@ -669,14 +781,11 @@ export function LogementClient({ id }: Props) {
                     title={property.title}
                     isApproximate={!hasExactLocation}
                   />
-                  <div className="border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-600">
-                    <p>Adresse: {property.address || "Adresse communiquée après contact"}</p>
-                    {!hasExactLocation && (
-                      <p className="mt-2 text-xs text-neutral-500">
-                        Position approximative: les coordonnées exactes n'ont pas encore été ajoutées par le propriétaire.
-                      </p>
-                    )}
-                  </div>
+                  {!hasExactLocation && (
+                    <p className="border-b border-neutral-200 pb-4 text-xs leading-6 text-neutral-500">
+                      Position approximative: les coordonnées exactes n'ont pas encore été ajoutées par le propriétaire.
+                    </p>
+                  )}
                   <PropertyStreetView
                     latitude={mapLatitude}
                     longitude={mapLongitude}
@@ -757,8 +866,7 @@ export function LogementClient({ id }: Props) {
             <aside className="space-y-5 xl:sticky xl:top-28 xl:self-start">
                 <div
                   data-detail-reveal="true"
-                  className="rounded-[2rem] bg-white p-6 shadow-soft"
-                  style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+                  className="rounded-[1.8rem] border border-neutral-200 bg-white p-6"
                >
                 <p className="text-xs font-semibold uppercase tracking-[0.25em] text-neutral-500">
                   Contact & décision
@@ -828,27 +936,73 @@ export function LogementClient({ id }: Props) {
 
                 <div
                   data-detail-reveal="true"
-                  className="rounded-[2rem] bg-white p-6 shadow-soft"
-                  style={{ boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)" }}
+                  className="rounded-[1.8rem] border border-neutral-200 bg-white p-6"
                >
-                <div className="flex items-center gap-2 text-blue-700">
-                  <FiShield />
-                  <p className="text-sm font-semibold">Pourquoi ce flow rassure</p>
+                <h2 className="text-xl font-semibold tracking-[-0.02em] text-neutral-950">
+                  À savoir
+                </h2>
+                <div className="mt-5 divide-y divide-neutral-200">
+                  {knowItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.title}
+                        type="button"
+                        className="flex w-full items-start gap-4 py-4 text-left first:pt-0 last:pb-0"
+                      >
+                        <Icon className="mt-1 shrink-0 text-xl text-neutral-800" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-semibold text-neutral-950">
+                            {item.title}
+                          </span>
+                          <span className="mt-1 block space-y-0.5 text-sm leading-5 text-neutral-500">
+                            {item.lines.map((line) => (
+                              <span key={line} className="block">
+                                {line}
+                              </span>
+                            ))}
+                          </span>
+                        </span>
+                        <FiChevronRight className="mt-1 shrink-0 text-neutral-400" />
+                      </button>
+                    );
+                  })}
                 </div>
-                <div className="mt-4 space-y-4 text-sm text-neutral-600">
-                  <div className="flex gap-3">
-                    <FiCheckCircle className="mt-0.5 text-blue-600" />
-                    <p>Annonce et propriétaire peuvent être vérifiés avant engagement.</p>
-                  </div>
-                  <div className="flex gap-3">
-                    <FiHome className="mt-0.5 text-blue-600" />
-                    <p>Les détails du bien restent accessibles avant toute prise de décision.</p>
-                  </div>
-                  <div className="flex gap-3">
-                    <FiStar className="mt-0.5 text-blue-600" />
-                    <p>Une conversation par annonce vous aide à garder un échange simple et clair.</p>
-                  </div>
-                </div>
+              </div>
+
+                <div
+                  data-detail-reveal="true"
+                  className="rounded-[1.8rem] border border-neutral-200 bg-white p-6"
+               >
+                <h2 className="text-xl font-semibold tracking-[-0.02em] text-neutral-950">
+                  Laisser un commentaire
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-neutral-500">
+                  Notez vos questions ou remarques avant de contacter le propriétaire.
+                </p>
+                <textarea
+                  rows={4}
+                  value={commentDraft}
+                  onChange={(event) => {
+                    setCommentDraft(event.target.value);
+                    setCommentSaved(false);
+                  }}
+                  placeholder="Votre commentaire..."
+                  className="mt-4 w-full resize-none rounded-2xl border border-neutral-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveComment}
+                  disabled={!commentDraft.trim()}
+                  className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-neutral-950 px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Enregistrer le commentaire
+                </button>
+                {commentSaved && (
+                  <p className="mt-2 text-center text-xs font-medium text-emerald-600">
+                    Commentaire enregistré sur cet appareil.
+                  </p>
+                )}
               </div>
             </aside>
           </div>

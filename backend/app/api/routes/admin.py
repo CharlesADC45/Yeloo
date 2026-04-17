@@ -27,6 +27,7 @@ from app.schemas.admin import (
     AdminPropertySummary,
     AdminUserSummary,
     AdminUserSuspensionUpdate,
+    AdminUserUpdate,
     FeatureModulePublic,
     FeatureModuleUpdate,
 )
@@ -385,6 +386,57 @@ def update_user_suspension(
     if user.id == current_admin.id and payload.is_suspended:
         raise HTTPException(status_code=400, detail="Le super admin connecte ne peut pas se suspendre lui-meme.")
     user.is_suspended = payload.is_suspended
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return _serialize_user(user)
+
+
+@router.patch("/users/{user_id}", response_model=AdminUserSummary)
+def update_admin_user(
+    user_id: str,
+    payload: AdminUserUpdate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    user = db.query(User).options(joinedload(User.owner_profile)).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable.")
+
+    data = payload.model_dump(exclude_unset=True)
+    next_email = data.get("email")
+    if next_email:
+        next_email = next_email.strip().lower()
+        existing = db.query(User).filter(User.email == next_email, User.id != user.id).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Cet email est deja utilise.")
+        user.email = next_email
+
+    if "phone" in data:
+        next_phone = (data.get("phone") or "").strip() or None
+        if next_phone:
+            existing = db.query(User).filter(User.phone == next_phone, User.id != user.id).first()
+            if existing:
+                raise HTTPException(status_code=400, detail="Ce telephone est deja utilise.")
+        user.phone = next_phone
+
+    if "full_name" in data:
+        user.full_name = (data.get("full_name") or "").strip() or None
+
+    if "role" in data and data.get("role"):
+        next_role = data["role"]
+        if next_role not in {"locataire", "proprietaire", "admin"}:
+            raise HTTPException(status_code=400, detail="Role invalide.")
+        if user.id == current_admin.id and next_role != "admin":
+            raise HTTPException(
+                status_code=400,
+                detail="Le super admin connecte ne peut pas retirer son propre role admin.",
+            )
+        user.role = next_role
+
+    if "is_verified" in data and data.get("is_verified") is not None:
+        user.is_verified = bool(data["is_verified"])
+
     db.add(user)
     db.commit()
     db.refresh(user)

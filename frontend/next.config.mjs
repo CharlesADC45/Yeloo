@@ -12,7 +12,7 @@ const csp = [
   "object-src 'none'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://images.pexels.com https://a0.muscache.com https://*.tile.openstreetmap.org https://*.r2.dev https://*.cloudflarestorage.com",
+  "img-src 'self' data: blob: https://images.pexels.com https://a0.muscache.com https://*.tile.openstreetmap.org https://server.arcgisonline.com https://*.r2.dev https://*.cloudflarestorage.com",
   "font-src 'self' data:",
   "connect-src 'self' https://yeloo-api.onrender.com https://*.onrender.com",
   "media-src 'self' blob: https://*.r2.dev https://*.cloudflarestorage.com",

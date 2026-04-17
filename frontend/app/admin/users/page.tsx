@@ -5,12 +5,15 @@ import { motion } from "framer-motion";
 import {
   FiArrowLeft,
   FiCalendar,
+  FiEdit3,
   FiFileText,
   FiMail,
   FiMapPin,
   FiPhone,
+  FiSave,
   FiShield,
   FiTrash2,
+  FiX,
   FiUserCheck,
   FiUserX,
   FiUsers,
@@ -23,9 +26,18 @@ import {
   deleteAdminUser,
   fetchAdminOwnerKyc,
   fetchAdminUsers,
+  updateAdminUser,
   updateAdminUserSuspension,
 } from "@/lib/admin";
 import { useAuthStore } from "@/stores/authStore";
+
+type UserEditForm = {
+  full_name: string;
+  email: string;
+  phone: string;
+  role: string;
+  is_verified: boolean;
+};
 
 const roleFilters = [
   { key: "all", label: "Tous" },
@@ -66,6 +78,15 @@ export default function AdminUsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [isEditingUser, setIsEditingUser] = useState(false);
+  const [isSavingUser, setIsSavingUser] = useState(false);
+  const [editForm, setEditForm] = useState<UserEditForm>({
+    full_name: "",
+    email: "",
+    phone: "",
+    role: "locataire",
+    is_verified: false,
+  });
 
   useEffect(() => {
     if (!token) return;
@@ -129,6 +150,21 @@ export default function AdminUsersPage() {
     }
   }, [selectedUser, selectedUserId]);
 
+  useEffect(() => {
+    if (!selectedUser) {
+      setIsEditingUser(false);
+      return;
+    }
+    setEditForm({
+      full_name: selectedUser.full_name || "",
+      email: selectedUser.email,
+      phone: selectedUser.phone || "",
+      role: selectedUser.role,
+      is_verified: selectedUser.is_verified,
+    });
+    setIsEditingUser(false);
+  }, [selectedUser?.id]);
+
   const toggleSuspension = async (user: AdminUserSummary) => {
     if (!token) return;
     setPendingUserId(user.id);
@@ -161,6 +197,27 @@ export default function AdminUsersPage() {
       setError(err instanceof Error ? err.message : "Suppression impossible.");
     } finally {
       setDeletingUserId(null);
+    }
+  };
+
+  const saveUserChanges = async () => {
+    if (!token || !selectedUser) return;
+    setIsSavingUser(true);
+    setError(null);
+    try {
+      const updated = await updateAdminUser(token, selectedUser.id, {
+        full_name: editForm.full_name.trim() || null,
+        email: editForm.email.trim(),
+        phone: editForm.phone.trim() || null,
+        role: editForm.role,
+        is_verified: editForm.is_verified,
+      });
+      setUsers((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+      setIsEditingUser(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Modification impossible.");
+    } finally {
+      setIsSavingUser(false);
     }
   };
 
@@ -282,18 +339,139 @@ export default function AdminUsersPage() {
                 </div>
 
                 <section>
-                  <h2 className="text-lg font-semibold text-neutral-950">Informations fournies</h2>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    {selectedInfoFields.map(({ label, value, Icon }) => (
-                      <div key={label} className="rounded-[1.4rem] bg-neutral-50 px-4 py-4">
-                        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
-                          <Icon className="text-sm" />
-                          {label}
-                        </div>
-                        <p className="mt-2 text-sm font-semibold text-neutral-950">{value}</p>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="text-lg font-semibold text-neutral-950">Informations fournies</h2>
+                    {isEditingUser ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsEditingUser(false);
+                            setEditForm({
+                              full_name: selectedUser.full_name || "",
+                              email: selectedUser.email,
+                              phone: selectedUser.phone || "",
+                              role: selectedUser.role,
+                              is_verified: selectedUser.is_verified,
+                            });
+                          }}
+                          className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-600"
+                        >
+                          <FiX />
+                          Annuler
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void saveUserChanges()}
+                          disabled={isSavingUser || !editForm.email.trim()}
+                          className="inline-flex items-center gap-2 rounded-full bg-neutral-950 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <FiSave />
+                          {isSavingUser ? "Sauvegarde..." : "Sauvegarder"}
+                        </button>
                       </div>
-                    ))}
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingUser(true)}
+                        className="inline-flex items-center gap-2 rounded-full bg-neutral-950 px-4 py-2 text-sm font-semibold text-white"
+                      >
+                        <FiEdit3 />
+                        Modifier
+                      </button>
+                    )}
                   </div>
+
+                  {isEditingUser ? (
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <label className="rounded-[1.4rem] bg-neutral-50 px-4 py-4">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
+                          Nom complet
+                        </span>
+                        <input
+                          value={editForm.full_name}
+                          onChange={(event) =>
+                            setEditForm((current) => ({ ...current, full_name: event.target.value }))
+                          }
+                          className="mt-2 w-full bg-transparent text-sm font-semibold text-neutral-950 outline-none"
+                          placeholder="Nom complet"
+                        />
+                      </label>
+                      <label className="rounded-[1.4rem] bg-neutral-50 px-4 py-4">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
+                          Email
+                        </span>
+                        <input
+                          type="email"
+                          value={editForm.email}
+                          onChange={(event) =>
+                            setEditForm((current) => ({ ...current, email: event.target.value }))
+                          }
+                          className="mt-2 w-full bg-transparent text-sm font-semibold text-neutral-950 outline-none"
+                          placeholder="email@yeloo.ci"
+                        />
+                      </label>
+                      <label className="rounded-[1.4rem] bg-neutral-50 px-4 py-4">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
+                          Téléphone
+                        </span>
+                        <input
+                          value={editForm.phone}
+                          onChange={(event) =>
+                            setEditForm((current) => ({ ...current, phone: event.target.value }))
+                          }
+                          className="mt-2 w-full bg-transparent text-sm font-semibold text-neutral-950 outline-none"
+                          placeholder="+225..."
+                        />
+                      </label>
+                      <label className="rounded-[1.4rem] bg-neutral-50 px-4 py-4">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
+                          Rôle
+                        </span>
+                        <select
+                          value={editForm.role}
+                          onChange={(event) =>
+                            setEditForm((current) => ({ ...current, role: event.target.value }))
+                          }
+                          className="mt-2 w-full bg-transparent text-sm font-semibold text-neutral-950 outline-none"
+                        >
+                          <option value="locataire">Locataire</option>
+                          <option value="proprietaire">Propriétaire</option>
+                          <option value="admin">Admin</option>
+                        </select>
+                      </label>
+                      <label className="flex items-center justify-between gap-4 rounded-[1.4rem] bg-neutral-50 px-4 py-4 sm:col-span-2">
+                        <span>
+                          <span className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
+                            Statut de vérification
+                          </span>
+                          <span className="mt-1 block text-sm font-semibold text-neutral-950">
+                            {editForm.is_verified ? "Compte vérifié" : "Compte à vérifier"}
+                          </span>
+                        </span>
+                        <input
+                          type="checkbox"
+                          checked={editForm.is_verified}
+                          onChange={(event) =>
+                            setEditForm((current) => ({ ...current, is_verified: event.target.checked }))
+                          }
+                          className="h-5 w-5 accent-blue-600"
+                        />
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      {selectedInfoFields.map(({ label, value, Icon }) => (
+                        <div key={label} className="rounded-[1.4rem] bg-neutral-50 px-4 py-4">
+                          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
+                            <Icon className="text-sm" />
+                            {label}
+                          </div>
+                          <p className="mt-2 text-sm font-semibold text-neutral-950">{value}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </section>
 
                 {selectedUser.role === "proprietaire" && (

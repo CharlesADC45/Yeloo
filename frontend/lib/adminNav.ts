@@ -1,4 +1,14 @@
-import { FiActivity, FiCheckCircle, FiHome, FiLayers, FiMap, FiMessageCircle, FiShield, FiUsers } from "react-icons/fi";
+import {
+  FiActivity,
+  FiCheckCircle,
+  FiHome,
+  FiLayers,
+  FiMap,
+  FiMessageCircle,
+  FiShield,
+  FiUser,
+  FiUsers,
+} from "react-icons/fi";
 
 export type AdminNavItem = {
   href: string;
@@ -49,6 +59,12 @@ export const adminNavItems: AdminNavItem[] = [
     label: "Baux",
     Icon: FiActivity,
     isActive: (pathname) => pathname.startsWith("/admin/baux"),
+  },
+  {
+    href: "/compte",
+    label: "Profil",
+    Icon: FiUser,
+    isActive: (pathname) => pathname.startsWith("/compte"),
   },
   {
     href: "/",
