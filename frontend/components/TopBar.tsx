@@ -165,13 +165,18 @@ function TopBarContent({
   const notificationPrefs = getNotificationPrefs(prefsByUser, user?.id);
   const notificationsEnabled = notificationPrefs.ownerPostNotifications;
   const visibleNotifications = useMemo(() => {
-    if (!user?.id || isOwnerRole) return [];
-    return notificationItems;
-  }, [isOwnerRole, notificationItems, user?.id]);
+    if (!user?.id || isAdminRole) return [];
+    if (isOwnerRole) {
+      return notificationItems.filter(
+        (item) => item.type === "owner_verification" && item.targetUserId === user.id
+      );
+    }
+    return notificationItems.filter((item) => item.type === "owner_post");
+  }, [isAdminRole, isOwnerRole, notificationItems, user?.id]);
   const unreadNotifications = useMemo(() => {
-    if (!notificationsEnabled) return [];
+    if (!isOwnerRole && !notificationsEnabled) return [];
     return getUnreadNotifications(visibleNotifications, readByUser, user?.id);
-  }, [notificationsEnabled, readByUser, user?.id, visibleNotifications]);
+  }, [isOwnerRole, notificationsEnabled, readByUser, user?.id, visibleNotifications]);
 
   useEffect(() => {
     const [latest] = unreadNotifications;
@@ -181,7 +186,7 @@ function TopBarContent({
       title: latest.title,
       body: latest.message,
       tag: latest.id,
-      url: `/logements/${latest.propertyId}`,
+      url: latest.href || (latest.propertyId ? `/logements/${latest.propertyId}` : "/"),
       icon: latest.imageUrl || "/icons/icon-192.png",
     });
   }, [unreadNotifications]);
@@ -484,14 +489,16 @@ function TopBarContent({
                         <div>
                           <p className="text-sm font-semibold text-neutral-900">Notifications</p>
                           <p className="text-xs text-neutral-500">
-                            {isOwnerRole || isAdminRole
-                              ? "Alerte réservée aux locataires."
-                              : notificationsEnabled
+                            {isAdminRole
+                              ? "Alertes de pilotage."
+                              : isOwnerRole
+                                ? `${unreadNotifications.length} non lue(s)`
+                                : notificationsEnabled
                                 ? `${unreadNotifications.length} non lue(s)`
                                 : "Notifications désactivées"}
                           </p>
                         </div>
-                        {!isOwnerRole && notificationsEnabled && visibleNotifications.length > 0 && (
+                        {!isAdminRole && (isOwnerRole || notificationsEnabled) && visibleNotifications.length > 0 && (
                           <button
                             type="button"
                             onClick={() => user?.id && markAllRead(user.id)}
@@ -503,11 +510,11 @@ function TopBarContent({
                       </div>
 
                       <div className="max-h-[24rem] overflow-y-auto p-3">
-                        {isOwnerRole || isAdminRole ? (
+                        {isAdminRole ? (
                           <div className="rounded-2xl bg-neutral-50 px-4 py-5 text-sm text-neutral-600">
-                            Les nouvelles annonces propriétaires apparaissent côté locataire.
+                            Les alertes admin restent dans les pages de pilotage.
                           </div>
-                        ) : !notificationsEnabled ? (
+                        ) : !isOwnerRole && !notificationsEnabled ? (
                           <div className="rounded-2xl bg-neutral-50 px-4 py-5 text-sm text-neutral-600">
                             Activez les notifications dans <Link href="/compte/parametres" className="font-semibold text-blue-700">Paramètres</Link> pour recevoir les nouvelles annonces.
                           </div>
@@ -528,7 +535,7 @@ function TopBarContent({
                                       markRead(user.id, item.id);
                                     }
                                     setIsNotificationsOpen(false);
-                                    router.push(`/logements/${item.propertyId}`);
+                                    router.push(item.href || (item.propertyId ? `/logements/${item.propertyId}` : "/"));
                                   }}
                                   className={`w-full rounded-2xl border px-3 py-3 text-left transition ${
                                     isUnread

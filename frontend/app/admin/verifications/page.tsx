@@ -30,6 +30,7 @@ export default function AdminVerificationsPage() {
   useEffect(() => {
     if (!token) return;
     let active = true;
+
     const load = async (silent = false) => {
       if (!silent) {
         setIsLoading(true);
@@ -48,6 +49,7 @@ export default function AdminVerificationsPage() {
         if (active && !silent) setIsLoading(false);
       }
     };
+
     void load();
     const interval = window.setInterval(() => {
       if (document.visibilityState === "visible") void load(true);
@@ -69,10 +71,16 @@ export default function AdminVerificationsPage() {
 
   const handleDecision = async (profileId: string, decision: "approved" | "rejected") => {
     if (!token) return;
+    const notes = notesById[profileId]?.trim() || "";
+    if (decision === "rejected" && !notes) {
+      setError("Ajoutez un motif avant de refuser une vérification.");
+      return;
+    }
+
     setPendingId(profileId);
     setError(null);
     try {
-      const updated = await reviewAdminOwnerKyc(token, profileId, decision, notesById[profileId]);
+      const updated = await reviewAdminOwnerKyc(token, profileId, decision, notes);
       setProfiles((current) => current.map((item) => (item.id === updated.id ? updated : item)));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Impossible de mettre à jour ce dossier.");
@@ -98,7 +106,8 @@ export default function AdminVerificationsPage() {
             Revue propriétaire
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-500">
-            Validez les dossiers propriétaires, comparez selfie, pièce d'identité et justificatif, puis approuvez ou refusez.
+            Validez les dossiers propriétaires, comparez selfie, pièce d'identité et justificatif,
+            puis approuvez ou refusez avec un motif clair.
           </p>
         </section>
 
@@ -133,6 +142,12 @@ export default function AdminVerificationsPage() {
             </button>
           ))}
         </div>
+
+        {error && (
+          <div className="max-w-4xl rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
 
         {isLoading ? (
           <AdminDashboardSkeleton />
@@ -177,7 +192,7 @@ export default function AdminVerificationsPage() {
                       setNotesById((current) => ({ ...current, [profile.id]: event.target.value }))
                     }
                     rows={3}
-                    placeholder="Note admin / motif éventuel..."
+                    placeholder="Motif du refus ou note admin..."
                     className="mt-4 w-full rounded-[1.25rem] bg-neutral-50 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100"
                   />
 
@@ -210,11 +225,6 @@ export default function AdminVerificationsPage() {
                 </article>
               ))}
             </div>
-            {error && (
-              <div className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
-                {error}
-              </div>
-            )}
           </section>
         )}
       </motion.section>

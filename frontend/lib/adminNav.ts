@@ -61,10 +61,10 @@ export const adminNavItems: AdminNavItem[] = [
     isActive: (pathname) => pathname.startsWith("/admin/baux"),
   },
   {
-    href: "/compte",
+    href: "/admin/profil",
     label: "Profil",
     Icon: FiUser,
-    isActive: (pathname) => pathname.startsWith("/compte"),
+    isActive: (pathname) => pathname.startsWith("/admin/profil"),
   },
   {
     href: "/",

@@ -591,6 +591,9 @@ def review_owner_kyc(
 ):
     if payload.decision not in {"approved", "rejected"}:
         raise HTTPException(status_code=400, detail="Decision invalide.")
+    notes = payload.notes.strip() if payload.notes else None
+    if payload.decision == "rejected" and not notes:
+        raise HTTPException(status_code=400, detail="Motif de rejet requis.")
 
     profile = (
         db.query(OwnerProfile)
@@ -602,7 +605,7 @@ def review_owner_kyc(
         raise HTTPException(status_code=404, detail="Dossier KYC introuvable.")
 
     profile.verification_status = payload.decision
-    profile.verification_notes = payload.notes.strip() if payload.notes else None
+    profile.verification_notes = notes
     profile.reviewed_by = current_admin.id
     profile.reviewed_at = datetime.utcnow()
     profile.user.is_verified = payload.decision == "approved"

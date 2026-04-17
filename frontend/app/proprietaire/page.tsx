@@ -12,9 +12,11 @@ import { TopBar } from "@/components/TopBar";
 import { getApiBaseUrl } from "@/lib/api";
 import { fetchConversations, type ConversationSummary } from "@/lib/messages";
 import { useAuthStore } from "@/stores/authStore";
+import { useNotificationStore } from "@/stores/notificationStore";
 
 type OwnerProfile = {
   id: string;
+  user_id: string;
   city: string;
   main_address: string;
   bank_name: string;
@@ -55,6 +57,9 @@ export default function ProprietairePage() {
   const token = useAuthStore((s) => s.token);
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
+  const pushOwnerVerificationRejection = useNotificationStore(
+    (s) => s.pushOwnerVerificationRejection
+  );
   const router = useRouter();
   const [profile, setProfile] = useState<OwnerProfile | null>(null);
   const [properties, setProperties] = useState<OwnerProperty[]>([]);
@@ -151,6 +156,14 @@ export default function ProprietairePage() {
           setConversations(Array.isArray(conversationData) ? conversationData : []);
           setProfile(profileData);
           setCanViewDashboard(true);
+          if (profileData?.verification_status === "rejected") {
+            pushOwnerVerificationRejection({
+              profileId: profileData.id,
+              userId: String(profileData.user_id || nextUser.id),
+              notes: profileData.verification_notes,
+              reviewedAt: profileData.reviewed_at,
+            });
+          }
         }
       } catch (err) {
         if (!isMounted) return;
@@ -174,7 +187,7 @@ export default function ProprietairePage() {
       isMounted = false;
       window.clearInterval(interval);
     };
-  }, [isAuthenticated, router, setUser, token]);
+  }, [isAuthenticated, pushOwnerVerificationRejection, router, setUser, token]);
 
   useEffect(() => {
     if (!redirectTarget) return;

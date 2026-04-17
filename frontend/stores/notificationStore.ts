@@ -5,15 +5,18 @@ import { persist } from "zustand/middleware";
 
 export type NotificationItem = {
   id: string;
-  type: "owner_post";
+  type: "owner_post" | "owner_verification";
   title: string;
   message: string;
-  propertyId: string;
+  propertyId?: string | null;
   createdAt: string;
   ownerId?: string | null;
   ownerName?: string | null;
   city?: string | null;
   imageUrl?: string | null;
+  targetUserId?: string | null;
+  href?: string | null;
+  severity?: "info" | "warning" | "success" | "error";
 };
 
 type NotificationPrefs = {
@@ -31,6 +34,12 @@ type NotificationState = {
     ownerId?: string | null;
     ownerName?: string | null;
     imageUrl?: string | null;
+  }) => void;
+  pushOwnerVerificationRejection: (payload: {
+    profileId: string;
+    userId: string;
+    notes?: string | null;
+    reviewedAt?: string | null;
   }) => void;
   markRead: (userId: string, notificationId: string) => void;
   markAllRead: (userId: string) => void;
@@ -71,6 +80,28 @@ export const useNotificationStore = create<NotificationState>()(
         set((state) => ({
           items: [item, ...state.items].slice(0, 80),
         }));
+      },
+      pushOwnerVerificationRejection: ({ profileId, userId, notes, reviewedAt }) => {
+        const id = `owner-verification-rejected:${profileId}:${reviewedAt || "latest"}`;
+        const item: NotificationItem = {
+          id,
+          type: "owner_verification",
+          title: "Vérification refusée",
+          message:
+            notes?.trim() ||
+            "Votre dossier propriétaire a été refusé. Ouvrez votre espace pour le corriger.",
+          createdAt: reviewedAt || new Date().toISOString(),
+          targetUserId: userId,
+          href: "/proprietaire",
+          severity: "error",
+        };
+
+        set((state) => {
+          if (state.items.some((current) => current.id === id)) return state;
+          return {
+            items: [item, ...state.items].slice(0, 80),
+          };
+        });
       },
       markRead: (userId, notificationId) => {
         if (!userId) return;
