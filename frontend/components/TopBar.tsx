@@ -439,7 +439,7 @@ function TopBarContent({
           <div className={`flex items-center justify-between py-4 ${isOwnerRoute ? "lg:px-0" : ""}`}>
             <div
               className={`flex items-center gap-2 ${
-                isOwnerRoute ? "lg:w-64 lg:px-6" : ""
+                isOwnerRoute ? "lg:w-72 lg:px-6" : ""
               }`}
             >
               <YelooBrand />

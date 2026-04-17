@@ -244,7 +244,7 @@ export default function ProprietaireProfilPage() {
     <div className="min-h-screen bg-transparent">
       <TopBar />
       <OwnerSidebar />
-      <main className="mx-auto max-w-4xl px-4 pb-28 pt-24 lg:ml-64 lg:max-w-[calc(100%-16rem)] lg:px-8">
+      <main className="mx-auto max-w-4xl px-4 pb-28 pt-24 lg:ml-72 lg:max-w-[calc(100%-18rem)] lg:px-8">
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}

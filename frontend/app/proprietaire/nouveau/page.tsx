@@ -490,7 +490,7 @@ export default function NouveauBienPage() {
       {isVerifiedOwner && <OwnerSidebar />}
       <main
         className={`mx-auto max-w-3xl px-3 pb-36 pt-20 sm:px-4 sm:pt-24 ${
-          isVerifiedOwner ? "lg:ml-64 lg:max-w-[calc(100%-16rem)] lg:px-8" : ""
+          isVerifiedOwner ? "lg:ml-72 lg:max-w-[calc(100%-18rem)] lg:px-8" : ""
         }`}
       >
         <motion.section

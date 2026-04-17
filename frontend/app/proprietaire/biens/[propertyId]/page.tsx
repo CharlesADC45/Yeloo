@@ -47,6 +47,16 @@ const DEFAULT_FORM: FormState = {
 
 const MAX_VIDEO_BYTES = 150 * 1024 * 1024;
 const MAX_TOUR_BYTES = 50 * 1024 * 1024;
+const SUPPORTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const SUPPORTED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/ogg", "video/quicktime"];
+const unsupportedFileMessage =
+  "Document non supporté. Utilisez JPG, PNG, WEBP, GIF pour les photos, ou MP4, WEBM, MOV pour les vidéos.";
+
+const isSupportedImage = (file: File) =>
+  SUPPORTED_IMAGE_TYPES.includes(file.type) || /\.(jpe?g|png|webp|gif)$/i.test(file.name);
+
+const isSupportedVideo = (file: File) =>
+  SUPPORTED_VIDEO_TYPES.includes(file.type) || /\.(mp4|webm|ogg|mov)$/i.test(file.name);
 const parseLocaleNumber = (value: string) => {
   const normalized = value.trim().replace(/\s+/g, "").replace(/,/g, ".");
   if (!normalized) return null;
@@ -199,6 +209,14 @@ export default function EditPropertyPage() {
 
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files ? Array.from(event.target.files) : [];
+    const invalid = files.find((file) => !isSupportedImage(file));
+    if (invalid) {
+      setPhotoFiles([]);
+      event.target.value = "";
+      setError(unsupportedFileMessage);
+      return;
+    }
+    setError(null);
     setPhotoFiles(files);
   };
 
@@ -208,8 +226,10 @@ export default function EditPropertyPage() {
       setVideoFile(null);
       return;
     }
-    if (!file.type.startsWith("video/")) {
-      setError("Le fichier vidéo est invalide.");
+    if (!isSupportedVideo(file)) {
+      setVideoFile(null);
+      event.target.value = "";
+      setError(unsupportedFileMessage);
       return;
     }
     if (file.size > MAX_VIDEO_BYTES) {
@@ -226,9 +246,11 @@ export default function EditPropertyPage() {
       setTourFile(null);
       return;
     }
-    const isValid = file.type.startsWith("image/") || file.type.startsWith("video/");
+    const isValid = isSupportedImage(file) || isSupportedVideo(file);
     if (!isValid) {
-      setError("Le fichier 360 est invalide.");
+      setTourFile(null);
+      event.target.value = "";
+      setError(unsupportedFileMessage);
       return;
     }
     if (file.size > MAX_TOUR_BYTES) {
@@ -401,7 +423,7 @@ export default function EditPropertyPage() {
     <div className="min-h-screen bg-transparent">
       <TopBar />
       <OwnerSidebar />
-      <main className="mx-auto max-w-3xl px-4 pb-28 pt-24 lg:ml-64 lg:max-w-[calc(100%-16rem)] lg:px-8">
+      <main className="mx-auto max-w-3xl px-4 pb-28 pt-24 lg:ml-72 lg:max-w-[calc(100%-18rem)] lg:px-8">
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -634,7 +656,7 @@ export default function EditPropertyPage() {
                 <input
                   type="file"
                   multiple
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
                   onChange={handlePhotoChange}
                   className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"
                 />
@@ -649,7 +671,7 @@ export default function EditPropertyPage() {
                 </span>
                 <input
                   type="file"
-                  accept="video/*"
+                  accept="video/mp4,video/webm,video/ogg,video/quicktime"
                   capture="environment"
                   onChange={handleVideoChange}
                   className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"
@@ -678,7 +700,7 @@ export default function EditPropertyPage() {
                 </span>
                 <input
                   type="file"
-                  accept="image/*,video/*"
+                  accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/ogg,video/quicktime"
                   capture="environment"
                   onChange={handleTourChange}
                   className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"

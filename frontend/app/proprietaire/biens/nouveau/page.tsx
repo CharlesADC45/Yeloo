@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { FiCamera, FiFilePlus, FiImage, FiUploadCloud, FiVideo } from "react-icons/fi";
 import { CelebrationModal } from "@/components/CelebrationModal";
 import { OwnerSidebar } from "@/components/OwnerSidebar";
 import { TopBar } from "@/components/TopBar";
@@ -67,6 +68,8 @@ const DEFAULT_FORM: FormState = {
 
 const MAX_VIDEO_BYTES = 150 * 1024 * 1024;
 const MAX_TOUR_BYTES = 50 * 1024 * 1024;
+const SUPPORTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const SUPPORTED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/ogg", "video/quicktime"];
 const SUBMISSION_STEPS: SubmissionStep[] = [
   { id: "validation", label: "Vérification locale", status: "pending" },
   { id: "property", label: "Création annonce", status: "pending" },
@@ -93,6 +96,15 @@ const parseCoordinates = (value: string) => {
   if (lat === null || lng === null) return null;
   return { lat, lng };
 };
+
+const isSupportedImage = (file: File) =>
+  SUPPORTED_IMAGE_TYPES.includes(file.type) || /\.(jpe?g|png|webp|gif)$/i.test(file.name);
+
+const isSupportedVideo = (file: File) =>
+  SUPPORTED_VIDEO_TYPES.includes(file.type) || /\.(mp4|webm|ogg|mov)$/i.test(file.name);
+
+const unsupportedFileMessage =
+  "Document non supporté. Utilisez JPG, PNG, WEBP, GIF pour les photos, ou MP4, WEBM, MOV pour les vidéos.";
 
 const normalizeFetchError = (error: unknown, fallback: string) => {
   const raw = error instanceof Error ? error.message : fallback;
@@ -136,6 +148,7 @@ export default function NouveauBienPage() {
   const pushOwnerPost = useNotificationStore((state) => state.pushOwnerPost);
   const router = useRouter();
   const photoInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraPhotoInputRef = useRef<HTMLInputElement | null>(null);
   const videoInputRef = useRef<HTMLInputElement | null>(null);
   const tourInputRef = useRef<HTMLInputElement | null>(null);
   const isOwnerRole = user?.role === "proprietaire" || user?.role === "admin";
@@ -208,6 +221,13 @@ export default function NouveauBienPage() {
 
   const handlePhotosChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files ? Array.from(event.target.files) : [];
+    const invalid = files.find((file) => !isSupportedImage(file));
+    if (invalid) {
+      setPhotoFiles([]);
+      event.target.value = "";
+      setErrors((prev) => ({ ...prev, photos: unsupportedFileMessage }));
+      return;
+    }
     setPhotoFiles(files);
     if (errors.photos) {
       setErrors((prev) => ({ ...prev, photos: undefined }));
@@ -221,8 +241,10 @@ export default function NouveauBienPage() {
       setVideoFile(null);
       return;
     }
-    if (!file.type.startsWith("video/")) {
-      setErrors((prev) => ({ ...prev, video: "Fichier vidéo invalide." }));
+    if (!isSupportedVideo(file)) {
+      setVideoFile(null);
+      event.target.value = "";
+      setErrors((prev) => ({ ...prev, video: unsupportedFileMessage }));
       return;
     }
     if (file.size > MAX_VIDEO_BYTES) {
@@ -240,9 +262,11 @@ export default function NouveauBienPage() {
       setTourFile(null);
       return;
     }
-    const isValid = file.type.startsWith("image/") || file.type.startsWith("video/");
+    const isValid = isSupportedImage(file) || isSupportedVideo(file);
     if (!isValid) {
-      setErrors((prev) => ({ ...prev, tour: "Fichier 360 invalide." }));
+      setTourFile(null);
+      event.target.value = "";
+      setErrors((prev) => ({ ...prev, tour: unsupportedFileMessage }));
       return;
     }
     if (file.size > MAX_TOUR_BYTES) {
@@ -277,14 +301,14 @@ export default function NouveauBienPage() {
       nextErrors.photos = "Ajoutez au moins une photo";
     }
     if (index === 1 && videoFile) {
-      if (!videoFile.type.startsWith("video/")) {
+      if (!isSupportedVideo(videoFile)) {
         nextErrors.video = "Fichier vidéo invalide.";
       } else if (videoFile.size > MAX_VIDEO_BYTES) {
         nextErrors.video = "Vidéo trop lourde (150MB max).";
       }
     }
     if (index === 1 && tourFile) {
-      const isValid = tourFile.type.startsWith("image/") || tourFile.type.startsWith("video/");
+      const isValid = isSupportedImage(tourFile) || isSupportedVideo(tourFile);
       if (!isValid) {
         nextErrors.tour = "Fichier 360 invalide.";
       } else if (tourFile.size > MAX_TOUR_BYTES) {
@@ -549,7 +573,7 @@ export default function NouveauBienPage() {
     <div className="min-h-screen bg-transparent">
       <TopBar />
       <OwnerSidebar />
-      <main className="mx-auto max-w-3xl px-3 pb-36 pt-20 sm:px-4 sm:pt-24 lg:ml-64 lg:max-w-[calc(100%-16rem)] lg:px-8">
+      <main className="mx-auto max-w-3xl px-3 pb-36 pt-20 sm:px-4 sm:pt-24 lg:ml-72 lg:max-w-[calc(100%-18rem)] lg:px-8">
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -864,29 +888,107 @@ export default function NouveauBienPage() {
               )}
 
               {stepIndex === 1 && (
-                <div className="grid gap-4 lg:grid-cols-2">
-                  <div className="rounded-2xl border border-neutral-100 bg-white p-4 sm:border-dashed sm:p-5">
-                    <div className="flex items-start justify-between gap-3">
+                <div className="space-y-5">
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.985 }}
+                      onClick={() => photoInputRef.current?.click()}
+                      className="flex min-h-20 items-center justify-between gap-4 rounded-[1.35rem] border border-neutral-200 bg-white px-4 py-3 text-left transition hover:border-blue-200 hover:bg-blue-50/40"
+                    >
+                      <span className="flex items-center gap-4">
+                        <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-neutral-50 text-neutral-500">
+                          <FiUploadCloud />
+                        </span>
+                        <span>
+                          <span className="block text-sm font-semibold text-neutral-950">
+                            Ajouter un fichier
+                          </span>
+                          <span className="mt-0.5 block text-xs text-neutral-500">
+                            Photo JPG, PNG ou WEBP
+                          </span>
+                        </span>
+                      </span>
+                      <span className="rounded-full bg-neutral-950 px-4 py-2 text-xs font-semibold text-white">
+                        Choisir
+                      </span>
+                    </motion.button>
+
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.985 }}
+                      onClick={() => cameraPhotoInputRef.current?.click()}
+                      className="flex min-h-20 items-center gap-4 rounded-[1.35rem] bg-white px-4 py-3 text-left transition hover:bg-neutral-100"
+                    >
+                      <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                        <FiCamera />
+                      </span>
+                      <span className="text-sm font-semibold text-neutral-950">Prendre une photo</span>
+                    </motion.button>
+
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.985 }}
+                      onClick={() => photoInputRef.current?.click()}
+                      className="flex min-h-20 items-center gap-4 rounded-[1.35rem] bg-white px-4 py-3 text-left transition hover:bg-neutral-100 lg:col-span-2"
+                    >
+                      <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-neutral-50 text-neutral-500">
+                        <FiImage />
+                      </span>
+                      <span>
+                        <span className="block text-sm font-semibold text-neutral-950">
+                          Uploader depuis le téléphone
+                        </span>
+                        <span className="mt-0.5 block text-xs text-neutral-500">
+                          Ajoutez plusieurs images claires et lumineuses.
+                        </span>
+                      </span>
+                    </motion.button>
+                  </div>
+
+                  <input
+                    ref={photoInputRef}
+                    type="file"
+                    multiple
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    onChange={handlePhotosChange}
+                    className="hidden"
+                  />
+                  <input
+                    ref={cameraPhotoInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    capture="environment"
+                    onChange={handlePhotosChange}
+                    className="hidden"
+                  />
+
+                  <div className="rounded-[1.35rem] border border-neutral-200 bg-white p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold text-neutral-900">Photos du bien</p>
                         <p className="text-xs text-neutral-500">
-                          Ajoutez plusieurs images claires et lumineuses.
+                          {photoFiles.length
+                            ? `${photoFiles.length} photo(s) sélectionnée(s)`
+                            : "Aucune photo sélectionnée"}
                         </p>
                       </div>
                       <span className="rounded-full bg-neutral-100 px-3 py-1 text-[11px] text-neutral-500">
-                        {photoFiles.length} fichier(s)
+                        Obligatoire
                       </span>
                     </div>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {photoFiles.map((file) => (
-                        <span
-                          key={file.name}
-                          className="max-w-[160px] truncate rounded-full bg-neutral-100 px-3 py-1 text-[11px] text-neutral-600"
-                        >
-                          {file.name}
-                        </span>
-                      ))}
-                    </div>
+                    {photoFiles.length > 0 && (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {photoFiles.map((file) => (
+                          <span
+                            key={`${file.name}-${file.size}`}
+                            className="max-w-[180px] truncate rounded-full bg-neutral-100 px-3 py-1 text-[11px] text-neutral-600"
+                          >
+                            {file.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     {photoPreviews.length > 0 && (
                       <div className="mt-4 grid grid-cols-3 gap-2">
                         {photoPreviews.slice(0, 3).map((src) => (
@@ -894,121 +996,120 @@ export default function NouveauBienPage() {
                             key={src}
                             src={src}
                             alt="Aperçu photo"
-                            className="h-20 w-full rounded-xl object-cover"
+                            className="h-24 w-full rounded-2xl object-cover"
                           />
                         ))}
                       </div>
                     )}
                     {errors.photos && (
-                      <p className="mt-3 text-[11px] text-red-500">{errors.photos}</p>
+                      <p className="mt-3 rounded-2xl bg-red-50 px-3 py-2 text-[11px] text-red-600">
+                        {errors.photos}
+                      </p>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => photoInputRef.current?.click()}
-                      className="mt-4 min-h-11 rounded-full bg-neutral-950 px-4 py-2 text-xs font-semibold text-white"
-                    >
-                      Prendre une photo
-                    </button>
-                    <input
-                      ref={photoInputRef}
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={handlePhotosChange}
-                      className="hidden"
-                    />
                   </div>
 
-                  <div className="rounded-2xl border border-neutral-100 bg-white p-4 sm:border-dashed sm:p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-neutral-900">Vidéo de visite</p>
-                        <p className="text-xs text-neutral-500">
-                          Optionnel. Ajoutez une vidéo courte.
-                        </p>
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <div className="rounded-[1.35rem] border border-neutral-200 bg-white p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3">
+                          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-neutral-50 text-neutral-500">
+                            <FiVideo />
+                          </span>
+                          <div>
+                            <p className="text-sm font-semibold text-neutral-900">Vidéo de visite</p>
+                            <p className="text-xs text-neutral-500">MP4, WEBM ou MOV · 150MB max</p>
+                          </div>
+                        </div>
+                        <span className="rounded-full bg-neutral-100 px-3 py-1 text-[11px] text-neutral-500">
+                          {videoFile ? "1 fichier" : "Optionnel"}
+                        </span>
                       </div>
-                      <span className="rounded-full bg-neutral-100 px-3 py-1 text-[11px] text-neutral-500">
-                        {videoFile ? "1 fichier" : "Aucun"}
-                      </span>
-                    </div>
-                    {videoFile && (
-                      <p className="mt-3 text-[11px] text-neutral-600">{videoFile.name}</p>
-                    )}
-                    {videoDisplayUrl && (
-                      <video
-                        className="mt-4 h-28 w-full rounded-xl object-cover"
-                        src={videoDisplayUrl}
-                        controls
-                      />
-                    )}
-                    {errors.video && (
-                      <p className="mt-3 text-[11px] text-red-500">{errors.video}</p>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => videoInputRef.current?.click()}
-                      className="mt-4 min-h-11 rounded-full bg-neutral-950 px-4 py-2 text-xs font-semibold text-white"
-                    >
-                      Choisir une vidéo
-                    </button>
-                    <input
-                      ref={videoInputRef}
-                      type="file"
-                      accept="video/*"
-                      capture="environment"
-                      onChange={handleVideoChange}
-                      className="hidden"
-                    />
-                  </div>
-
-                  <div className="rounded-2xl border border-neutral-100 bg-white p-4 sm:border-dashed sm:p-5 lg:col-span-2">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-neutral-900">Visite 360°</p>
-                        <p className="text-xs text-neutral-500">
-                          Ajoutez une image panoramique ou une courte vidéo 360.
-                        </p>
-                      </div>
-                      <span className="rounded-full bg-neutral-100 px-3 py-1 text-[11px] text-neutral-500">
-                        {tourFile ? "1 fichier" : "Aucun"}
-                      </span>
-                    </div>
-                    {tourFile && (
-                      <p className="mt-3 text-[11px] text-neutral-600">{tourFile.name}</p>
-                    )}
-                    {tourDisplayUrl ? (
-                      isTourVideo ? (
+                      {videoFile && (
+                        <p className="mt-3 text-[11px] text-neutral-600">{videoFile.name}</p>
+                      )}
+                      {videoDisplayUrl && (
                         <video
                           className="mt-4 h-28 w-full rounded-xl object-cover"
-                          src={tourDisplayUrl}
+                          src={videoDisplayUrl}
                           controls
                         />
-                      ) : (
-                        <img
-                          src={tourDisplayUrl}
-                          alt="Aperçu visite 360"
-                          className="mt-4 h-28 w-full rounded-xl object-cover"
-                        />
-                      )
-                    ) : null}
-                    {errors.tour && (
-                      <p className="mt-3 text-[11px] text-red-500">{errors.tour}</p>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => tourInputRef.current?.click()}
-                      className="mt-4 min-h-11 rounded-full bg-neutral-950 px-4 py-2 text-xs font-semibold text-white"
-                    >
-                      Ajouter la visite 360°
-                    </button>
-                    <input
-                      ref={tourInputRef}
-                      type="file"
-                      accept="image/*,video/*"
-                      capture="environment"
-                      onChange={handleTourChange}
-                      className="hidden"
-                    />
+                      )}
+                      {errors.video && (
+                        <p className="mt-3 rounded-2xl bg-red-50 px-3 py-2 text-[11px] text-red-600">
+                          {errors.video}
+                        </p>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => videoInputRef.current?.click()}
+                        className="mt-4 min-h-11 rounded-full bg-neutral-950 px-4 py-2 text-xs font-semibold text-white"
+                      >
+                        Choisir une vidéo
+                      </button>
+                      <input
+                        ref={videoInputRef}
+                        type="file"
+                        accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                        capture="environment"
+                        onChange={handleVideoChange}
+                        className="hidden"
+                      />
+                    </div>
+
+                    <div className="rounded-[1.35rem] border border-neutral-200 bg-white p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3">
+                          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-neutral-50 text-neutral-500">
+                            <FiFilePlus />
+                          </span>
+                          <div>
+                            <p className="text-sm font-semibold text-neutral-900">Visite 360°</p>
+                            <p className="text-xs text-neutral-500">Image panoramique ou vidéo courte</p>
+                          </div>
+                        </div>
+                        <span className="rounded-full bg-neutral-100 px-3 py-1 text-[11px] text-neutral-500">
+                          {tourFile ? "1 fichier" : "Optionnel"}
+                        </span>
+                      </div>
+                      {tourFile && (
+                        <p className="mt-3 text-[11px] text-neutral-600">{tourFile.name}</p>
+                      )}
+                      {tourDisplayUrl ? (
+                        isTourVideo ? (
+                          <video
+                            className="mt-4 h-28 w-full rounded-xl object-cover"
+                            src={tourDisplayUrl}
+                            controls
+                          />
+                        ) : (
+                          <img
+                            src={tourDisplayUrl}
+                            alt="Aperçu visite 360"
+                            className="mt-4 h-28 w-full rounded-xl object-cover"
+                          />
+                        )
+                      ) : null}
+                      {errors.tour && (
+                        <p className="mt-3 rounded-2xl bg-red-50 px-3 py-2 text-[11px] text-red-600">
+                          {errors.tour}
+                        </p>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => tourInputRef.current?.click()}
+                        className="mt-4 min-h-11 rounded-full bg-neutral-950 px-4 py-2 text-xs font-semibold text-white"
+                      >
+                        Ajouter la visite 360°
+                      </button>
+                      <input
+                        ref={tourInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/ogg,video/quicktime"
+                        capture="environment"
+                        onChange={handleTourChange}
+                        className="hidden"
+                      />
+                    </div>
                   </div>
                 </div>
               )}
@@ -1174,7 +1275,7 @@ export default function NouveauBienPage() {
                             : "bg-white text-neutral-300"
                     }`}
                   >
-                    {step.status === "success" && "✓"}
+                    {step.status === "success" && "?"}
                     {step.status === "error" && "×"}
                     {step.status === "running" && (
                       <span className="h-3 w-3 animate-spin rounded-full border border-blue-200 border-t-blue-700" />
