@@ -36,6 +36,7 @@ export function AuthSync() {
           role: user.role,
           profile_image_url: user.profile_image_url,
           is_verified: user.is_verified,
+          owner_verification_status: user.owner_verification_status,
         });
       } catch {
         if (!isActive) return;

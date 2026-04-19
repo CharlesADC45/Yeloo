@@ -25,3 +25,12 @@ class OwnerProfilePublic(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class OwnerProfileUpdate(BaseModel):
+    city: str | None = None
+    main_address: str | None = None
+    bank_name: str | None = None
+    account_number: str | None = None
+    mobile_money: str | None = None
+    account_holder: str | None = None

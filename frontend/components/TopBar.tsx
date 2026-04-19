@@ -347,7 +347,7 @@ function TopBarContent({
           opacity: 1,
           y: compactHomeSearch ? -8 : 0,
         }}
-        transition={{ type: "spring", stiffness: 220, damping: 28 }}
+        transition={{ type: "spring", stiffness: 130, damping: 24, mass: 0.85 }}
         className={`pointer-events-none mx-auto w-full ${widthClass}`}
         style={{ transformOrigin: "center center" }}
       >
@@ -398,6 +398,7 @@ function TopBarContent({
                 <motion.button
                   key="home-filter-btn"
                   type="button"
+                  onMouseDown={(event) => event.preventDefault()}
                   onClick={homeSearch.onOpenFilters}
                   initial={{ width: 0, opacity: 0, scale: 0.9 }}
                   animate={{
@@ -406,7 +407,7 @@ function TopBarContent({
                     scale: compactHomeSearch ? 0.9 : 1,
                   }}
                   exit={{ width: 0, opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.22, ease: "easeInOut" }}
+                  transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
                   className="shrink-0 overflow-hidden rounded-full border border-neutral-200 px-0 py-2.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
                 >
                   Filtres
@@ -630,7 +631,7 @@ function TopBarContent({
                   scale: compactHomeSearch ? 0.97 : 1,
                   y: compactHomeSearch ? -56 : 0,
                 }}
-                transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
                 className="relative z-10"
               >
                 {renderHomeSearchBar()}

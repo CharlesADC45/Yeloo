@@ -20,6 +20,7 @@ import {
 import { OwnerSidebar } from "@/components/OwnerSidebar";
 import { OwnerProfileSkeleton } from "@/components/Skeleton";
 import { TopBar } from "@/components/TopBar";
+import { changePassword, updateMyAccount } from "@/lib/account";
 import { getApiBaseUrl } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -60,6 +61,26 @@ export default function ProprietaireProfilPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"account" | "password">("account");
+  const [profileForm, setProfileForm] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    city: "",
+    mainAddress: "",
+    accountHolder: "",
+    bankName: "",
+    accountNumber: "",
+    mobileMoney: "",
+  });
+  const [passwordForm, setPasswordForm] = useState({
+    current: "",
+    next: "",
+    confirm: "",
+  });
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isSavingPassword, setIsSavingPassword] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated || !user) return;
@@ -117,6 +138,20 @@ export default function ProprietaireProfilPage() {
     setAvatarPreview(null);
   }, [user?.id]);
 
+  useEffect(() => {
+    setProfileForm({
+      fullName: user?.full_name || "",
+      email: user?.email || "",
+      phone: user?.phone || "",
+      city: profile?.city || "",
+      mainAddress: profile?.main_address || "",
+      accountHolder: profile?.account_holder || "",
+      bankName: profile?.bank_name || "",
+      accountNumber: profile?.account_number || "",
+      mobileMoney: profile?.mobile_money || "",
+    });
+  }, [profile, user?.email, user?.full_name, user?.phone]);
+
   const resolveAvatarUrl = (value?: string | null) => {
     if (!value) return null;
     if (value.startsWith("http") || value.startsWith("data:")) return value;
@@ -157,6 +192,9 @@ export default function ProprietaireProfilPage() {
     const file = event.target.files?.[0];
     if (!file || !token || !user) return;
 
+    const preview = URL.createObjectURL(file);
+    setAvatarPreview(preview);
+
     const formData = new FormData();
     formData.append("file", file);
 
@@ -168,7 +206,10 @@ export default function ProprietaireProfilPage() {
       body: formData,
     });
 
-    if (!response.ok) return;
+    if (!response.ok) {
+      setAvatarPreview(null);
+      return;
+    }
 
     const updated = await response.json();
     const resolved = resolveAvatarUrl(updated.profile_image_url);
@@ -179,6 +220,78 @@ export default function ProprietaireProfilPage() {
       ...user,
       profile_image_url: updated.profile_image_url,
     });
+  };
+
+  const handleProfileSave = async () => {
+    if (!token || !user) return;
+    setIsSavingProfile(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const [updatedUser, updatedProfileResponse] = await Promise.all([
+        updateMyAccount(token, {
+          full_name: profileForm.fullName,
+          email: profileForm.email,
+          phone: profileForm.phone,
+        }),
+        fetch(`${getApiBaseUrl()}/api/owners/me`, {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            city: profileForm.city,
+            main_address: profileForm.mainAddress,
+            account_holder: profileForm.accountHolder,
+            bank_name: profileForm.bankName,
+            account_number: profileForm.accountNumber,
+            mobile_money: profileForm.mobileMoney,
+          }),
+        }),
+      ]);
+
+      if (!updatedProfileResponse.ok) {
+        const payload = await updatedProfileResponse.json().catch(() => null);
+        throw new Error(payload?.detail || "Impossible de modifier le profil propriétaire.");
+      }
+
+      const updatedProfile = (await updatedProfileResponse.json()) as OwnerProfile;
+      setProfile(updatedProfile);
+      setUser({
+        ...user,
+        email: updatedUser.email,
+        full_name: updatedUser.full_name,
+        phone: updatedUser.phone,
+        profile_image_url: updatedUser.profile_image_url,
+        is_verified: updatedUser.is_verified,
+        owner_verification_status: updatedUser.owner_verification_status,
+      });
+      setSuccess("Profil propriétaire mis à jour.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Modification impossible.");
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  const handlePasswordSave = async () => {
+    if (!token) return;
+    setIsSavingPassword(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      if (passwordForm.next !== passwordForm.confirm) {
+        throw new Error("Les nouveaux mots de passe ne correspondent pas.");
+      }
+      await changePassword(token, passwordForm.current, passwordForm.next);
+      setPasswordForm({ current: "", next: "", confirm: "" });
+      setSuccess("Mot de passe mis à jour.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Modification impossible.");
+    } finally {
+      setIsSavingPassword(false);
+    }
   };
 
   if (!isAuthenticated) {
@@ -306,19 +419,63 @@ export default function ProprietaireProfilPage() {
             <div className="mt-6 flex gap-6 border-b border-neutral-200 text-sm">
               <button
                 type="button"
-                className="border-b-2 border-blue-600 pb-3 font-semibold text-blue-700"
+                onClick={() => setActiveTab("account")}
+                className={`pb-3 font-semibold ${
+                  activeTab === "account"
+                    ? "border-b-2 border-blue-600 text-blue-700"
+                    : "text-neutral-500"
+                }`}
               >
                 My Account
               </button>
-              <button type="button" className="pb-3 text-neutral-500">
+              <button
+                type="button"
+                onClick={() => setActiveTab("password")}
+                className={`pb-3 font-semibold ${
+                  activeTab === "password"
+                    ? "border-b-2 border-blue-600 text-blue-700"
+                    : "text-neutral-500"
+                }`}
+              >
                 Password
-              </button>
-              <button type="button" className="pb-3 text-neutral-500">
-                Notifications
               </button>
             </div>
           </div>
 
+          {activeTab === "password" ? (
+            <section className="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-soft">
+              <h2 className="text-lg font-semibold text-neutral-950">Changer le mot de passe</h2>
+              <div className="mt-5 grid gap-4 md:grid-cols-3">
+                {[
+                  ["Mot de passe actuel", "current"],
+                  ["Nouveau mot de passe", "next"],
+                  ["Confirmer", "confirm"],
+                ].map(([label, key]) => (
+                  <label key={key} className="block">
+                    <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-neutral-500">
+                      {label}
+                    </span>
+                    <input
+                      type="password"
+                      value={passwordForm[key as keyof typeof passwordForm]}
+                      onChange={(event) =>
+                        setPasswordForm((prev) => ({ ...prev, [key]: event.target.value }))
+                      }
+                      className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-800 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                    />
+                  </label>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={handlePasswordSave}
+                disabled={isSavingPassword}
+                className="mt-5 rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {isSavingPassword ? "Sauvegarde..." : "Mettre à jour"}
+              </button>
+            </section>
+          ) : (
           <div className="grid gap-6 xl:grid-cols-[1.8fr_0.95fr]">
             <div className="space-y-6">
               <section className="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-soft">
@@ -326,20 +483,40 @@ export default function ProprietaireProfilPage() {
                   Informations générales
                 </h2>
                 <div className="mt-5 grid gap-4 md:grid-cols-2">
-                  {fields.slice(0, 8).map((field) => (
+                  {[
+                    { label: "Nom complet", value: profileForm.fullName, key: "fullName", icon: FiUser },
+                    { label: "Email", value: profileForm.email, key: "email", icon: FiMail },
+                    { label: "Téléphone", value: profileForm.phone, key: "phone", icon: FiPhone },
+                    { label: "Ville", value: profileForm.city, key: "city", icon: FiMapPin },
+                    { label: "Adresse principale", value: profileForm.mainAddress, key: "mainAddress", icon: FiMapPin },
+                    { label: "Titulaire du compte", value: profileForm.accountHolder, key: "accountHolder", icon: FiCreditCard },
+                    { label: "Banque", value: profileForm.bankName, key: "bankName", icon: FiCreditCard },
+                    { label: "Numéro de compte", value: profileForm.accountNumber, key: "accountNumber", icon: FiCreditCard },
+                    { label: "Mobile money", value: profileForm.mobileMoney, key: "mobileMoney", icon: FiPhone },
+                  ].map((field) => (
                     <label key={field.label} className="block">
                       <span className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-neutral-500">
                         <field.icon className="text-neutral-400" />
                         {field.label}
                       </span>
                       <input
-                        readOnly
                         value={field.value}
-                        className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-800 outline-none"
+                        onChange={(event) =>
+                          setProfileForm((prev) => ({ ...prev, [field.key]: event.target.value }))
+                        }
+                        className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-800 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                       />
                     </label>
                   ))}
                 </div>
+                <button
+                  type="button"
+                  onClick={handleProfileSave}
+                  disabled={isSavingProfile}
+                  className="mt-5 rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                >
+                  {isSavingProfile ? "Sauvegarde..." : "Enregistrer les modifications"}
+                </button>
               </section>
 
               <section className="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-soft">
@@ -347,7 +524,7 @@ export default function ProprietaireProfilPage() {
                   Vérification et documents
                 </h2>
                 <div className="mt-5 grid gap-4 md:grid-cols-2">
-                  {fields.slice(8).map((field) => (
+                  {fields.slice(9).map((field) => (
                     <label key={field.label} className="block">
                       <span className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-neutral-500">
                         <field.icon className="text-neutral-400" />
@@ -437,8 +614,10 @@ export default function ProprietaireProfilPage() {
               </section>
             </aside>
           </div>
+          )}
 
           {error && <p className="text-sm text-red-600">{error}</p>}
+          {success && <p className="text-sm text-emerald-600">{success}</p>}
             </>
           )}
         </motion.section>

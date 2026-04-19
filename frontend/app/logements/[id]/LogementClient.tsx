@@ -200,7 +200,7 @@ function PropertyMap({ latitude, longitude, title, isApproximate = false }: MapP
 function PropertyStreetView({ latitude, longitude, title, isApproximate = false }: MapProps) {
   const hasCoordinates = typeof latitude === "number" && typeof longitude === "number";
   const streetViewUrl = hasCoordinates
-    ? `https://www.google.com/maps?layer=c&cbll=${latitude},${longitude}&cbp=11,0,0,0,0&output=svembed`
+    ? `https://maps.google.com/maps?q=&layer=c&cbll=${latitude},${longitude}&cbp=11,0,0,0,0&output=svembed`
     : "";
   const mapsUrl = hasCoordinates
     ? `https://www.google.com/maps?q=${latitude},${longitude}`
@@ -227,7 +227,7 @@ function PropertyStreetView({ latitude, longitude, title, isApproximate = false 
           <FiExternalLink />
         </a>
       </div>
-      <div className="relative h-64 bg-neutral-100 sm:h-72">
+        <div className="relative h-72 min-h-[18rem] bg-neutral-100 sm:h-80">
         {hasCoordinates ? (
           <iframe
             title={`Street View ${title}`}

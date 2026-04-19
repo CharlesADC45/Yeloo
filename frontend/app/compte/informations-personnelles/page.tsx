@@ -20,6 +20,7 @@ export default function InformationsPersonnellesPage() {
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isVerified = Boolean(user?.is_verified);
+  const isOwnerPending = user?.owner_verification_status === "pending_review";
   const bottomNav = <BottomNav />;
 
   const resolveAvatarUrl = (value?: string | null) => {
@@ -124,15 +125,16 @@ export default function InformationsPersonnellesPage() {
                 <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700">
                   Actif
                 </span>
-                <span
-                  className={`rounded-full px-3 py-1 ${
-                    isVerified
-                      ? "bg-blue-100 text-blue-700"
-                      : "bg-amber-100 text-amber-700"
-                  }`}
-                >
-                  {isVerified ? "Verifie" : "En attente"}
-                </span>
+                {isVerified && (
+                  <span className="rounded-full bg-blue-100 px-3 py-1 text-blue-700">
+                    Verifie
+                  </span>
+                )}
+                {isOwnerPending && (
+                  <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-700">
+                    En attente
+                  </span>
+                )}
               </div>
             </div>
           </div>

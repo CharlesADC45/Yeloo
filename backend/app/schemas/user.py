@@ -15,6 +15,12 @@ class UserCreate(BaseModel):
     role: str = Field(default="locataire", pattern="^(proprietaire|locataire|admin)$")
 
 
+class UserUpdate(BaseModel):
+    email: str | None = Field(default=None, pattern=EMAIL_PATTERN)
+    phone: str | None = None
+    full_name: str | None = None
+
+
 class UserPublic(BaseModel):
     id: uuid.UUID
     email: str

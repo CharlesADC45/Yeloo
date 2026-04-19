@@ -248,7 +248,10 @@ function HomePageContent() {
               setIsSearchEngaged(false);
             }
           },
-          onOpenFilters: () => setIsSearchOpen(true),
+          onOpenFilters: () => {
+            setIsSearchEngaged(true);
+            setIsSearchOpen(true);
+          },
         }}
       />
 
@@ -257,13 +260,13 @@ function HomePageContent() {
           {isLoading ? (
             <SectionHeaderSkeleton />
           ) : (
-            <div className="flex items-center justify-between gap-4">
-              <h2 className="text-lg font-semibold sm:text-xl">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="min-w-0 text-lg font-semibold sm:text-xl">
                 Annonces consultées récemment
               </h2>
               <Link
                 href={buildLogementsHref(filters.city)}
-                className="flex items-center gap-1 text-sm font-semibold text-neutral-600 hover:text-neutral-900"
+                className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-sm font-semibold text-neutral-600 hover:text-neutral-900"
               >
                 Voir tout <FiChevronRight />
               </Link>
@@ -291,13 +294,13 @@ function HomePageContent() {
           {isLoading ? (
             <SectionHeaderSkeleton />
           ) : (
-            <div className="flex items-center justify-between gap-4">
-              <h2 className="text-lg font-semibold sm:text-xl">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="min-w-0 text-lg font-semibold sm:text-xl">
                 Logements populaires · {activeLocation}
               </h2>
               <Link
                 href={buildLogementsHref(activeLocation)}
-                className="flex items-center gap-1 text-sm font-semibold text-neutral-600 hover:text-neutral-900"
+                className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-sm font-semibold text-neutral-600 hover:text-neutral-900"
               >
                 Voir tout <FiChevronRight />
               </Link>
@@ -315,11 +318,11 @@ function HomePageContent() {
 
         {!isLoading && !error && popularLocations.length > 0 && (
           <section ref={locationsSectionRef} className="mt-12">
-            <div className="flex items-center justify-between gap-4">
-              <h2 className="text-lg font-semibold sm:text-xl">Popular locations</h2>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="min-w-0 text-lg font-semibold sm:text-xl">Popular locations</h2>
               <Link
                 href={buildLogementsHref(filters.city)}
-                className="flex items-center gap-1 text-sm font-semibold text-neutral-600 hover:text-neutral-900"
+                className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-sm font-semibold text-neutral-600 hover:text-neutral-900"
               >
                 Voir tout <FiChevronRight />
               </Link>

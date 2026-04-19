@@ -519,14 +519,12 @@ export default function NouveauBienPage() {
                   : "Brouillon sauvegardé automatiquement"}
               </p>
             </div>
-            {user?.is_verified && (
-              <Link
-                href="/proprietaire"
-                className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700"
-              >
-                Retour
-              </Link>
-            )}
+            <Link
+              href="/proprietaire"
+              className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700"
+            >
+              Retour au dashboard
+            </Link>
           </div>
 
           <div className="mt-5 min-w-0 overflow-visible sm:rounded-3xl sm:border sm:border-neutral-200 sm:p-5">

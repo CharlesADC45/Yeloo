@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { FiCamera, FiFilePlus, FiImage, FiUploadCloud, FiVideo } from "react-icons/fi";
 import { CelebrationModal } from "@/components/CelebrationModal";
@@ -78,6 +78,8 @@ const SUBMISSION_STEPS: SubmissionStep[] = [
   { id: "finalization", label: "Soumission du dossier", status: "pending" },
 ];
 
+const PROPERTY_DRAFT_KEY = "yeloo-property-draft-v1";
+
 const getFreshSubmissionSteps = () =>
   SUBMISSION_STEPS.map((step) => ({ ...step }));
 
@@ -135,6 +137,11 @@ export default function NouveauBienPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [shouldRedirect, setShouldRedirect] = useState(false);
+  const [draftStatus, setDraftStatus] = useState<"idle" | "saved" | "restored" | "unavailable">(
+    "idle"
+  );
+  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
+  const [isPhotoOptionsOpen, setIsPhotoOptionsOpen] = useState(false);
   const [submissionStatus, setSubmissionStatus] = useState<
     "idle" | "running" | "error" | "success"
   >("idle");
@@ -164,6 +171,34 @@ export default function NouveauBienPage() {
       router.replace("/proprietaire");
     }
   }, [isAuthenticated, isOwnerRole, isVerifiedOwner, router, user]);
+
+  useEffect(() => {
+    try {
+      const rawDraft = window.localStorage.getItem(PROPERTY_DRAFT_KEY);
+      if (rawDraft) {
+        const parsed = JSON.parse(rawDraft) as Partial<FormState>;
+        setForm((current) => ({ ...current, ...parsed }));
+        setDraftStatus("restored");
+      }
+    } catch {
+      setDraftStatus("unavailable");
+    } finally {
+      setIsDraftLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isDraftLoaded || success) return;
+    const timer = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(PROPERTY_DRAFT_KEY, JSON.stringify(form));
+        setDraftStatus("saved");
+      } catch {
+        setDraftStatus("unavailable");
+      }
+    }, 650);
+    return () => window.clearTimeout(timer);
+  }, [form, isDraftLoaded, success]);
 
   useEffect(() => {
     if (!shouldRedirect) return;
@@ -520,6 +555,7 @@ export default function NouveauBienPage() {
 
       setSubmissionStatus("success");
       setSuccess("Annonce créée. Préparation de votre espace...");
+      window.localStorage.removeItem(PROPERTY_DRAFT_KEY);
       setShouldRedirect(true);
     } catch (err) {
       const message = normalizeFetchError(err, "Publication impossible.");
@@ -573,12 +609,12 @@ export default function NouveauBienPage() {
     <div className="min-h-screen bg-transparent">
       <TopBar />
       <OwnerSidebar />
-      <main className="mx-auto max-w-3xl px-3 pb-36 pt-20 sm:px-4 sm:pt-24 lg:ml-72 lg:max-w-[calc(100%-18rem)] lg:px-8">
+      <main className="mx-auto max-w-3xl px-3 pb-36 pt-20 sm:px-4 sm:pt-24 lg:ml-72 lg:max-w-5xl lg:px-8">
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="bg-white px-1 py-3 sm:rounded-3xl sm:p-6"
+          className="mx-auto max-w-4xl bg-white px-1 py-3 sm:rounded-3xl sm:p-6"
         >
           <div className="flex flex-wrap items-center justify-between gap-3 px-1 sm:px-0">
             <div>
@@ -587,6 +623,19 @@ export default function NouveauBienPage() {
               </h1>
               <p className="mt-1 text-xs text-neutral-600">
                 Suivez les étapes pour créer votre annonce.
+              </p>
+              <p
+                className={`mt-2 inline-flex rounded-full px-3 py-1 text-[11px] font-semibold ${
+                  draftStatus === "unavailable"
+                    ? "bg-amber-50 text-amber-700"
+                    : "bg-blue-50 text-blue-700"
+                }`}
+              >
+                {draftStatus === "unavailable"
+                  ? "Sauvegarde locale indisponible"
+                  : draftStatus === "restored"
+                    ? "Brouillon restauré automatiquement"
+                    : "Brouillon sauvegardé automatiquement"}
               </p>
             </div>
             <Link
@@ -893,7 +942,7 @@ export default function NouveauBienPage() {
                     <motion.button
                       type="button"
                       whileTap={{ scale: 0.985 }}
-                      onClick={() => photoInputRef.current?.click()}
+                      onClick={() => setIsPhotoOptionsOpen((value) => !value)}
                       className="flex min-h-20 items-center justify-between gap-4 rounded-[1.35rem] border border-neutral-200 bg-white px-4 py-3 text-left transition hover:border-blue-200 hover:bg-blue-50/40"
                     >
                       <span className="flex items-center gap-4">
@@ -910,40 +959,54 @@ export default function NouveauBienPage() {
                         </span>
                       </span>
                       <span className="rounded-full bg-neutral-950 px-4 py-2 text-xs font-semibold text-white">
-                        Choisir
+                        {isPhotoOptionsOpen ? "Fermer" : "Ouvrir"}
                       </span>
                     </motion.button>
 
-                    <motion.button
-                      type="button"
-                      whileTap={{ scale: 0.985 }}
-                      onClick={() => cameraPhotoInputRef.current?.click()}
-                      className="flex min-h-20 items-center gap-4 rounded-[1.35rem] bg-white px-4 py-3 text-left transition hover:bg-neutral-100"
-                    >
-                      <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-                        <FiCamera />
-                      </span>
-                      <span className="text-sm font-semibold text-neutral-950">Prendre une photo</span>
-                    </motion.button>
+                    <AnimatePresence initial={false}>
+                      {isPhotoOptionsOpen && (
+                        <>
+                          <motion.button
+                            type="button"
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.22 }}
+                            whileTap={{ scale: 0.985 }}
+                            onClick={() => cameraPhotoInputRef.current?.click()}
+                            className="flex min-h-20 items-center gap-4 rounded-[1.35rem] bg-white px-4 py-3 text-left transition hover:bg-neutral-100"
+                          >
+                            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                              <FiCamera />
+                            </span>
+                            <span className="text-sm font-semibold text-neutral-950">Prendre une photo</span>
+                          </motion.button>
 
-                    <motion.button
-                      type="button"
-                      whileTap={{ scale: 0.985 }}
-                      onClick={() => photoInputRef.current?.click()}
-                      className="flex min-h-20 items-center gap-4 rounded-[1.35rem] bg-white px-4 py-3 text-left transition hover:bg-neutral-100 lg:col-span-2"
-                    >
-                      <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-neutral-50 text-neutral-500">
-                        <FiImage />
-                      </span>
-                      <span>
-                        <span className="block text-sm font-semibold text-neutral-950">
-                          Uploader depuis le téléphone
-                        </span>
-                        <span className="mt-0.5 block text-xs text-neutral-500">
-                          Ajoutez plusieurs images claires et lumineuses.
-                        </span>
-                      </span>
-                    </motion.button>
+                          <motion.button
+                            type="button"
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.24 }}
+                            whileTap={{ scale: 0.985 }}
+                            onClick={() => photoInputRef.current?.click()}
+                            className="flex min-h-20 items-center gap-4 rounded-[1.35rem] bg-white px-4 py-3 text-left transition hover:bg-neutral-100 lg:col-span-2"
+                          >
+                            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-neutral-50 text-neutral-500">
+                              <FiImage />
+                            </span>
+                            <span>
+                              <span className="block text-sm font-semibold text-neutral-950">
+                                Uploader depuis le téléphone
+                              </span>
+                              <span className="mt-0.5 block text-xs text-neutral-500">
+                                Ajoutez plusieurs images claires et lumineuses.
+                              </span>
+                            </span>
+                          </motion.button>
+                        </>
+                      )}
+                    </AnimatePresence>
                   </div>
 
                   <input

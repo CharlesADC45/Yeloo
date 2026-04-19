@@ -10,11 +10,13 @@ import {
   FiUser,
   FiWifiOff,
   FiCamera,
+  FiEdit3,
 } from "react-icons/fi";
 import { motion } from "framer-motion";
 import { BottomNav } from "@/components/BottomNav";
 import { TopBar } from "@/components/TopBar";
 import { getApiBaseUrl } from "@/lib/api";
+import { updateMyAccount } from "@/lib/account";
 import { useAuthStore } from "@/stores/authStore";
 import { useFavoritesStore } from "@/stores/favoritesStore";
 
@@ -26,11 +28,17 @@ export default function ComptePage() {
   const setUser = useAuthStore((s) => s.setUser);
   const favoriteCount = useFavoritesStore((s) => s.favoriteIds.length);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [form, setForm] = useState({ fullName: "", email: "", phone: "" });
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
 
   const name = user?.full_name || "Utilisateur";
   const email = user?.email || "contact@yeloo.local";
   const phone = user?.phone || "+2250700000000";
   const isVerified = Boolean(user?.is_verified);
+  const isOwnerPending = user?.owner_verification_status === "pending_review";
   const bottomNav = <BottomNav />;
 
   const resolveAvatarUrl = (value?: string | null) => {
@@ -44,6 +52,14 @@ export default function ComptePage() {
   useEffect(() => {
     setAvatarPreview(null);
   }, [user?.id]);
+
+  useEffect(() => {
+    setForm({
+      fullName: user?.full_name || "",
+      email: user?.email || "",
+      phone: user?.phone || "",
+    });
+  }, [user?.email, user?.full_name, user?.phone]);
 
   const initials = useMemo(
     () =>
@@ -62,6 +78,9 @@ export default function ComptePage() {
     if (!file) return;
     if (!token) return;
 
+    const preview = URL.createObjectURL(file);
+    setAvatarPreview(preview);
+
     const formData = new FormData();
     formData.append("file", file);
 
@@ -74,6 +93,7 @@ export default function ComptePage() {
     });
 
     if (!response.ok) {
+      setAvatarPreview(null);
       return;
     }
 
@@ -91,6 +111,35 @@ export default function ComptePage() {
   };
 
   const displayedAvatar = avatarPreview ?? resolveAvatarUrl(user?.profile_image_url);
+
+  const handleProfileSave = async () => {
+    if (!token || !user) return;
+    setIsSavingProfile(true);
+    setProfileError(null);
+    setProfileSuccess(null);
+    try {
+      const updated = await updateMyAccount(token, {
+        full_name: form.fullName,
+        email: form.email,
+        phone: form.phone,
+      });
+      setUser({
+        ...user,
+        email: updated.email,
+        full_name: updated.full_name,
+        phone: updated.phone,
+        profile_image_url: updated.profile_image_url,
+        is_verified: updated.is_verified,
+        owner_verification_status: updated.owner_verification_status,
+      });
+      setIsEditingProfile(false);
+      setProfileSuccess("Profil mis à jour.");
+    } catch (err) {
+      setProfileError(err instanceof Error ? err.message : "Modification impossible.");
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   if (!isAuthenticated) {
     return (
@@ -133,6 +182,14 @@ export default function ComptePage() {
                   Gerez vos informations personnelles.
                 </p>
               </div>
+              <button
+                type="button"
+                onClick={() => setIsEditingProfile((value) => !value)}
+                className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+              >
+                <FiEdit3 />
+                {isEditingProfile ? "Fermer" : "Modifier le profil"}
+              </button>
             </div>
           </header>
 
@@ -176,18 +233,62 @@ export default function ComptePage() {
                     <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700">
                       Actif
                     </span>
-                    <span
-                      className={`rounded-full px-3 py-1 ${
-                        isVerified
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-amber-100 text-amber-700"
-                      }`}
-                    >
-                      {isVerified ? "Verifie" : "En attente"}
-                    </span>
+                    {isVerified && (
+                      <span className="rounded-full bg-blue-100 px-3 py-1 text-blue-700">
+                        Verifie
+                      </span>
+                    )}
+                    {isOwnerPending && (
+                      <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-700">
+                        En attente
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
+
+              {isEditingProfile && (
+                <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft">
+                  <h3 className="text-sm font-semibold text-neutral-900">Modifier le profil</h3>
+                  <div className="mt-4 grid gap-3">
+                    <label className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                      Nom complet
+                      <input
+                        value={form.fullName}
+                        onChange={(event) => setForm((prev) => ({ ...prev, fullName: event.target.value }))}
+                        className="mt-2 h-12 w-full rounded-2xl border border-neutral-200 px-4 text-sm font-normal normal-case tracking-normal text-neutral-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </label>
+                    <label className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                      Email
+                      <input
+                        type="email"
+                        value={form.email}
+                        onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
+                        className="mt-2 h-12 w-full rounded-2xl border border-neutral-200 px-4 text-sm font-normal normal-case tracking-normal text-neutral-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </label>
+                    <label className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                      Téléphone
+                      <input
+                        value={form.phone}
+                        onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))}
+                        className="mt-2 h-12 w-full rounded-2xl border border-neutral-200 px-4 text-sm font-normal normal-case tracking-normal text-neutral-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </label>
+                  </div>
+                  {profileError && <p className="mt-3 text-xs text-red-600">{profileError}</p>}
+                  {profileSuccess && <p className="mt-3 text-xs text-emerald-600">{profileSuccess}</p>}
+                  <button
+                    type="button"
+                    onClick={handleProfileSave}
+                    disabled={isSavingProfile}
+                    className="mt-4 w-full rounded-full bg-blue-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                  >
+                    {isSavingProfile ? "Sauvegarde..." : "Enregistrer"}
+                  </button>
+                </div>
+              )}
 
               <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft">
                 <h3 className="text-sm font-semibold text-neutral-900">
@@ -216,6 +317,7 @@ export default function ComptePage() {
                   {[
                     { label: "Statut de synchro offline", icon: FiWifiOff, href: "/compte/offline" },
                     { label: "Informations personnelles", icon: FiUser, href: "/compte/informations-personnelles" },
+                    { label: "Mot de passe", icon: FiSettings, href: "/compte/changer-mot-de-passe" },
                     { label: "Parametres", icon: FiSettings, href: "/compte/parametres" },
                     { label: "Aide & Support", icon: FiHelpCircle, href: "/compte/aide-support" },
                   ].map((item) => (

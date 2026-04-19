@@ -21,6 +21,7 @@ import {
   updateAdminUser,
   type AdminDashboard,
 } from "@/lib/admin";
+import { changePassword } from "@/lib/account";
 import { getApiBaseUrl } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -50,11 +51,18 @@ export default function AdminProfilPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingPassword, setIsSavingPassword] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"account" | "password">("account");
   const [form, setForm] = useState<AdminProfileForm>({
     fullName: "",
     email: "",
     phone: "",
+  });
+  const [passwordForm, setPasswordForm] = useState({
+    current: "",
+    next: "",
+    confirm: "",
   });
 
   useEffect(() => {
@@ -148,6 +156,9 @@ export default function AdminProfilPage() {
       return;
     }
 
+    const preview = URL.createObjectURL(file);
+    setAvatarPreview(preview);
+
     const payload = new FormData();
     payload.append("file", file);
     const response = await fetch(`${getApiBaseUrl()}/api/users/me/avatar`, {
@@ -157,6 +168,7 @@ export default function AdminProfilPage() {
     });
 
     if (!response.ok) {
+      setAvatarPreview(null);
       setError("Impossible de mettre à jour la photo.");
       return;
     }
@@ -190,6 +202,26 @@ export default function AdminProfilPage() {
       setError(err instanceof Error ? err.message : "Mise à jour impossible.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handlePasswordSave = async () => {
+    if (!token) return;
+    setError(null);
+    setSuccess(null);
+    if (passwordForm.next !== passwordForm.confirm) {
+      setError("Les nouveaux mots de passe ne correspondent pas.");
+      return;
+    }
+    setIsSavingPassword(true);
+    try {
+      await changePassword(token, passwordForm.current, passwordForm.next);
+      setPasswordForm({ current: "", next: "", confirm: "" });
+      setSuccess("Mot de passe mis Ã  jour.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Mot de passe impossible Ã  modifier.");
+    } finally {
+      setIsSavingPassword(false);
     }
   };
 
@@ -286,18 +318,81 @@ export default function AdminProfilPage() {
           </div>
 
           <div className="mt-6 flex gap-6 border-b border-neutral-200 text-sm">
-            <button type="button" className="border-b-2 border-blue-600 pb-3 font-semibold text-blue-700">
+            <button
+              type="button"
+              onClick={() => setActiveTab("account")}
+              className={`pb-3 font-semibold ${
+                activeTab === "account"
+                  ? "border-b-2 border-blue-600 text-blue-700"
+                  : "text-neutral-500"
+              }`}
+            >
               My Account
             </button>
-            <button type="button" className="pb-3 text-neutral-500">
+            <button
+              type="button"
+              onClick={() => setActiveTab("password")}
+              className={`pb-3 font-semibold ${
+                activeTab === "password"
+                  ? "border-b-2 border-blue-600 text-blue-700"
+                  : "text-neutral-500"
+              }`}
+            >
               Password
-            </button>
-            <button type="button" className="pb-3 text-neutral-500">
-              Notifications
             </button>
           </div>
         </section>
 
+        {activeTab === "password" ? (
+          <section className="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-soft">
+            <h2 className="text-lg font-semibold text-neutral-950">Changer le mot de passe</h2>
+            <p className="mt-1 text-sm text-neutral-500">
+              Mettez Ã  jour votre accÃ¨s super admin en toute sÃ©curitÃ©.
+            </p>
+            <div className="mt-5 grid gap-4 md:grid-cols-3">
+              {[
+                ["Mot de passe actuel", "current"],
+                ["Nouveau mot de passe", "next"],
+                ["Confirmer", "confirm"],
+              ].map(([label, key]) => (
+                <label key={key} className="block">
+                  <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-neutral-500">
+                    {label}
+                  </span>
+                  <input
+                    type="password"
+                    value={passwordForm[key as keyof typeof passwordForm]}
+                    onChange={(event) =>
+                      setPasswordForm((current) => ({
+                        ...current,
+                        [key]: event.target.value,
+                      }))
+                    }
+                    className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-800 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70"
+                  />
+                </label>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={handlePasswordSave}
+              disabled={isSavingPassword}
+              className="mt-5 rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              {isSavingPassword ? "Sauvegarde..." : "Mettre Ã  jour"}
+            </button>
+            {success && (
+              <p className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                {success}
+              </p>
+            )}
+            {error && (
+              <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-600">
+                {error}
+              </p>
+            )}
+          </section>
+        ) : (
         <section className="grid gap-6 xl:grid-cols-[1.8fr_0.95fr]">
           <div className="space-y-6">
             <section className="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-soft">
@@ -472,6 +567,7 @@ export default function AdminProfilPage() {
             </section>
           </aside>
         </section>
+        )}
       </motion.section>
     </main>
   );

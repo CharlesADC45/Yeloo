@@ -11,7 +11,7 @@ from app.db.deps import get_db
 from app.models.feature_module import FeatureModule
 from app.models.user import User
 from app.schemas.admin import FeatureModulePublic
-from app.schemas.user import UserPublic
+from app.schemas.user import UserPublic, UserUpdate
 
 
 router = APIRouter()
@@ -25,6 +25,47 @@ def list_public_modules(db: Session = Depends(get_db)):
 
 @router.get("/me", response_model=UserPublic)
 def me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+
+@router.patch("/me", response_model=UserPublic)
+def update_me(
+    payload: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if payload.email is not None:
+        normalized_email = payload.email.strip().lower()
+        if not normalized_email:
+            raise HTTPException(status_code=400, detail="Email requis.")
+        if normalized_email != current_user.email:
+            existing_email = (
+                db.query(User)
+                .filter(User.email == normalized_email, User.id != current_user.id)
+                .first()
+            )
+            if existing_email:
+                raise HTTPException(status_code=400, detail="Cet e-mail est déjà utilisé.")
+            current_user.email = normalized_email
+
+    if payload.phone is not None:
+        normalized_phone = payload.phone.strip() or None
+        if normalized_phone and normalized_phone != current_user.phone:
+            existing_phone = (
+                db.query(User)
+                .filter(User.phone == normalized_phone, User.id != current_user.id)
+                .first()
+            )
+            if existing_phone:
+                raise HTTPException(status_code=400, detail="Ce numéro est déjà utilisé.")
+        current_user.phone = normalized_phone
+
+    if payload.full_name is not None:
+        current_user.full_name = payload.full_name.strip() or None
+
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
     return current_user
 
 

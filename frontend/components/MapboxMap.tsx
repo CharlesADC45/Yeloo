@@ -6,8 +6,10 @@ import type {
   LatLngBounds,
   Map as LeafletMap,
   Marker as LeafletMarker,
+  TileLayer,
 } from "leaflet";
 import { useEffect, useRef, useState } from "react";
+import { FiLayers } from "react-icons/fi";
 import type { Property } from "@/lib/properties";
 
 type Props = {
@@ -86,10 +88,13 @@ export function MapboxMap({
   const markersRef = useRef<LeafletMarker[]>([]);
   const markerByPropertyIdRef = useRef<Map<string, LeafletMarker>>(new Map());
   const userMarkerRef = useRef<LeafletMarker | null>(null);
+  const streetLayerRef = useRef<TileLayer | null>(null);
+  const satelliteLayerRef = useRef<TileLayer | null>(null);
   const boundsRef = useRef<LatLngBounds | null>(null);
   const leafletRef = useRef<typeof import("leaflet") | null>(null);
   const renderMarkersRef = useRef<(() => void) | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [isSatellite, setIsSatellite] = useState(false);
 
   const openMarkerPopup = (marker: LeafletMarker) => {
     const map = mapRef.current;
@@ -120,12 +125,19 @@ export function MapboxMap({
       const map = leaflet.map(containerRef.current).setView(DEFAULT_CENTER, 12);
       mapRef.current = map;
 
-      leaflet
+      streetLayerRef.current = leaflet
         .tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           attribution: "&copy; OpenStreetMap contributors",
           maxZoom: 19,
         })
         .addTo(map);
+      satelliteLayerRef.current = leaflet.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        {
+          attribution: "Tiles &copy; Esri",
+          maxZoom: 19,
+        }
+      );
 
       const handleViewportChange = () => {
         renderMarkersRef.current?.();
@@ -182,6 +194,22 @@ export function MapboxMap({
       { enableHighAccuracy: true, timeout: 10000 }
     );
   }, [locateSignal]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const streetLayer = streetLayerRef.current;
+    const satelliteLayer = satelliteLayerRef.current;
+    if (!map || !streetLayer || !satelliteLayer) return;
+
+    if (isSatellite) {
+      if (map.hasLayer(streetLayer)) map.removeLayer(streetLayer);
+      if (!map.hasLayer(satelliteLayer)) satelliteLayer.addTo(map);
+      return;
+    }
+
+    if (map.hasLayer(satelliteLayer)) map.removeLayer(satelliteLayer);
+    if (!map.hasLayer(streetLayer)) streetLayer.addTo(map);
+  }, [isSatellite]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -431,12 +459,22 @@ export function MapboxMap({
 
   return (
     <div
-      ref={containerRef}
       style={{ width: "100%", minWidth: 0, maxWidth: "100%" }}
       className={`relative z-0 block w-full min-w-0 max-w-full overflow-hidden bg-neutral-100 ${
         className ?? "h-[62vh] min-h-[420px]"
       }`}
-    />
+    >
+      <div ref={containerRef} className="absolute inset-0" />
+      <button
+        type="button"
+        onClick={() => setIsSatellite((value) => !value)}
+        className="absolute right-4 top-4 z-[500] inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-neutral-800 shadow-[0_14px_34px_rgba(15,23,42,0.18)] transition hover:scale-105"
+        aria-label={isSatellite ? "Afficher le plan" : "Afficher en mode satellite"}
+        title={isSatellite ? "Plan" : "Satellite"}
+      >
+        <FiLayers className="text-lg" />
+      </button>
+    </div>
   );
 }
 

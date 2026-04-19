@@ -6,7 +6,7 @@ from app.core.security import get_current_user
 from app.db.deps import get_db
 from app.models.owner_profile import OwnerProfile
 from app.models.user import User
-from app.schemas.owner_profile import OwnerProfilePublic
+from app.schemas.owner_profile import OwnerProfilePublic, OwnerProfileUpdate
 
 
 router = APIRouter()
@@ -29,6 +29,39 @@ def get_owner_profile(
     )
     if not profile:
         raise HTTPException(status_code=404, detail="Profil proprietaire introuvable.")
+    return profile
+
+
+@router.patch("/me", response_model=OwnerProfilePublic)
+def update_owner_profile(
+    payload: OwnerProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    profile = (
+        db.query(OwnerProfile).filter(OwnerProfile.user_id == current_user.id).first()
+    )
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profil proprietaire introuvable.")
+
+    for field in (
+        "city",
+        "main_address",
+        "bank_name",
+        "account_number",
+        "mobile_money",
+        "account_holder",
+    ):
+        value = getattr(payload, field)
+        if value is not None:
+            cleaned = value.strip()
+            if not cleaned:
+                raise HTTPException(status_code=400, detail="Champ requis.")
+            setattr(profile, field, cleaned)
+
+    db.add(profile)
+    db.commit()
+    db.refresh(profile)
     return profile
 
 
