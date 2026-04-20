@@ -12,6 +12,7 @@ class PropertyCreate(BaseModel):
     price: float = Field(gt=0)
     price_period: str = Field(default="mois", pattern="^(jour|semaine|mois)$")
     deposit_months: int = Field(ge=1)
+    advance_months: int = Field(ge=1)
     surface_m2: int | None = Field(default=None, gt=0)
     rooms: int | None = Field(default=None, ge=0)
     bathrooms: int | None = Field(default=None, ge=0)
@@ -34,6 +35,7 @@ class PropertyUpdate(BaseModel):
     price: float | None = Field(default=None, gt=0)
     price_period: str | None = Field(default=None, pattern="^(jour|semaine|mois)$")
     deposit_months: int | None = Field(default=None, ge=1)
+    advance_months: int | None = Field(default=None, ge=1)
     surface_m2: int | None = Field(default=None, gt=0)
     rooms: int | None = Field(default=None, ge=0)
     bathrooms: int | None = Field(default=None, ge=0)
@@ -58,6 +60,7 @@ class PropertyPublic(BaseModel):
     price: float
     price_period: str
     deposit_months: int | None = None
+    advance_months: int | None = None
     surface_m2: int | None = None
     rooms: int | None = None
     bathrooms: int | None = None

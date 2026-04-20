@@ -188,7 +188,7 @@ function CartePageContent() {
 
   const renderExpandedFilters = (gridClassName: string) => (
     <>
-      <div className={`mt-4 grid gap-3 ${gridClassName}`}>
+      <div className={`mt-3 grid gap-3 ${gridClassName}`}>
         <div>
           <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500">
             Ville
@@ -698,7 +698,7 @@ function CartePageContent() {
         <section className="h-full xl:hidden">
           <div className="relative h-full overflow-hidden bg-white">
             <div className="relative h-full w-full overflow-hidden bg-white">
-                <div className="absolute inset-x-4 top-4 z-50 flex items-center gap-3">
+                <div className="absolute inset-x-3 top-3 z-50 flex items-center gap-2.5">
                   <button
                     type="button"
                     onClick={() => router.back()}
@@ -707,8 +707,8 @@ function CartePageContent() {
                   >
                     <FiArrowLeft className="h-5 w-5" />
                   </button>
-                  <div className="min-w-0 flex-1 rounded-[1.75rem] bg-white/95 px-4 py-3 shadow-[0_16px_36px_rgba(15,23,42,0.16)] ring-1 ring-black/5 backdrop-blur">
-                    <label className="flex items-center gap-3 rounded-[1.1rem] border border-neutral-200/80 bg-neutral-50/90 px-3 py-2.5">
+                  <div className="min-w-0 flex-1 rounded-[1.45rem] bg-white/95 px-3 py-2.5 shadow-[0_14px_30px_rgba(15,23,42,0.14)] ring-1 ring-black/5 backdrop-blur">
+                    <label className="flex items-center gap-2.5 rounded-full px-1 py-0.5">
                       <FiSearch className="h-4.5 w-4.5 shrink-0 text-neutral-500" />
                       <input
                         value={filters.city}
@@ -722,7 +722,7 @@ function CartePageContent() {
                   <button
                     type="button"
                     onClick={() => setShowFilters((prev) => !prev)}
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/95 text-neutral-800 shadow-[0_10px_24px_rgba(15,23,42,0.14)] ring-1 ring-black/5 backdrop-blur"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/95 text-neutral-800 shadow-[0_10px_24px_rgba(15,23,42,0.14)] ring-1 ring-black/5 backdrop-blur"
                     aria-label="Filtres"
                   >
                     <FiSliders className="h-4.5 w-4.5" />
@@ -736,7 +736,7 @@ function CartePageContent() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -8, scale: 0.98 }}
                     transition={{ duration: 0.22 }}
-                    className="absolute inset-x-4 top-[4.9rem] z-50 rounded-[1.75rem] bg-white/95 p-4 shadow-[0_24px_60px_rgba(15,23,42,0.22)] ring-1 ring-white/70 backdrop-blur-xl"
+                    className="absolute inset-x-3 top-[4.35rem] z-50 rounded-[1.5rem] bg-white/95 p-3 shadow-[0_22px_54px_rgba(15,23,42,0.2)] ring-1 ring-white/70 backdrop-blur-xl"
                   >
                     {renderExpandedFilters("grid-cols-1")}
                   </motion.div>
@@ -1005,18 +1005,18 @@ function CartePageContent() {
 
                 <div className="hidden xl:block xl:sticky xl:top-0 xl:z-20 xl:bg-white xl:pb-5">
                   <div className="space-y-5">
-                    <div className="rounded-[1.75rem] border border-neutral-200 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)] sm:p-5">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                    <div className="rounded-[1.5rem] border border-neutral-200 bg-white p-3 shadow-[0_8px_24px_rgba(15,23,42,0.035)]">
+                      <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center">
                         <input
                           value={filters.city}
                           onChange={handleQuickSearch}
                           placeholder="Recherche quartier ou ville..."
-                          className="w-full min-w-0 flex-1 rounded-full border border-neutral-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70"
+                          className="w-full min-w-0 flex-1 rounded-full border border-neutral-200 bg-white px-3.5 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70"
                         />
                         <button
                           type="button"
                           onClick={() => setShowFilters((prev) => !prev)}
-                          className="w-full rounded-full border border-neutral-200 px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 sm:w-auto"
+                          className="w-full rounded-full border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 sm:w-auto"
                         >
                           {showFilters ? "Masquer filtres" : "Afficher filtres"}
                         </button>

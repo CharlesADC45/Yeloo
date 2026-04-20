@@ -61,6 +61,7 @@ export type AdminPropertySummary = {
   price: number;
   price_period: string;
   deposit_months?: number | null;
+  advance_months?: number | null;
   surface_m2?: number | null;
   rooms?: number | null;
   bathrooms?: number | null;

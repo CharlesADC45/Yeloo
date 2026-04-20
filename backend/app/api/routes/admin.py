@@ -134,6 +134,7 @@ def _serialize_property(property_obj: Property) -> AdminPropertySummary:
         price=float(property_obj.price),
         price_period=property_obj.price_period,
         deposit_months=property_obj.deposit_months,
+        advance_months=property_obj.advance_months,
         surface_m2=property_obj.surface_m2,
         rooms=property_obj.rooms,
         bathrooms=property_obj.bathrooms,

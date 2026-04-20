@@ -18,6 +18,7 @@ export type Property = {
   price: number;
   pricePeriod: string;
   depositMonths?: number | null;
+  advanceMonths?: number | null;
   surfaceM2?: number;
   rooms?: number;
   bathrooms?: number;
@@ -44,6 +45,7 @@ export type ApiProperty = {
   price: number | string;
   price_period?: string | null;
   deposit_months?: number | string | null;
+  advance_months?: number | string | null;
   surface_m2?: number | string | null;
   rooms?: number | string | null;
   bathrooms?: number | string | null;
@@ -117,6 +119,7 @@ export const mapApiProperty = (api: ApiProperty): Property => {
     price: toNumber(api.price) ?? 0,
     pricePeriod: api.price_period || "mois",
     depositMonths: toNumber(api.deposit_months) ?? null,
+    advanceMonths: toNumber(api.advance_months) ?? null,
     surfaceM2: toNumber(api.surface_m2),
     rooms: toNumber(api.rooms),
     bathrooms: toNumber(api.bathrooms),

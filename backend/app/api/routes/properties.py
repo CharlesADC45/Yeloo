@@ -67,6 +67,7 @@ def create_property(
         price=payload.price,
         price_period=payload.price_period,
         deposit_months=payload.deposit_months,
+        advance_months=payload.advance_months,
         surface_m2=payload.surface_m2,
         rooms=payload.rooms,
         bathrooms=payload.bathrooms,

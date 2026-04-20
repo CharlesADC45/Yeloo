@@ -24,6 +24,7 @@ type FormState = {
   price: string;
   pricePeriod: "jour" | "semaine" | "mois";
   depositMonths: string;
+  advanceMonths: string;
   surfaceM2: string;
   rooms: string;
   bathrooms: string;
@@ -57,6 +58,7 @@ const DEFAULT_FORM: FormState = {
   price: "",
   pricePeriod: "mois",
   depositMonths: "",
+  advanceMonths: "",
   surfaceM2: "",
   rooms: "",
   bathrooms: "",
@@ -142,6 +144,8 @@ export default function NouveauBienPage() {
   );
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
   const [isPhotoOptionsOpen, setIsPhotoOptionsOpen] = useState(false);
+  const [isVideoOptionsOpen, setIsVideoOptionsOpen] = useState(false);
+  const [isTourOptionsOpen, setIsTourOptionsOpen] = useState(false);
   const [submissionStatus, setSubmissionStatus] = useState<
     "idle" | "running" | "error" | "success"
   >("idle");
@@ -157,7 +161,9 @@ export default function NouveauBienPage() {
   const photoInputRef = useRef<HTMLInputElement | null>(null);
   const cameraPhotoInputRef = useRef<HTMLInputElement | null>(null);
   const videoInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraVideoInputRef = useRef<HTMLInputElement | null>(null);
   const tourInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraTourInputRef = useRef<HTMLInputElement | null>(null);
   const isOwnerRole = user?.role === "proprietaire" || user?.role === "admin";
   const isVerifiedOwner = isOwnerRole && Boolean(user?.is_verified);
 
@@ -325,6 +331,10 @@ export default function NouveauBienPage() {
       if (!form.depositMonths.trim() || Number.isNaN(depositValue) || depositValue < 1) {
         nextErrors.depositMonths = "Caution invalide";
       }
+      const advanceValue = Number(form.advanceMonths);
+      if (!form.advanceMonths.trim() || Number.isNaN(advanceValue) || advanceValue < 1) {
+        nextErrors.advanceMonths = "Avance invalide";
+      }
       if (form.coordinates.trim()) {
         const coords = parseCoordinates(form.coordinates);
         if (!coords) {
@@ -457,6 +467,7 @@ export default function NouveauBienPage() {
           price: priceValue,
           price_period: form.pricePeriod,
           deposit_months: Number(form.depositMonths),
+          advance_months: Number(form.advanceMonths),
           surface_m2: form.surfaceM2 ? parseLocaleNumber(form.surfaceM2) : null,
           rooms: form.rooms ? parseLocaleNumber(form.rooms) : null,
           bathrooms: form.bathrooms ? parseLocaleNumber(form.bathrooms) : null,
@@ -820,6 +831,24 @@ export default function NouveauBienPage() {
 
                   <label className="flex flex-col gap-1 text-xs text-neutral-600">
                     <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
+                      Avance (mois)
+                    </span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={form.advanceMonths}
+                      onChange={(event) => updateField("advanceMonths", event.target.value)}
+                      className={`h-12 rounded-2xl border bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70 ${
+                        errors.advanceMonths ? "border-red-300 ring-red-200" : "border-neutral-200"
+                      }`}
+                    />
+                    {errors.advanceMonths && (
+                      <span className="text-[11px] text-red-500">{errors.advanceMonths}</span>
+                    )}
+                  </label>
+
+                  <label className="flex flex-col gap-1 text-xs text-neutral-600">
+                    <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
                       Ville
                     </span>
                     <input
@@ -1104,13 +1133,48 @@ export default function NouveauBienPage() {
                       )}
                       <button
                         type="button"
-                        onClick={() => videoInputRef.current?.click()}
+                        onClick={() => setIsVideoOptionsOpen((value) => !value)}
                         className="mt-4 min-h-11 rounded-full bg-neutral-950 px-4 py-2 text-xs font-semibold text-white"
                       >
-                        Choisir une vidéo
+                        {isVideoOptionsOpen ? "Fermer" : "Ouvrir les options"}
                       </button>
+                      <AnimatePresence initial={false}>
+                        {isVideoOptionsOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.22 }}
+                            className="mt-3 grid gap-2"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => cameraVideoInputRef.current?.click()}
+                              className="flex min-h-12 items-center gap-3 rounded-2xl bg-neutral-50 px-3 py-2 text-left text-xs font-semibold text-neutral-800 transition hover:bg-neutral-100"
+                            >
+                              <FiCamera className="text-blue-600" />
+                              Prendre une vidéo
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => videoInputRef.current?.click()}
+                              className="flex min-h-12 items-center gap-3 rounded-2xl bg-neutral-50 px-3 py-2 text-left text-xs font-semibold text-neutral-800 transition hover:bg-neutral-100"
+                            >
+                              <FiUploadCloud className="text-neutral-500" />
+                              Uploader depuis le téléphone
+                            </button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                       <input
                         ref={videoInputRef}
+                        type="file"
+                        accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                        onChange={handleVideoChange}
+                        className="hidden"
+                      />
+                      <input
+                        ref={cameraVideoInputRef}
                         type="file"
                         accept="video/mp4,video/webm,video/ogg,video/quicktime"
                         capture="environment"
@@ -1159,13 +1223,48 @@ export default function NouveauBienPage() {
                       )}
                       <button
                         type="button"
-                        onClick={() => tourInputRef.current?.click()}
+                        onClick={() => setIsTourOptionsOpen((value) => !value)}
                         className="mt-4 min-h-11 rounded-full bg-neutral-950 px-4 py-2 text-xs font-semibold text-white"
                       >
-                        Ajouter la visite 360°
+                        {isTourOptionsOpen ? "Fermer" : "Ouvrir les options"}
                       </button>
+                      <AnimatePresence initial={false}>
+                        {isTourOptionsOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.22 }}
+                            className="mt-3 grid gap-2"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => cameraTourInputRef.current?.click()}
+                              className="flex min-h-12 items-center gap-3 rounded-2xl bg-neutral-50 px-3 py-2 text-left text-xs font-semibold text-neutral-800 transition hover:bg-neutral-100"
+                            >
+                              <FiCamera className="text-blue-600" />
+                              Capturer une vidéo 360°
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => tourInputRef.current?.click()}
+                              className="flex min-h-12 items-center gap-3 rounded-2xl bg-neutral-50 px-3 py-2 text-left text-xs font-semibold text-neutral-800 transition hover:bg-neutral-100"
+                            >
+                              <FiFilePlus className="text-neutral-500" />
+                              Uploader une visite 360°
+                            </button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                       <input
                         ref={tourInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/ogg,video/quicktime"
+                        onChange={handleTourChange}
+                        className="hidden"
+                      />
+                      <input
+                        ref={cameraTourInputRef}
                         type="file"
                         accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/ogg,video/quicktime"
                         capture="environment"
@@ -1200,6 +1299,12 @@ export default function NouveauBienPage() {
                         <span>Caution</span>
                         <span className="font-semibold text-neutral-900">
                           {form.depositMonths || "-"} mois
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Avance</span>
+                        <span className="font-semibold text-neutral-900">
+                          {form.advanceMonths || "-"} mois
                         </span>
                       </div>
                       <div className="flex items-center justify-between">

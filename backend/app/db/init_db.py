@@ -98,17 +98,25 @@ def _ensure_owner_profile_kyc_columns() -> None:
             connection.execute(text(statement))
 
 
-def _ensure_property_deposit_column() -> None:
+def _ensure_property_payment_columns() -> None:
     inspector = inspect(engine)
     if "properties" not in inspector.get_table_names():
         return
 
     existing_columns = {column["name"] for column in inspector.get_columns("properties")}
-    if "deposit_months" in existing_columns:
+    statements: list[str] = []
+
+    if "deposit_months" not in existing_columns:
+        statements.append("ALTER TABLE properties ADD COLUMN IF NOT EXISTS deposit_months INTEGER")
+    if "advance_months" not in existing_columns:
+        statements.append("ALTER TABLE properties ADD COLUMN IF NOT EXISTS advance_months INTEGER")
+
+    if not statements:
         return
 
     with engine.begin() as connection:
-        connection.execute(text("ALTER TABLE properties ADD COLUMN IF NOT EXISTS deposit_months INTEGER"))
+        for statement in statements:
+            connection.execute(text(statement))
 
 
 def _seed_default_feature_modules() -> None:
@@ -193,6 +201,6 @@ def init_db() -> None:
     _ensure_feature_modules_table()
     _ensure_lease_request_v2_columns()
     _ensure_owner_profile_kyc_columns()
-    _ensure_property_deposit_column()
+    _ensure_property_payment_columns()
     _seed_default_feature_modules()
     _ensure_bootstrap_super_admin()

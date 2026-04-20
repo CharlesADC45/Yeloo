@@ -436,6 +436,7 @@ export default function AdminPage() {
                         </p>
                         <p className="mt-1 text-xs text-neutral-500">
                           {property.deposit_months ? `Caution : ${property.deposit_months} mois` : "Caution non renseignée"}
+                          {property.advance_months ? ` · Avance : ${property.advance_months} mois` : ""}
                         </p>
                         <p className="mt-1 text-[11px] text-neutral-400">
                           {property.owner_name || "Propriétaire inconnu"} · {formatDate(property.created_at)}

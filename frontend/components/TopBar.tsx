@@ -11,7 +11,6 @@ import {
   FiCompass,
   FiGrid,
   FiLogOut,
-  FiMenu,
   FiX,
 } from "react-icons/fi";
 import { adminNavItems } from "@/lib/adminNav";
@@ -81,42 +80,12 @@ function YelooBrand() {
 
 function LocationBadgeIcon() {
   return (
-    <svg
-      viewBox="0 0 48 48"
+    <img
+      src="/icons/address.png"
+      alt=""
       aria-hidden="true"
-      className="h-[34px] w-[34px]"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M20.5 6.5C12.77 6.5 6.5 12.77 6.5 20.5C6.5 30.2 15.83 38.01 19.05 40.39C19.9 41.01 21.1 41.01 21.95 40.39C25.17 38.01 34.5 30.2 34.5 20.5C34.5 12.77 28.23 6.5 20.5 6.5Z"
-        stroke="currentColor"
-        strokeWidth="2.9"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle cx="20.5" cy="19.5" r="4.8" stroke="currentColor" strokeWidth="2.9" />
-      <path
-        d="M26.8 27.9L33.9 22.9L41 27.9V38.1C41 39 40.27 39.7 39.38 39.7H28.42C27.53 39.7 26.8 39 26.8 38.1V27.9Z"
-        stroke="currentColor"
-        strokeWidth="2.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M30.8 39.7V31.9H37V39.7"
-        stroke="currentColor"
-        strokeWidth="2.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M31.8 17.2H34.6"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-      />
-    </svg>
+      className="h-7 w-7 object-contain sm:h-8 sm:w-8"
+    />
   );
 }
 
@@ -466,10 +435,10 @@ function TopBarContent({
                   ref={notificationButtonRef}
                   type="button"
                   onClick={() => setIsNotificationsOpen((value) => !value)}
-                  className="relative flex h-11 w-11 items-center justify-center rounded-full border border-blue-100 bg-blue-50 text-blue-700 shadow-sm sm:h-12 sm:w-12 sm:text-lg"
+                  className="relative flex h-12 w-12 items-center justify-center rounded-full bg-white text-blue-700 shadow-sm ring-1 ring-blue-100 sm:h-[3.25rem] sm:w-[3.25rem]"
                   aria-label="Notifications"
                 >
-                  <FiBell />
+                  <FiBell className="h-6 w-6" />
                   {unreadNotifications.length > 0 && (
                     <span className="absolute -right-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-bold text-white">
                       {unreadNotifications.length > 9 ? "9+" : unreadNotifications.length}
@@ -594,10 +563,10 @@ function TopBarContent({
               <button
                 type="button"
                 onClick={() => setIsMenuOpen(true)}
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-sm sm:hidden"
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-neutral-200 sm:hidden"
                 aria-label="Menu"
                 >
-                  <FiMenu />
+                  <img src="/icons/menu.png" alt="" className="h-6 w-6 object-contain" />
                 </button>
             </div>
           </div>
@@ -613,7 +582,7 @@ function TopBarContent({
                   y: compactHomeSearch ? -22 : 0,
                 }}
                 transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                className="overflow-hidden text-center"
+                className="hidden overflow-hidden text-center md:block"
               >
                 <div className="mx-auto w-full max-w-3xl">
                   <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">

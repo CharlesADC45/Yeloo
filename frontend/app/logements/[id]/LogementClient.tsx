@@ -315,6 +315,10 @@ export function LogementClient({ id }: Props) {
           label: "Caution",
           value: property.depositMonths ? `${property.depositMonths} mois` : "Non renseignée",
         },
+        {
+          label: "Avance",
+          value: property.advanceMonths ? `${property.advanceMonths} mois` : "Non renseignée",
+        },
       ]
     : [];
   const featureItems = property

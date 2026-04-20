@@ -42,6 +42,7 @@ class AdminPropertySummary(BaseModel):
     price: float
     price_period: str
     deposit_months: int | None = None
+    advance_months: int | None = None
     surface_m2: int | None = None
     rooms: int | None = None
     bathrooms: int | None = None

@@ -21,6 +21,7 @@ class Property(Base):
     price: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     price_period: Mapped[str] = mapped_column(Enum("jour", "semaine", "mois", name="price_period"), nullable=False, default="mois")
     deposit_months: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    advance_months: Mapped[int | None] = mapped_column(Integer, nullable=True)
     surface_m2: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     rooms: Mapped[int | None] = mapped_column(Integer, nullable=True)
