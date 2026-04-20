@@ -436,6 +436,19 @@ export default function NouveauBienPage() {
       updateSubmissionStep(id, "success");
     };
 
+    const cleanupCreatedProperty = async () => {
+      if (!propertyId) return true;
+      try {
+        const response = await fetch(`${getApiBaseUrl()}/api/properties/${propertyId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        return response.ok || response.status === 404;
+      } catch {
+        return false;
+      }
+    };
+
     try {
       await runStep("validation", async () => {
         priceValue = parseLocaleNumber(form.price);
@@ -570,9 +583,15 @@ export default function NouveauBienPage() {
       setShouldRedirect(true);
     } catch (err) {
       const message = normalizeFetchError(err, "Publication impossible.");
+      const cleanupSucceeded = await cleanupCreatedProperty();
+      const cleanupMessage = propertyId
+        ? cleanupSucceeded
+          ? " L'annonce temporaire a été supprimée."
+          : " L'annonce temporaire n'a pas pu être supprimée automatiquement."
+        : "";
       setSubmissionStatus("error");
       updateSubmissionStep(activeStep, "error", message);
-      setSubmitError(message);
+      setSubmitError(`${message}${cleanupMessage}`);
     } finally {
       setIsSubmitting(false);
     }

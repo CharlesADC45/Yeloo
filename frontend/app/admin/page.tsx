@@ -295,7 +295,7 @@ export default function AdminPage() {
 
             <section className="grid gap-8 xl:grid-cols-[1.18fr_0.82fr]">
               <div className="space-y-5">
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex items-start justify-between gap-3">
                   <div>
                     <h2 className="text-xl font-semibold tracking-tight text-neutral-950">Pilotage rapide</h2>
                     <p className="mt-1 text-sm text-neutral-500">
@@ -304,7 +304,7 @@ export default function AdminPage() {
                   </div>
                   <Link
                     href="/admin/modules"
-                    className="inline-flex items-center gap-2 rounded-full bg-neutral-950 px-3 py-1.5 text-xs font-semibold text-white"
+                    className="mt-0.5 inline-flex shrink-0 items-center gap-2 rounded-full bg-neutral-950 px-3 py-1.5 text-xs font-semibold text-white"
                   >
                     Tout voir
                     <FiArrowRight />
@@ -337,12 +337,12 @@ export default function AdminPage() {
               </div>
 
               <div className="space-y-5">
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex items-start justify-between gap-3">
                   <div>
                     <h2 className="text-xl font-semibold tracking-tight text-neutral-950">Queue KYC</h2>
                     <p className="mt-1 text-sm text-neutral-500">Les propriétaires qui attendent une décision admin.</p>
                   </div>
-                  <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                  <span className="mt-0.5 shrink-0 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
                     {kycQueue.length} dossier(s)
                   </span>
                 </div>
@@ -374,12 +374,12 @@ export default function AdminPage() {
 
             <section className="grid gap-8 xl:grid-cols-[0.9fr_1.1fr]">
               <div>
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex items-start justify-between gap-3">
                   <div>
                     <h2 className="text-xl font-semibold tracking-tight text-neutral-950">Activité récente</h2>
                     <p className="mt-1 text-sm text-neutral-500">Ce qui vient de bouger sur la plateforme.</p>
                   </div>
-                  <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-600">
+                  <span className="mt-0.5 shrink-0 rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-600">
                     {recentActivity.length} entrée(s)
                   </span>
                 </div>
@@ -415,7 +415,7 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <div>
+                <div className="border-t border-neutral-200/70 pt-5 md:border-t-0 md:pt-0">
                   <h2 className="text-lg font-semibold text-neutral-950">Publications récentes</h2>
                   <div className="mt-4 divide-y divide-neutral-100">
                     {dashboard.recent_properties.slice(0, 5).map((property) => (

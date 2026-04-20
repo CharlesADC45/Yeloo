@@ -435,7 +435,7 @@ function TopBarContent({
                   ref={notificationButtonRef}
                   type="button"
                   onClick={() => setIsNotificationsOpen((value) => !value)}
-                  className="relative flex h-12 w-12 items-center justify-center rounded-full bg-white text-blue-700 shadow-sm ring-1 ring-blue-100 sm:h-[3.25rem] sm:w-[3.25rem]"
+                  className="relative flex h-12 w-12 items-center justify-center rounded-full bg-white text-blue-700 shadow-sm sm:h-[3.25rem] sm:w-[3.25rem]"
                   aria-label="Notifications"
                 >
                   <FiBell className="h-6 w-6" />
@@ -563,7 +563,7 @@ function TopBarContent({
               <button
                 type="button"
                 onClick={() => setIsMenuOpen(true)}
-                className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-neutral-200 sm:hidden"
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm sm:hidden"
                 aria-label="Menu"
                 >
                   <img src="/icons/menu.png" alt="" className="h-6 w-6 object-contain" />
