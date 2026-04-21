@@ -18,6 +18,13 @@ import { updateMyAccount } from "@/lib/account";
 import { getApiBaseUrl } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 
+const getInitials = (value: string) => {
+  const parts = value.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "U";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+};
+
 export default function InformationsPersonnellesPage() {
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
@@ -31,6 +38,7 @@ export default function InformationsPersonnellesPage() {
   const [form, setForm] = useState({ fullName: "", email: "", phone: "" });
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
 
   const resolveAvatarUrl = (value?: string | null) => {
     if (!value) return null;
@@ -47,21 +55,15 @@ export default function InformationsPersonnellesPage() {
     });
   }, [user?.email, user?.full_name, user?.phone]);
 
+  useEffect(() => {
+    setAvatarLoadFailed(false);
+  }, [user?.id, user?.profile_image_url]);
+
   const name = form.fullName || user?.full_name || "Commercial Test";
   const email = form.email || user?.email || "commercial@gimo.local";
   const phone = form.phone || user?.phone || "+2250700000001";
-  const displayedAvatar = resolveAvatarUrl(user?.profile_image_url);
-  const initials = useMemo(
-    () =>
-      name
-        .split(" ")
-        .filter(Boolean)
-        .map((part) => part[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase(),
-    [name]
-  );
+  const displayedAvatar = avatarLoadFailed ? null : resolveAvatarUrl(user?.profile_image_url);
+  const initials = useMemo(() => getInitials(name), [name]);
 
   const handleSave = async () => {
     if (!token || !user) return;
@@ -171,9 +173,12 @@ export default function InformationsPersonnellesPage() {
                       src={displayedAvatar}
                       alt={name}
                       className="h-full w-full object-cover"
+                      onError={() => setAvatarLoadFailed(true)}
                     />
                   ) : (
-                    initials
+                    <span className="text-2xl font-bold leading-none tracking-normal">
+                      {initials}
+                    </span>
                   )}
                 </div>
                 <span className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full bg-white text-blue-600 shadow-soft">

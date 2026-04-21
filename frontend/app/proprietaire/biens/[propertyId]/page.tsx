@@ -4,6 +4,17 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import {
+  FiArrowLeft,
+  FiCheckCircle,
+  FiDollarSign,
+  FiFileText,
+  FiHome,
+  FiImage,
+  FiMapPin,
+  FiUploadCloud,
+  FiVideo,
+} from "react-icons/fi";
 import { OwnerSidebar } from "@/components/OwnerSidebar";
 import { TopBar } from "@/components/TopBar";
 import { getApiBaseUrl } from "@/lib/api";
@@ -57,6 +68,12 @@ const isSupportedImage = (file: File) =>
 
 const isSupportedVideo = (file: File) =>
   SUPPORTED_VIDEO_TYPES.includes(file.type) || /\.(mp4|webm|ogg|mov)$/i.test(file.name);
+
+const formatFileSize = (bytes: number) => {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} Ko`;
+  return `${(bytes / (1024 * 1024)).toFixed(1).replace(".", ",")} Mo`;
+};
+
 const parseLocaleNumber = (value: string) => {
   const normalized = value.trim().replace(/\s+/g, "").replace(/,/g, ".");
   if (!normalized) return null;
@@ -419,346 +436,387 @@ export default function EditPropertyPage() {
     return null;
   }
 
+  const fieldClass =
+    "min-h-12 rounded-2xl border border-neutral-200 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-[#174EA6] focus:ring-4 focus:ring-[#174EA6]/12";
+  const labelClass =
+    "flex flex-col gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500";
+  const sectionClass = "rounded-[1.75rem] border border-neutral-200 bg-white p-5 shadow-soft sm:p-6";
+  const videoSource = videoPreview || form.videoUrl;
+  const tourSource = tourPreview || form.tour360Url;
+  const tourIsVideo = tourFile
+    ? tourFile.type.startsWith("video/")
+    : /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(form.tour360Url);
+
   return (
-    <div className="min-h-screen bg-transparent">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#f4f7fb_48%,#f8fafc_100%)]">
       <TopBar />
       <OwnerSidebar />
-      <main className="mx-auto max-w-3xl px-4 pb-28 pt-24 lg:ml-72 lg:max-w-[calc(100%-18rem)] lg:px-8">
+      <main className="mx-auto max-w-6xl px-4 pb-28 pt-24 lg:ml-72 lg:max-w-[calc(100%-18rem)] lg:px-8">
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="rounded-3xl bg-white p-6 shadow-soft"
+          className="space-y-6"
         >
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h1 className="text-xl font-semibold tracking-tight">Modifier l'annonce</h1>
-              <p className="mt-1 text-xs text-neutral-600">
-                Mettez à jour les informations principales du bien.
-              </p>
+          <header className="rounded-[1.75rem] border border-neutral-200 bg-white px-5 py-5 shadow-soft sm:px-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="min-w-0">
+                <Link
+                  href="/proprietaire/biens"
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-neutral-500 transition hover:text-neutral-900"
+                >
+                  <FiArrowLeft />
+                  Mes biens
+                </Link>
+                <h1 className="mt-3 text-2xl font-semibold tracking-tight text-neutral-950">
+                  Modifier l'annonce
+                </h1>
+                <p className="mt-1 max-w-2xl text-sm leading-6 text-neutral-600">
+                  Mettez à jour les informations, la localisation et les médias visibles par les locataires.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-2 rounded-full bg-[#EAF1FF] px-3 py-2 text-xs font-semibold text-[#123B8C]">
+                  <FiCheckCircle />
+                  {form.status === "published"
+                    ? "Disponible"
+                    : form.status === "suspendu"
+                      ? "Suspendu"
+                      : "Brouillon"}
+                </span>
+                <Link
+                  href="/proprietaire"
+                  className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50"
+                >
+                  Retour dashboard
+                </Link>
+              </div>
             </div>
-            <Link
-              href="/proprietaire"
-              className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700"
-            >
-              Retour
-            </Link>
-          </div>
+          </header>
 
           {isLoading ? (
-            <div className="mt-6 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-6 text-sm text-neutral-600">
+            <div className="rounded-[1.75rem] border border-neutral-200 bg-white px-5 py-8 text-sm text-neutral-600 shadow-soft">
               Chargement de l'annonce...
             </div>
           ) : (
-            <form className="mt-6 grid gap-4 sm:grid-cols-2" onSubmit={handleSubmit}>
-              <label className="flex flex-col gap-1 text-xs text-neutral-600 sm:col-span-2">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
-                  Titre
-                </span>
-                <input
-                  required
-                  value={form.title}
-                  onChange={handleChange("title")}
-                  className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-                />
-              </label>
+            <form className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]" onSubmit={handleSubmit}>
+              <div className="space-y-5">
+                <section className={sectionClass}>
+                  <div className="mb-5 flex items-start gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EAF1FF] text-[#123B8C]">
+                      <FiHome />
+                    </span>
+                    <div>
+                      <h2 className="text-base font-semibold text-neutral-950">Informations principales</h2>
+                      <p className="mt-1 text-sm text-neutral-500">Titre, prix et caractéristiques du logement.</p>
+                    </div>
+                  </div>
 
-              <label className="flex flex-col gap-1 text-xs text-neutral-600">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
-                  Type de bien
-                </span>
-                <select
-                  value={form.propertyType}
-                  onChange={handleChange("propertyType")}
-                  className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-                >
-                  <option value="studio">Studio</option>
-                  <option value="appartement">Appartement</option>
-                  <option value="maison">Maison</option>
-                  <option value="villa">Villa</option>
-                </select>
-              </label>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className={`${labelClass} sm:col-span-2`}>
+                      Titre
+                      <input required value={form.title} onChange={handleChange("title")} className={fieldClass} />
+                    </label>
 
-              <label className="flex flex-col gap-1 text-xs text-neutral-600">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
-                  Prix (FCFA)
-                </span>
-                <input
-                  required
-                  type="number"
-                  value={form.price}
-                  onChange={handleChange("price")}
-                  className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-                />
-              </label>
+                    <label className={labelClass}>
+                      Type de bien
+                      <select value={form.propertyType} onChange={handleChange("propertyType")} className={fieldClass}>
+                        <option value="studio">Studio</option>
+                        <option value="appartement">Appartement</option>
+                        <option value="maison">Maison</option>
+                        <option value="villa">Villa</option>
+                      </select>
+                    </label>
 
-              <label className="flex flex-col gap-1 text-xs text-neutral-600">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
-                  Période
-                </span>
-                <select
-                  value={form.pricePeriod}
-                  onChange={handleChange("pricePeriod")}
-                  className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-                >
-                  <option value="jour">Jour</option>
-                  <option value="semaine">Semaine</option>
-                  <option value="mois">Mois</option>
-                </select>
-              </label>
+                    <label className={labelClass}>
+                      Statut
+                      <select value={form.status} onChange={handleChange("status")} className={fieldClass}>
+                        <option value="draft">Brouillon</option>
+                        <option value="published">Publié</option>
+                        <option value="suspendu">Suspendu</option>
+                      </select>
+                    </label>
 
-              <label className="flex flex-col gap-1 text-xs text-neutral-600">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
-                  Statut
-                </span>
-                <select
-                  value={form.status}
-                  onChange={handleChange("status")}
-                  className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-                >
-                  <option value="draft">Brouillon</option>
-                  <option value="published">Publie</option>
-                  <option value="suspendu">Suspendu</option>
-                </select>
-              </label>
+                    <label className={labelClass}>
+                      Prix (FCFA)
+                      <input required type="number" value={form.price} onChange={handleChange("price")} className={fieldClass} />
+                    </label>
 
-              <label className="flex flex-col gap-1 text-xs text-neutral-600">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
-                  Ville
-                </span>
-                <input
-                  required
-                  value={form.city}
-                  onChange={handleChange("city")}
-                  className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-                />
-              </label>
+                    <label className={labelClass}>
+                      Période
+                      <select value={form.pricePeriod} onChange={handleChange("pricePeriod")} className={fieldClass}>
+                        <option value="jour">Jour</option>
+                        <option value="semaine">Semaine</option>
+                        <option value="mois">Mois</option>
+                      </select>
+                    </label>
 
-              <label className="flex flex-col gap-1 text-xs text-neutral-600 sm:col-span-2">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
-                  Adresse
-                </span>
-                <input
-                  value={form.address}
-                  onChange={handleChange("address")}
-                  className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-                />
-              </label>
+                    <label className={labelClass}>
+                      Surface (m2)
+                      <input type="number" value={form.surfaceM2} onChange={handleChange("surfaceM2")} className={fieldClass} />
+                    </label>
 
-              <label className="flex flex-col gap-1 text-xs text-neutral-600">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
-                  Surface (m2)
-                </span>
-                <input
-                  type="number"
-                  value={form.surfaceM2}
-                  onChange={handleChange("surfaceM2")}
-                  className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-                />
-              </label>
+                    <label className={labelClass}>
+                      Pièces
+                      <input type="number" value={form.rooms} onChange={handleChange("rooms")} className={fieldClass} />
+                    </label>
 
-              <label className="flex flex-col gap-1 text-xs text-neutral-600">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
-                  Pièces
-                </span>
-                <input
-                  type="number"
-                  value={form.rooms}
-                  onChange={handleChange("rooms")}
-                  className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-                />
-              </label>
+                    <label className={labelClass}>
+                      Salles de bain
+                      <input type="number" value={form.bathrooms} onChange={handleChange("bathrooms")} className={fieldClass} />
+                    </label>
 
-              <label className="flex flex-col gap-1 text-xs text-neutral-600">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
-                  Salles de bain
-                </span>
-                <input
-                  type="number"
-                  value={form.bathrooms}
-                  onChange={handleChange("bathrooms")}
-                  className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-                />
-              </label>
+                    <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 text-sm font-semibold text-neutral-700">
+                      <input
+                        type="checkbox"
+                        checked={form.isFurnished}
+                        onChange={handleChange("isFurnished")}
+                        className="h-4 w-4 rounded border-neutral-300 text-[#123B8C] focus:ring-[#174EA6]"
+                      />
+                      Meublé
+                    </label>
+                  </div>
+                </section>
 
-              <label className="flex flex-col gap-1 text-xs text-neutral-600 sm:col-span-2">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
-                  Coordonnées GPS (lat, lng)
-                </span>
-                <div className="flex flex-wrap items-center gap-2">
-                  <input
-                    value={form.coordinates}
-                    onChange={handleChange("coordinates")}
-                    placeholder="5.296552, -3.966379"
-                    className="flex-1 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleLocate}
-                    className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700"
-                    disabled={isLocating}
-                  >
-                    {isLocating ? "Localisation..." : "Utiliser ma position"}
-                  </button>
-                </div>
-              </label>
+                <section className={sectionClass}>
+                  <div className="mb-5 flex items-start gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EAF1FF] text-[#123B8C]">
+                      <FiMapPin />
+                    </span>
+                    <div>
+                      <h2 className="text-base font-semibold text-neutral-950">Localisation</h2>
+                      <p className="mt-1 text-sm text-neutral-500">Adresse et coordonnées pour la carte.</p>
+                    </div>
+                  </div>
 
-              <label className="flex items-center gap-2 text-xs text-neutral-600 sm:col-span-2">
-                <input
-                  type="checkbox"
-                  checked={form.isFurnished}
-                  onChange={handleChange("isFurnished")}
-                  className="h-4 w-4 rounded border-neutral-300 text-blue-600 focus:ring-blue-500"
-                />
-                Meuble
-              </label>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className={labelClass}>
+                      Ville
+                      <input required value={form.city} onChange={handleChange("city")} className={fieldClass} />
+                    </label>
 
-              <label className="flex flex-col gap-1 text-xs text-neutral-600 sm:col-span-2">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
-                  Description
-                </span>
-                <textarea
-                  rows={4}
-                  value={form.description}
-                  onChange={handleChange("description")}
-                  className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-                />
-              </label>
+                    <label className={`${labelClass} sm:col-span-2`}>
+                      Adresse
+                      <input value={form.address} onChange={handleChange("address")} className={fieldClass} />
+                    </label>
 
-              <label className="flex flex-col gap-1 text-xs text-neutral-600 sm:col-span-2">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
-                  URL visite 360°
-                </span>
-                <input
-                  value={form.tour360Url}
-                  onChange={handleChange("tour360Url")}
-                  placeholder="https://..."
-                  className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-                />
-              </label>
+                    <label className={`${labelClass} sm:col-span-2`}>
+                      Coordonnées GPS
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <input
+                          value={form.coordinates}
+                          onChange={handleChange("coordinates")}
+                          placeholder="5.296552, -3.966379"
+                          className={`${fieldClass} flex-1`}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleLocate}
+                          className="min-h-12 rounded-2xl border border-neutral-200 px-4 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
+                          disabled={isLocating}
+                        >
+                          {isLocating ? "Localisation..." : "Utiliser ma position"}
+                        </button>
+                      </div>
+                    </label>
+                  </div>
+                </section>
 
-              <label className="flex flex-col gap-1 text-xs text-neutral-600 sm:col-span-2">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
-                  URL vidéo
-                </span>
-                <input
-                  value={form.videoUrl}
-                  onChange={handleChange("videoUrl")}
-                  placeholder="https://..."
-                  className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-                />
-              </label>
+                <section className={sectionClass}>
+                  <div className="mb-5 flex items-start gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EAF1FF] text-[#123B8C]">
+                      <FiFileText />
+                    </span>
+                    <div>
+                      <h2 className="text-base font-semibold text-neutral-950">Description</h2>
+                      <p className="mt-1 text-sm text-neutral-500">Ce que le locataire doit savoir avant de visiter.</p>
+                    </div>
+                  </div>
 
-              <label className="flex flex-col gap-1 text-xs text-neutral-600 sm:col-span-2">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
-                  Ajouter des photos
-                </span>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  onChange={handlePhotoChange}
-                  className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"
-                />
-                <span className="text-[11px] text-neutral-400">
-                  Les nouvelles photos seront ajoutees a la galerie existante.
-                </span>
-              </label>
-
-              <label className="flex flex-col gap-1 text-xs text-neutral-600 sm:col-span-2">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
-                  Télécharger une vidéo (optionnel)
-                </span>
-                <input
-                  type="file"
-                  accept="video/mp4,video/webm,video/ogg,video/quicktime"
-                  capture="environment"
-                  onChange={handleVideoChange}
-                  className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"
-                />
-                {videoFile && (
-                  <span className="text-[11px] text-neutral-400">{videoFile.name}</span>
-                )}
-                {videoPreview ? (
-                  <video
-                    className="mt-3 h-32 w-full rounded-xl object-cover"
-                    src={videoPreview}
-                    controls
-                  />
-                ) : form.videoUrl ? (
-                  <video
-                    className="mt-3 h-32 w-full rounded-xl object-cover"
-                    src={form.videoUrl}
-                    controls
-                  />
-                ) : null}
-              </label>
-
-              <label className="flex flex-col gap-1 text-xs text-neutral-600 sm:col-span-2">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
-                  Télécharger une visite 360 (optionnel)
-                </span>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/ogg,video/quicktime"
-                  capture="environment"
-                  onChange={handleTourChange}
-                  className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"
-                />
-                {tourFile && (
-                  <span className="text-[11px] text-neutral-400">{tourFile.name}</span>
-                )}
-                {tourPreview && tourFile ? (
-                  tourFile.type.startsWith("video/") ? (
-                    <video
-                    className="mt-3 h-32 w-full rounded-xl object-cover"
-                      src={tourPreview}
-                      controls
+                  <label className={labelClass}>
+                    Description
+                    <textarea
+                      rows={5}
+                      value={form.description}
+                      onChange={handleChange("description")}
+                      className="min-h-36 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-[#174EA6] focus:ring-4 focus:ring-[#174EA6]/12"
                     />
-                  ) : (
-                    <img
-                      src={tourPreview}
-                      alt="Aperçu 360"
-                      className="mt-3 h-32 w-full rounded-xl object-cover"
-                    />
-                  )
-                ) : form.tour360Url ? (
-                  /\.(mp4|webm|ogg|mov)$/i.test(form.tour360Url) ? (
-                    <video
-                      className="mt-3 h-32 w-full rounded-xl object-cover"
-                      src={form.tour360Url}
-                      controls
-                    />
-                  ) : (
-                    <img
-                      src={form.tour360Url}
-                      alt="Aperçu 360"
-                      className="mt-3 h-32 w-full rounded-xl object-cover"
-                    />
-                  )
-                ) : null}
-              </label>
+                  </label>
+                </section>
 
-              {error && (
-                <div className="sm:col-span-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-                  {error}
-                </div>
-              )}
-              {success && (
-                <div className="sm:col-span-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
-                  {success}
-                </div>
-              )}
+                <section className={sectionClass}>
+                  <div className="mb-5 flex items-start gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EAF1FF] text-[#123B8C]">
+                      <FiImage />
+                    </span>
+                    <div>
+                      <h2 className="text-base font-semibold text-neutral-950">Photos</h2>
+                      <p className="mt-1 text-sm text-neutral-500">Ajoutez des images à la galerie existante.</p>
+                    </div>
+                  </div>
 
-              <div className="sm:col-span-2 flex justify-end">
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="rounded-full bg-blue-600 px-5 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  {isSubmitting ? "Envoi..." : "Enregistrer"}
-                </button>
+                  <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 px-4 py-8 text-center transition hover:border-[#174EA6] hover:bg-[#EAF1FF]/60">
+                    <FiUploadCloud className="text-2xl text-[#123B8C]" />
+                    <span className="mt-3 text-sm font-semibold text-neutral-900">
+                      Choisir des photos
+                    </span>
+                    <span className="mt-1 text-xs text-neutral-500">
+                      JPG, PNG, WEBP ou GIF. Les nouvelles photos seront ajoutées.
+                    </span>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      onChange={handlePhotoChange}
+                      className="sr-only"
+                    />
+                  </label>
+
+                  {photoFiles.length > 0 && (
+                    <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                      {photoFiles.map((file) => (
+                        <div key={`${file.name}-${file.size}`} className="rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-xs text-neutral-600">
+                          <p className="truncate font-semibold text-neutral-800">{file.name}</p>
+                          <p className="mt-0.5">{formatFileSize(file.size)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                <section className={sectionClass}>
+                  <div className="mb-5 flex items-start gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EAF1FF] text-[#123B8C]">
+                      <FiVideo />
+                    </span>
+                    <div>
+                      <h2 className="text-base font-semibold text-neutral-950">Médias immersifs</h2>
+                      <p className="mt-1 text-sm text-neutral-500">Vidéo classique et visite 360 pour renforcer la confiance.</p>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4">
+                    <label className={labelClass}>
+                      URL vidéo
+                      <input value={form.videoUrl} onChange={handleChange("videoUrl")} placeholder="https://..." className={fieldClass} />
+                    </label>
+
+                    <label className="flex cursor-pointer flex-col rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 transition hover:bg-white">
+                      <span className="flex items-center gap-2 text-sm font-semibold text-neutral-900">
+                        <FiUploadCloud className="text-[#123B8C]" />
+                        Télécharger une vidéo
+                      </span>
+                      <span className="mt-1 text-xs text-neutral-500">MP4, WEBM, OGG ou MOV. 150 Mo max.</span>
+                      <input
+                        type="file"
+                        accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                        capture="environment"
+                        onChange={handleVideoChange}
+                        className="sr-only"
+                      />
+                    </label>
+
+                    {videoFile && <p className="text-xs text-neutral-500">{videoFile.name} · {formatFileSize(videoFile.size)}</p>}
+                    {videoSource && (
+                      <video className="h-56 w-full rounded-2xl bg-neutral-950 object-cover" src={videoSource} controls />
+                    )}
+
+                    <label className={labelClass}>
+                      URL visite 360°
+                      <input value={form.tour360Url} onChange={handleChange("tour360Url")} placeholder="https://..." className={fieldClass} />
+                    </label>
+
+                    <label className="flex cursor-pointer flex-col rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 transition hover:bg-white">
+                      <span className="flex items-center gap-2 text-sm font-semibold text-neutral-900">
+                        <FiUploadCloud className="text-[#123B8C]" />
+                        Télécharger une visite 360
+                      </span>
+                      <span className="mt-1 text-xs text-neutral-500">Image ou vidéo. 50 Mo max.</span>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/ogg,video/quicktime"
+                        capture="environment"
+                        onChange={handleTourChange}
+                        className="sr-only"
+                      />
+                    </label>
+
+                    {tourFile && <p className="text-xs text-neutral-500">{tourFile.name} · {formatFileSize(tourFile.size)}</p>}
+                    {tourSource && (
+                      tourIsVideo ? (
+                        <video className="h-56 w-full rounded-2xl bg-neutral-950 object-cover" src={tourSource} controls />
+                      ) : (
+                        <img src={tourSource} alt="Aperçu visite 360" className="h-56 w-full rounded-2xl object-cover" />
+                      )
+                    )}
+                  </div>
+                </section>
               </div>
+
+              <aside className="space-y-4 xl:sticky xl:top-28 xl:self-start">
+                <section className="rounded-[1.75rem] border border-neutral-200 bg-white p-5 shadow-soft">
+                  <h2 className="text-base font-semibold text-neutral-950">Résumé</h2>
+                  <div className="mt-4 space-y-3 text-sm">
+                    <div className="rounded-2xl bg-neutral-50 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-400">Annonce</p>
+                      <p className="mt-2 line-clamp-2 font-semibold text-neutral-900">{form.title || "Titre non renseigné"}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-2xl bg-[#EAF1FF] p-3 text-[#123B8C]">
+                        <FiDollarSign />
+                        <p className="mt-2 text-xs text-[#123B8C]/70">Prix</p>
+                        <p className="font-semibold">{form.price || "0"} FCFA</p>
+                      </div>
+                      <div className="rounded-2xl bg-[#EAF1FF] p-3 text-[#123B8C]">
+                        <FiMapPin />
+                        <p className="mt-2 text-xs text-[#123B8C]/70">Ville</p>
+                        <p className="font-semibold">{form.city || "-"}</p>
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-neutral-200 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-400">Médias ajoutés</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-700">
+                          {photoFiles.length} photo{photoFiles.length > 1 ? "s" : ""}
+                        </span>
+                        <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-700">
+                          {videoFile || form.videoUrl ? "Vidéo prête" : "Pas de vidéo"}
+                        </span>
+                        <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-700">
+                          {tourFile || form.tour360Url ? "360 prêt" : "Pas de 360"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {error && (
+                  <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {error}
+                  </div>
+                )}
+                {success && (
+                  <div className="rounded-2xl border border-[#174EA6]/20 bg-[#EAF1FF] px-4 py-3 text-sm text-[#123B8C]">
+                    {success}
+                  </div>
+                )}
+
+                <div className="rounded-[1.75rem] border border-neutral-200 bg-white p-4 shadow-soft">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex min-h-12 w-full items-center justify-center rounded-2xl bg-[#123B8C] px-5 text-sm font-semibold text-white transition hover:bg-[#0B2E6D] disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {isSubmitting ? "Envoi..." : "Enregistrer les modifications"}
+                  </button>
+                  <Link
+                    href="/proprietaire/biens"
+                    className="mt-2 flex min-h-11 w-full items-center justify-center rounded-2xl text-sm font-semibold text-neutral-600 transition hover:bg-neutral-50"
+                  >
+                    Annuler
+                  </Link>
+                </div>
+              </aside>
             </form>
           )}
         </motion.section>

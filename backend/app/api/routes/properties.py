@@ -146,16 +146,31 @@ def upload_property_photos(
 
     upload_root = get_upload_dir()
     target_dir = upload_root / "properties" / str(property_id)
-    target_dir.mkdir(parents=True, exist_ok=True)
+    use_object_storage = is_minio_configured()
+    if not use_object_storage:
+        target_dir.mkdir(parents=True, exist_ok=True)
 
     existing_primary = db.query(PropertyPhoto).filter(PropertyPhoto.property_id == prop.id).first()
     for upload in files:
-        suffix = Path(upload.filename or "").suffix or ".jpg"
-        filename = f"{uuid.uuid4().hex}{suffix}"
-        file_path = target_dir / filename
-        with file_path.open("wb") as buffer:
-            shutil.copyfileobj(upload.file, buffer)
-        url = f"/uploads/properties/{property_id}/{filename}"
+        if use_object_storage:
+            object_key = build_object_key(
+                f"properties/{property_id}/photos",
+                upload.filename or "photo.jpg",
+            )
+            try:
+                url = upload_file(upload.file, object_key, upload.content_type)
+            except Exception as exc:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Upload image impossible.",
+                ) from exc
+        else:
+            suffix = Path(upload.filename or "").suffix or ".jpg"
+            filename = f"{uuid.uuid4().hex}{suffix}"
+            file_path = target_dir / filename
+            with file_path.open("wb") as buffer:
+                shutil.copyfileobj(upload.file, buffer)
+            url = f"/uploads/properties/{property_id}/{filename}"
         photo = PropertyPhoto(
             id=uuid.uuid4(),
             property_id=prop.id,
