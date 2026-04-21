@@ -435,7 +435,7 @@ function TopBarContent({
                   ref={notificationButtonRef}
                   type="button"
                   onClick={() => setIsNotificationsOpen((value) => !value)}
-                  className="relative flex h-12 w-12 items-center justify-center rounded-full text-blue-700 shadow-sm sm:h-[3.25rem] sm:w-[3.25rem]"
+                  className="relative flex h-12 w-12 items-center justify-center text-blue-700 sm:h-[3.25rem] sm:w-[3.25rem]"
                   aria-label="Notifications"
                 >
                   <FiBell className="h-6 w-6" />
@@ -445,6 +445,7 @@ function TopBarContent({
                     </span>
                   )}
                 </button>
+
                 <AnimatePresence>
                   {isNotificationsOpen && (
                     <motion.div
@@ -453,7 +454,7 @@ function TopBarContent({
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 6, scale: 0.98 }}
                       transition={{ duration: 0.18 }}
-                      className="fixed left-3 right-3 top-20 z-[1100] mx-auto max-w-sm overflow-hidden rounded-[1.5rem] border border-neutral-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.16)] sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+12px)] sm:mx-0 sm:w-[min(24rem,calc(100vw-2rem))]"
+                      className="fixed left-3 right-3 top-20 z-[1100] mx-auto max-w-sm overflow-hidden rounded-[1.5rem] border border-neutral-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.10)] sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+12px)] sm:mx-0 sm:w-[min(24rem,calc(100vw-2rem))]"
                     >
                       <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-3">
                         <div>
@@ -551,6 +552,7 @@ function TopBarContent({
                   )}
                 </AnimatePresence>
               </div>
+
               <Link
                 href={actionHref}
                 className="hidden items-center gap-2 rounded-full border border-blue-100 bg-blue-600 px-4 py-2 text-sm font-semibold tracking-wide text-white shadow-sm sm:flex"
@@ -560,14 +562,15 @@ function TopBarContent({
                 </span>
                 {actionLabel}
               </Link>
+
               <button
                 type="button"
                 onClick={() => setIsMenuOpen(true)}
-                className="flex h-12 w-12 items-center justify-center rounded-full shadow-sm sm:hidden"
+                className="flex h-12 w-12 items-center justify-center"
                 aria-label="Menu"
                 >
                   <img src="/icons/menu.png" alt="" className="h-6 w-6 object-contain" />
-                </button>
+              </button>
             </div>
           </div>
 
