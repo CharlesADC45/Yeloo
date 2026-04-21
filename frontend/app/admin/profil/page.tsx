@@ -262,7 +262,7 @@ export default function AdminProfilPage() {
       >
         <section className="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-soft">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-            <div className="flex items-start gap-5">
+            <div className="flex w-full flex-col items-center text-center lg:max-w-sm">
               <div className="relative">
                 <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-neutral-300 text-3xl font-semibold text-white">
                   {displayedAvatar ? (
@@ -287,12 +287,13 @@ export default function AdminProfilPage() {
                   onChange={handleAvatarChange}
                 />
               </div>
-              <div className="space-y-2 pt-1">
+              <div className="mt-4 space-y-2">
                 <h1 className="text-2xl font-semibold tracking-tight text-neutral-950">
-                  [Super admin] {name}
+                  {name}
                 </h1>
+                <p className="text-sm font-medium text-neutral-800">Super admin Yeloo</p>
                 <p className="text-sm text-neutral-600">Email: {email}</p>
-                <div className="flex flex-wrap gap-2 pt-2 text-xs">
+                <div className="flex flex-wrap justify-center gap-2 pt-2 text-xs">
                   <span className="rounded-full bg-blue-100 px-3 py-1 font-medium text-blue-700">
                     Super admin vérifié
                   </span>

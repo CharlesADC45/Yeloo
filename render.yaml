@@ -13,9 +13,9 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: FRONTEND_ORIGIN
-        value: https://project-svxlr.vercel.app
+        sync: false
       - key: FRONTEND_ORIGINS
-        value: https://project-svxlr.vercel.app,http://localhost:3000,http://127.0.0.1:3000
+        sync: false
       - key: BOOTSTRAP_ADMIN_EMAIL
         value: admin@yeloo.ci
       - key: BOOTSTRAP_ADMIN_PASSWORD
