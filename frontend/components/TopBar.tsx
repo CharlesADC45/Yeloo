@@ -566,7 +566,7 @@ function TopBarContent({
               <button
                 type="button"
                 onClick={() => setIsMenuOpen(true)}
-                className="flex h-12 w-12 items-center justify-center"
+                className="flex h-12 w-12 items-center justify-center sm:hidden"
                 aria-label="Menu"
                 >
                   <img src="/icons/menu.png" alt="" className="h-6 w-6 object-contain" />
