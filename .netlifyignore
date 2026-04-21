@@ -1,0 +1,11 @@
+.git
+.tmp
+minio-data
+tools
+backend/.venv
+frontend/.next
+frontend/node_modules
+frontend/.npm-cache
+frontend/tsconfig.tsbuildinfo
+**/__pycache__
+**/*.pyc
