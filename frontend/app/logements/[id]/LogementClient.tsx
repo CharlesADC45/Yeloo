@@ -550,6 +550,11 @@ export function LogementClient({ id }: Props) {
                     <FiMapPin className="text-sm" />
                     {locationLabel || property.city}
                   </span>
+                  {property.promoLabel && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-700 px-3 py-1 font-semibold text-white">
+                      {property.promoLabel}
+                    </span>
+                  )}
                   {property.isVerified && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-emerald-700">
                       <FiCheckCircle className="text-sm" />
@@ -608,6 +613,11 @@ export function LogementClient({ id }: Props) {
             <div className="absolute bottom-5 right-5 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white">
               {activeSlide + 1}/{totalSlides}
             </div>
+            {property.promoLabel && (
+              <div className="absolute left-5 top-5 rounded-full bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow-soft">
+                {property.promoLabel}
+              </div>
+            )}
           </div>
 
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_380px]">

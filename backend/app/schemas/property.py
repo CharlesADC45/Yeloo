@@ -71,6 +71,8 @@ class PropertyPublic(BaseModel):
     longitude: float | None = None
     video_url: str | None = None
     tour_360_url: str | None = None
+    promo_label: str | None = None
+    promo_until: datetime | None = None
     is_furnished: bool
     status: str
     is_verified_listing: bool

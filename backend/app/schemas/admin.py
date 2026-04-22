@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class FeatureModulePublic(BaseModel):
@@ -51,6 +51,8 @@ class AdminPropertySummary(BaseModel):
     longitude: float | None = None
     video_url: str | None = None
     tour_360_url: str | None = None
+    promo_label: str | None = None
+    promo_until: datetime | None = None
     photo_urls: list[str] = []
     is_verified_listing: bool = False
     views_count: int = 0
@@ -149,3 +151,41 @@ class AdminUserUpdate(BaseModel):
 
 class AdminPropertyStatusUpdate(BaseModel):
     status: str
+
+
+class AdminPropertyPromoUpdate(BaseModel):
+    promo_label: str | None = Field(default=None, max_length=80)
+    duration_hours: int | None = Field(default=None, ge=1, le=2160)
+    clear: bool = False
+
+
+class PublicAnnouncementPublic(BaseModel):
+    id: str
+    message: str
+    icon: str
+    target_audience: str
+    duration_hours: int
+    is_active: bool
+    starts_at: datetime
+    expires_at: datetime
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class PublicAnnouncementCreate(BaseModel):
+    message: str = Field(min_length=3, max_length=500)
+    icon: str = Field(default="info", max_length=40)
+    target_audience: str = Field(default="all", pattern="^(all|locataire|proprietaire)$")
+    duration_hours: int = Field(default=24, ge=1, le=2160)
+    is_active: bool = True
+
+
+class PublicAnnouncementUpdate(BaseModel):
+    message: str | None = Field(default=None, min_length=3, max_length=500)
+    icon: str | None = Field(default=None, max_length=40)
+    target_audience: str | None = Field(default=None, pattern="^(all|locataire|proprietaire)$")
+    duration_hours: int | None = Field(default=None, ge=1, le=2160)
+    is_active: bool | None = None

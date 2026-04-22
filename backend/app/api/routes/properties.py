@@ -18,9 +18,19 @@ from app.schemas.property import PropertyCreate, PropertyPublic, PropertyUpdate
 router = APIRouter()
 
 
+def _serialize_property(prop: Property, include_promo: bool = True) -> PropertyPublic:
+    payload = PropertyPublic.model_validate(prop)
+    if not include_promo:
+        payload.promo_label = None
+        payload.promo_until = None
+    return payload
+
+
 @router.get("/", response_model=list[PropertyPublic])
 def list_properties(db: Session = Depends(get_db)):
-    return db.query(Property).order_by(Property.created_at.desc()).limit(50).all()
+    include_promo = is_feature_enabled(db, "listing_promos")
+    properties = db.query(Property).order_by(Property.created_at.desc()).limit(50).all()
+    return [_serialize_property(prop, include_promo=include_promo) for prop in properties]
 
 
 @router.get("/mine", response_model=list[PropertyPublic])
@@ -41,7 +51,7 @@ def get_property(property_id: uuid.UUID, db: Session = Depends(get_db)):
     prop = db.query(Property).filter(Property.id == property_id).first()
     if not prop:
         raise HTTPException(status_code=404, detail="Logement introuvable.")
-    return prop
+    return _serialize_property(prop, include_promo=is_feature_enabled(db, "listing_promos"))
 
 
 @router.post("/", response_model=PropertyPublic, status_code=status.HTTP_201_CREATED)

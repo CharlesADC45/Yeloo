@@ -34,6 +34,8 @@ class Property(Base):
     longitude: Mapped[float | None] = mapped_column(Numeric(10, 7), nullable=True)
     video_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     tour_360_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    promo_label: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    promo_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     is_furnished: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     status: Mapped[str] = mapped_column(

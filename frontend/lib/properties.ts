@@ -27,6 +27,8 @@ export type Property = {
   isVerified: boolean;
   imageUrl: string;
   badgeLabel?: string;
+  promoLabel?: string;
+  promoUntil?: string;
   photoUrls?: string[];
   latitude?: number;
   longitude?: number;
@@ -61,6 +63,8 @@ export type ApiProperty = {
   imageUrl?: string | null;
   photo_urls?: string[] | null;
   owner_is_verified?: boolean | null;
+  promo_label?: string | null;
+  promo_until?: string | null;
 };
 
 const FALLBACK_IMAGES: Record<string, string> = {
@@ -108,6 +112,11 @@ export const mapApiProperty = (api: ApiProperty): Property => {
   const badgeLabel = api.is_verified_listing
     ? "Annonce verifiee"
     : STATUS_BADGES[status];
+  const promoUntil = api.promo_until || undefined;
+  const promoIsActive = Boolean(
+    api.promo_label &&
+      (!promoUntil || Number.isNaN(Date.parse(promoUntil)) || new Date(promoUntil).getTime() >= Date.now())
+  );
 
   return {
     id: String(api.id),
@@ -128,6 +137,8 @@ export const mapApiProperty = (api: ApiProperty): Property => {
     isVerified: Boolean(api.is_verified_listing),
     imageUrl,
     badgeLabel,
+    promoLabel: promoIsActive ? api.promo_label || undefined : undefined,
+    promoUntil,
     photoUrls,
     latitude: toNumber(api.latitude),
     longitude: toNumber(api.longitude),

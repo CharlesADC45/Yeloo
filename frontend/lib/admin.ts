@@ -70,6 +70,8 @@ export type AdminPropertySummary = {
   longitude?: number | null;
   video_url?: string | null;
   tour_360_url?: string | null;
+  promo_label?: string | null;
+  promo_until?: string | null;
   photo_urls?: string[];
   is_verified_listing?: boolean;
   views_count?: number;
@@ -80,6 +82,19 @@ export type AdminPropertySummary = {
   owner_phone?: string | null;
   owner_is_verified?: boolean;
   created_at: string;
+};
+
+export type PublicAnnouncement = {
+  id: string;
+  message: string;
+  icon: string;
+  target_audience: "all" | "locataire" | "proprietaire";
+  duration_hours: number;
+  is_active: boolean;
+  starts_at: string;
+  expires_at: string;
+  created_at: string;
+  updated_at: string;
 };
 
 export type AdminLeaseSummary = {
@@ -188,6 +203,22 @@ async function apiPatch<T>(path: string, token: string, body: unknown): Promise<
   return response.json();
 }
 
+async function apiPost<T>(path: string, token: string, body: unknown): Promise<T> {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    throw new Error(payload?.detail || "Creation impossible.");
+  }
+  return response.json();
+}
+
 async function apiDelete(path: string, token: string): Promise<void> {
   const response = await fetch(`${getApiBaseUrl()}${path}`, {
     method: "DELETE",
@@ -229,6 +260,14 @@ export function updateAdminPropertyStatus(token: string, propertyId: string, sta
   });
 }
 
+export function updateAdminPropertyPromo(
+  token: string,
+  propertyId: string,
+  payload: { promo_label?: string | null; duration_hours?: number | null; clear?: boolean }
+) {
+  return apiPatch<AdminPropertySummary>(`/api/admin/properties/${propertyId}/promo`, token, payload);
+}
+
 export function deleteAdminProperty(token: string, propertyId: string) {
   return apiDelete(`/api/properties/${propertyId}`, token);
 }
@@ -236,6 +275,41 @@ export function deleteAdminProperty(token: string, propertyId: string) {
 export function fetchAdminLeaseRequests(token: string, status?: string) {
   const query = status ? `?status=${encodeURIComponent(status)}` : "";
   return apiGet<AdminLeaseSummary[]>(`/api/admin/lease-requests${query}`, token);
+}
+
+export function fetchPublicAnnouncementsAdmin(token: string) {
+  return apiGet<PublicAnnouncement[]>("/api/admin/public-announcements", token);
+}
+
+export function createPublicAnnouncement(
+  token: string,
+  payload: {
+    message: string;
+    icon: string;
+    target_audience: "all" | "locataire" | "proprietaire";
+    duration_hours: number;
+    is_active: boolean;
+  }
+) {
+  return apiPost<PublicAnnouncement>("/api/admin/public-announcements", token, payload);
+}
+
+export function updatePublicAnnouncement(
+  token: string,
+  announcementId: string,
+  payload: {
+    message?: string;
+    icon?: string;
+    target_audience?: "all" | "locataire" | "proprietaire";
+    duration_hours?: number;
+    is_active?: boolean;
+  }
+) {
+  return apiPatch<PublicAnnouncement>(`/api/admin/public-announcements/${announcementId}`, token, payload);
+}
+
+export function deletePublicAnnouncement(token: string, announcementId: string) {
+  return apiDelete(`/api/admin/public-announcements/${announcementId}`, token);
 }
 
 export function fetchAdminOwnerKyc(token: string, status?: string) {

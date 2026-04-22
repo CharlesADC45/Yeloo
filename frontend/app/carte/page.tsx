@@ -292,6 +292,11 @@ function CartePageContent() {
           className="h-full w-full object-cover"
         />
         <div className="absolute left-3 top-3 flex max-w-[72%] flex-wrap items-center gap-2">
+          {property.promoLabel && (
+            <span className="rounded-full bg-blue-700 px-3 py-1.5 text-[11px] font-semibold text-white shadow-sm">
+              {property.promoLabel}
+            </span>
+          )}
           {property.ownerIsVerified && (
             <span className="inline-flex items-center gap-1 rounded-full bg-white/92 px-3 py-1.5 text-[11px] font-semibold text-neutral-800 shadow-sm backdrop-blur">
               <FiCheckCircle className="text-xs text-blue-600" />
@@ -1144,6 +1149,11 @@ function CartePageContent() {
                             className="h-full w-full object-cover"
                           />
                           <div className="absolute left-3 top-3 flex max-w-[72%] flex-wrap items-center gap-2">
+                            {property.promoLabel && (
+                              <span className="rounded-full bg-blue-700 px-3 py-1.5 text-[11px] font-semibold text-white shadow-sm">
+                                {property.promoLabel}
+                              </span>
+                            )}
                             {selected?.id === property.id && (
                               <span className="rounded-full bg-neutral-950/85 px-3 py-1.5 text-[11px] font-semibold text-white shadow-sm backdrop-blur">
                                 Sur la carte

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   FiArrowRight,
+  FiBell,
   FiCheckCircle,
   FiClock,
   FiFileText,
@@ -141,7 +142,7 @@ export default function AdminPage() {
 
   const criticalModules = useMemo(() => {
     if (!dashboard) return [];
-    const keys = ["owner_dashboard", "owner_kyc", "listing_chat", "notifications"];
+    const keys = ["owner_dashboard", "owner_kyc", "listing_chat", "notifications", "public_announcements", "listing_promos"];
     return dashboard.modules.filter((module) => keys.includes(module.key));
   }, [dashboard]);
 
@@ -262,7 +263,7 @@ export default function AdminPage() {
               />
             </section>
 
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
               <QuickActionCard
                 href="/admin/verifications"
                 label="Revue KYC"
@@ -290,6 +291,13 @@ export default function AdminPage() {
                 helper="Locataires, propriétaires et statuts"
                 value={`${counts.suspended_users} suspendu(s)`}
                 Icon={FiUsers}
+              />
+              <QuickActionCard
+                href="/admin/notifications"
+                label="Notifications publiques"
+                helper="Messages carousel et promos annonces"
+                value="Configurer"
+                Icon={FiBell}
               />
             </section>
 

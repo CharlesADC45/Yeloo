@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import shutil
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, or_
@@ -15,6 +15,7 @@ from app.models.feature_module import FeatureModule
 from app.models.lease_request import LeaseRequest
 from app.models.owner_profile import OwnerProfile
 from app.models.property import Property
+from app.models.public_announcement import PublicAnnouncement
 from app.models.user import User
 from app.schemas.admin import (
     AdminActivityItem,
@@ -23,6 +24,7 @@ from app.schemas.admin import (
     AdminLeaseSummary,
     AdminOwnerKycDecision,
     AdminOwnerKycSummary,
+    AdminPropertyPromoUpdate,
     AdminPropertyStatusUpdate,
     AdminPropertySummary,
     AdminUserSummary,
@@ -30,6 +32,9 @@ from app.schemas.admin import (
     AdminUserUpdate,
     FeatureModulePublic,
     FeatureModuleUpdate,
+    PublicAnnouncementCreate,
+    PublicAnnouncementPublic,
+    PublicAnnouncementUpdate,
 )
 
 router = APIRouter()
@@ -81,6 +86,18 @@ DEFAULT_FEATURE_MODULES = [
         "key": "notifications",
         "name": "Notifications",
         "description": "Diffuse les notifications de nouvelles annonces et alertes utilisateurs.",
+        "category": "engagement",
+    },
+    {
+        "key": "public_announcements",
+        "name": "Alertes publiques",
+        "description": "Diffuse les messages publics en carousel sur l'accueil.",
+        "category": "engagement",
+    },
+    {
+        "key": "listing_promos",
+        "name": "Promos annonces",
+        "description": "Affiche les reductions et offres visibles sur les images des logements.",
         "category": "engagement",
     },
 ]
@@ -143,6 +160,8 @@ def _serialize_property(property_obj: Property) -> AdminPropertySummary:
         longitude=float(property_obj.longitude) if property_obj.longitude is not None else None,
         video_url=property_obj.video_url,
         tour_360_url=property_obj.tour_360_url,
+        promo_label=property_obj.promo_label,
+        promo_until=property_obj.promo_until,
         photo_urls=property_obj.photo_urls,
         is_verified_listing=property_obj.is_verified_listing,
         views_count=property_obj.views_count,
@@ -153,6 +172,21 @@ def _serialize_property(property_obj: Property) -> AdminPropertySummary:
         owner_phone=property_obj.owner.phone if property_obj.owner else None,
         owner_is_verified=property_obj.owner_is_verified,
         created_at=property_obj.created_at,
+    )
+
+
+def _serialize_public_announcement(item: PublicAnnouncement) -> PublicAnnouncementPublic:
+    return PublicAnnouncementPublic(
+        id=str(item.id),
+        message=item.message,
+        icon=item.icon,
+        target_audience=item.target_audience,
+        duration_hours=item.duration_hours,
+        is_active=item.is_active,
+        starts_at=item.starts_at,
+        expires_at=item.expires_at,
+        created_at=item.created_at,
+        updated_at=item.updated_at,
     )
 
 
@@ -535,6 +569,113 @@ def update_admin_property_status(
     db.commit()
     db.refresh(property_obj)
     return _serialize_property(property_obj)
+
+
+@router.patch("/properties/{property_id}/promo", response_model=AdminPropertySummary)
+def update_admin_property_promo(
+    property_id: str,
+    payload: AdminPropertyPromoUpdate,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_admin),
+):
+    property_obj = db.query(Property).options(joinedload(Property.owner)).filter(Property.id == property_id).first()
+    if not property_obj:
+        raise HTTPException(status_code=404, detail="Publication introuvable.")
+
+    if payload.clear:
+        property_obj.promo_label = None
+        property_obj.promo_until = None
+    else:
+        label = (payload.promo_label or "").strip()
+        if not label:
+            raise HTTPException(status_code=400, detail="Texte de promo requis.")
+        if not payload.duration_hours:
+            raise HTTPException(status_code=400, detail="Duree de promo requise.")
+        property_obj.promo_label = label
+        property_obj.promo_until = datetime.utcnow() + timedelta(hours=payload.duration_hours)
+
+    db.add(property_obj)
+    db.commit()
+    db.refresh(property_obj)
+    return _serialize_property(property_obj)
+
+
+@router.get("/public-announcements", response_model=list[PublicAnnouncementPublic])
+def list_public_announcements(
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_admin),
+):
+    items = db.query(PublicAnnouncement).order_by(PublicAnnouncement.created_at.desc()).limit(100).all()
+    return [_serialize_public_announcement(item) for item in items]
+
+
+@router.post("/public-announcements", response_model=PublicAnnouncementPublic, status_code=status.HTTP_201_CREATED)
+def create_public_announcement(
+    payload: PublicAnnouncementCreate,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_admin),
+):
+    now = datetime.utcnow()
+    item = PublicAnnouncement(
+        message=payload.message.strip(),
+        icon=payload.icon.strip() or "info",
+        target_audience=payload.target_audience,
+        duration_hours=payload.duration_hours,
+        is_active=payload.is_active,
+        starts_at=now,
+        expires_at=now + timedelta(hours=payload.duration_hours),
+        created_at=now,
+        updated_at=now,
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return _serialize_public_announcement(item)
+
+
+@router.patch("/public-announcements/{announcement_id}", response_model=PublicAnnouncementPublic)
+def update_public_announcement(
+    announcement_id: str,
+    payload: PublicAnnouncementUpdate,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_admin),
+):
+    item = db.query(PublicAnnouncement).filter(PublicAnnouncement.id == announcement_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Notification publique introuvable.")
+
+    data = payload.model_dump(exclude_unset=True)
+    if "message" in data and data["message"] is not None:
+        item.message = data["message"].strip()
+    if "icon" in data and data["icon"] is not None:
+        item.icon = data["icon"].strip() or "info"
+    if "target_audience" in data and data["target_audience"] is not None:
+        item.target_audience = data["target_audience"]
+    if "duration_hours" in data and data["duration_hours"] is not None:
+        item.duration_hours = data["duration_hours"]
+        item.expires_at = datetime.utcnow() + timedelta(hours=data["duration_hours"])
+    if "is_active" in data and data["is_active"] is not None:
+        item.is_active = bool(data["is_active"])
+    item.updated_at = datetime.utcnow()
+
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return _serialize_public_announcement(item)
+
+
+@router.delete("/public-announcements/{announcement_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_public_announcement(
+    announcement_id: str,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_admin),
+):
+    item = db.query(PublicAnnouncement).filter(PublicAnnouncement.id == announcement_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Notification publique introuvable.")
+    db.delete(item)
+    db.commit()
+    return None
 
 
 @router.get("/lease-requests", response_model=list[AdminLeaseSummary])

@@ -8,6 +8,7 @@ import { FiCheckCircle, FiChevronRight, FiHeart } from "react-icons/fi";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
 import { HeroSearch } from "@/components/HeroSearch";
+import { PublicAnnouncementCarousel } from "@/components/PublicAnnouncementCarousel";
 import { PropertyCarouselSkeleton, SectionHeaderSkeleton } from "@/components/Skeleton";
 import { useProperties } from "@/hooks/useProperties";
 import { applyPropertyFilters } from "@/lib/properties";
@@ -181,6 +182,11 @@ function HomePageContent() {
                 }}
                 className="h-full w-full object-cover"
               />
+              {property.promoLabel && (
+                <span className="absolute left-3 top-3 rounded-full bg-blue-700 px-3 py-1 text-[11px] font-semibold text-white shadow-soft">
+                  {property.promoLabel}
+                </span>
+              )}
               <button
                 type="button"
                 onClick={(event) => {
@@ -198,7 +204,9 @@ function HomePageContent() {
                 />
               </button>
               {property.badgeLabel && (
-                <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold text-neutral-700 shadow-soft">
+                <span className={`absolute left-3 rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold text-neutral-700 shadow-soft ${
+                  property.promoLabel ? "top-11" : "top-3"
+                }`}>
                   {property.badgeLabel}
                 </span>
               )}
@@ -256,6 +264,8 @@ function HomePageContent() {
       />
 
       <main className="flex-1 px-6 pb-32 pt-[15.5rem] sm:px-10 sm:pt-[16.5rem] lg:px-16">
+        <PublicAnnouncementCarousel />
+
         <section ref={recentSectionRef} className="mt-8">
           {isLoading ? (
             <SectionHeaderSkeleton />

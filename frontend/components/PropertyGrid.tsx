@@ -101,8 +101,15 @@ export function PropertyGrid({
                     }`}
                   />
                 </motion.button>
-                {p.isVerified && (
+                {p.promoLabel && (
                   <div className="absolute left-3 top-3">
+                    <span className="rounded-full bg-blue-700 px-3 py-1 text-[11px] font-semibold text-white shadow-soft">
+                      {p.promoLabel}
+                    </span>
+                  </div>
+                )}
+                {p.isVerified && (
+                  <div className={`absolute left-3 ${p.promoLabel ? "top-11" : "top-3"}`}>
                     <span className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-medium text-neutral-700 shadow-soft">
                       Annonce vérifiée
                     </span>

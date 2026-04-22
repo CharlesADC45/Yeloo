@@ -1,5 +1,6 @@
 import {
   FiActivity,
+  FiBell,
   FiCheckCircle,
   FiHome,
   FiLayers,
@@ -47,6 +48,12 @@ export const adminNavItems: AdminNavItem[] = [
     label: "Publications",
     Icon: FiMap,
     isActive: (pathname) => pathname.startsWith("/admin/publications"),
+  },
+  {
+    href: "/admin/notifications",
+    label: "Notifications",
+    Icon: FiBell,
+    isActive: (pathname) => pathname.startsWith("/admin/notifications"),
   },
   {
     href: "/messages",
