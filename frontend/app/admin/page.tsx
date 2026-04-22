@@ -142,7 +142,15 @@ export default function AdminPage() {
 
   const criticalModules = useMemo(() => {
     if (!dashboard) return [];
-    const keys = ["owner_dashboard", "owner_kyc", "listing_chat", "notifications", "public_announcements", "listing_promos"];
+    const keys = [
+      "owner_dashboard",
+      "owner_kyc",
+      "listing_chat",
+      "notifications",
+      "public_announcements",
+      "listing_promos",
+      "app_status_alerts",
+    ];
     return dashboard.modules.filter((module) => keys.includes(module.key));
   }, [dashboard]);
 

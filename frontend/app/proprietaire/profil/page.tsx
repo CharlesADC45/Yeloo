@@ -48,6 +48,13 @@ function maskAccountNumber(value: string) {
   return `${"*".repeat(Math.max(0, value.length - 4))}${value.slice(-4)}`;
 }
 
+const getInitials = (value: string) => {
+  const parts = value.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "P";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+};
+
 export default function ProprietaireProfilPage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const token = useAuthStore((s) => s.token);
@@ -61,6 +68,7 @@ export default function ProprietaireProfilPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const [activeTab, setActiveTab] = useState<"account" | "password">("account");
   const [profileForm, setProfileForm] = useState({
     fullName: "",
@@ -136,7 +144,12 @@ export default function ProprietaireProfilPage() {
 
   useEffect(() => {
     setAvatarPreview(null);
+    setAvatarLoadFailed(false);
   }, [user?.id]);
+
+  useEffect(() => {
+    setAvatarLoadFailed(false);
+  }, [user?.profile_image_url]);
 
   useEffect(() => {
     setProfileForm({
@@ -158,21 +171,11 @@ export default function ProprietaireProfilPage() {
     return `${getApiBaseUrl()}${value}`;
   };
 
-  const displayedAvatar = avatarPreview ?? resolveAvatarUrl(user?.profile_image_url);
+  const displayedAvatar = avatarLoadFailed ? null : avatarPreview ?? resolveAvatarUrl(user?.profile_image_url);
   const fullName = user?.full_name || "Proprietaire";
   const email = user?.email || "contact@yeloo.local";
   const phone = user?.phone || "-";
-  const initials = useMemo(
-    () =>
-      fullName
-        .split(" ")
-        .filter(Boolean)
-        .map((part) => part[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase(),
-    [fullName]
-  );
+  const initials = useMemo(() => getInitials(fullName), [fullName]);
 
   const checklist = [
     { label: "Photo de profil", done: Boolean(displayedAvatar) },
@@ -194,6 +197,7 @@ export default function ProprietaireProfilPage() {
 
     const preview = URL.createObjectURL(file);
     setAvatarPreview(preview);
+    setAvatarLoadFailed(false);
 
     const formData = new FormData();
     formData.append("file", file);
@@ -215,6 +219,7 @@ export default function ProprietaireProfilPage() {
     const resolved = resolveAvatarUrl(updated.profile_image_url);
     if (resolved) {
       setAvatarPreview(resolved);
+      setAvatarLoadFailed(false);
     }
     setUser({
       ...user,
@@ -378,9 +383,15 @@ export default function ProprietaireProfilPage() {
                         src={displayedAvatar}
                         alt={fullName}
                         className="h-full w-full object-cover"
+                        onError={() => {
+                          setAvatarLoadFailed(true);
+                          setAvatarPreview(null);
+                        }}
                       />
                     ) : (
-                      initials
+                      <span className="text-3xl font-bold leading-none tracking-normal">
+                        {initials}
+                      </span>
                     )}
                   </div>
                   <button

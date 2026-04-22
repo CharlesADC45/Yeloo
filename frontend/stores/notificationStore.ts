@@ -5,7 +5,7 @@ import { persist } from "zustand/middleware";
 
 export type NotificationItem = {
   id: string;
-  type: "owner_post" | "owner_verification";
+  type: "owner_post" | "owner_verification" | "message";
   title: string;
   message: string;
   propertyId?: string | null;
@@ -40,6 +40,13 @@ type NotificationState = {
     userId: string;
     notes?: string | null;
     reviewedAt?: string | null;
+  }) => void;
+  pushMessageNotification: (payload: {
+    userId: string;
+    conversationId: string;
+    title: string;
+    preview?: string | null;
+    updatedAt?: string | null;
   }) => void;
   markRead: (userId: string, notificationId: string) => void;
   markAllRead: (userId: string) => void;
@@ -94,6 +101,26 @@ export const useNotificationStore = create<NotificationState>()(
           targetUserId: userId,
           href: "/proprietaire",
           severity: "error",
+        };
+
+        set((state) => {
+          if (state.items.some((current) => current.id === id)) return state;
+          return {
+            items: [item, ...state.items].slice(0, 80),
+          };
+        });
+      },
+      pushMessageNotification: ({ userId, conversationId, title, preview, updatedAt }) => {
+        const id = `message:${conversationId}:${updatedAt || "latest"}`;
+        const item: NotificationItem = {
+          id,
+          type: "message",
+          title: title || "Nouveau message",
+          message: preview?.trim() || "Vous avez recu un nouveau message.",
+          createdAt: updatedAt || new Date().toISOString(),
+          targetUserId: userId,
+          href: `/messages/${conversationId}`,
+          severity: "info",
         };
 
         set((state) => {

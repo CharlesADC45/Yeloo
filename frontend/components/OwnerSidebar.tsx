@@ -25,7 +25,7 @@ export function OwnerSidebar() {
               key={label}
               href={href}
               className={`flex items-center gap-3 rounded-full px-4 py-3 transition ${
-                active ? "bg-neutral-950 text-white" : "text-neutral-600 hover:text-neutral-950"
+                active ? "bg-blue-700 text-white" : "text-neutral-600 hover:text-blue-700"
               }`}
             >
               <Icon />
@@ -41,7 +41,7 @@ export function OwnerSidebar() {
             logout();
             router.push("/");
           }}
-          className="flex w-full items-center gap-3 rounded-full px-4 py-3 text-sm text-neutral-600 transition hover:text-neutral-950"
+          className="flex w-full items-center gap-3 rounded-full px-4 py-3 text-sm text-neutral-600 transition hover:text-blue-700"
         >
           <FiLogOut />
           Logout

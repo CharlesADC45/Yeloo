@@ -100,6 +100,12 @@ DEFAULT_FEATURE_MODULES = [
         "description": "Affiche les reductions et offres visibles sur les images des logements.",
         "category": "engagement",
     },
+    {
+        "key": "app_status_alerts",
+        "name": "Alertes statut app",
+        "description": "Affiche les alertes de connexion instable, hors ligne et nouveaux messages.",
+        "category": "engagement",
+    },
 ]
 
 

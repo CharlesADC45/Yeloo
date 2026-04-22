@@ -42,6 +42,13 @@ function formatDate(value?: string | null) {
   }).format(date);
 }
 
+const getInitials = (value: string) => {
+  const parts = value.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "SA";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+};
+
 export default function AdminProfilPage() {
   const token = useAuthStore((s) => s.token);
   const user = useAuthStore((s) => s.user);
@@ -53,6 +60,7 @@ export default function AdminProfilPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const [activeTab, setActiveTab] = useState<"account" | "password">("account");
   const [form, setForm] = useState<AdminProfileForm>({
     fullName: "",
@@ -94,6 +102,10 @@ export default function AdminProfilPage() {
     };
   }, [token]);
 
+  useEffect(() => {
+    setAvatarLoadFailed(false);
+  }, [user?.id, user?.profile_image_url]);
+
   const resolveAvatarUrl = (value?: string | null) => {
     if (!value) return null;
     if (value.startsWith("http") || value.startsWith("data:")) return value;
@@ -103,18 +115,8 @@ export default function AdminProfilPage() {
   const name = form.fullName || user?.full_name || "Super admin";
   const email = form.email || user?.email || "admin@yeloo.ci";
   const phone = form.phone || user?.phone || "Non renseigné";
-  const displayedAvatar = avatarPreview ?? resolveAvatarUrl(user?.profile_image_url);
-  const initials = useMemo(
-    () =>
-      name
-        .split(" ")
-        .filter(Boolean)
-        .map((part) => part[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase(),
-    [name]
-  );
+  const displayedAvatar = avatarLoadFailed ? null : avatarPreview ?? resolveAvatarUrl(user?.profile_image_url);
+  const initials = useMemo(() => getInitials(name), [name]);
 
   const checklist = [
     { label: "Photo de profil", done: Boolean(displayedAvatar) },
@@ -158,6 +160,7 @@ export default function AdminProfilPage() {
 
     const preview = URL.createObjectURL(file);
     setAvatarPreview(preview);
+    setAvatarLoadFailed(false);
 
     const payload = new FormData();
     payload.append("file", file);
@@ -175,7 +178,10 @@ export default function AdminProfilPage() {
 
     const updated = await response.json();
     const resolved = resolveAvatarUrl(updated.profile_image_url);
-    if (resolved) setAvatarPreview(resolved);
+    if (resolved) {
+      setAvatarPreview(resolved);
+      setAvatarLoadFailed(false);
+    }
     setUser({ ...user, profile_image_url: updated.profile_image_url });
     setSuccess("Photo de profil mise à jour.");
   };
@@ -266,9 +272,19 @@ export default function AdminProfilPage() {
               <div className="relative">
                 <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-neutral-300 text-3xl font-semibold text-white">
                   {displayedAvatar ? (
-                    <img src={displayedAvatar} alt={name} className="h-full w-full object-cover" />
+                    <img
+                      src={displayedAvatar}
+                      alt={name}
+                      className="h-full w-full object-cover"
+                      onError={() => {
+                        setAvatarLoadFailed(true);
+                        setAvatarPreview(null);
+                      }}
+                    />
                   ) : (
-                    initials || "SA"
+                    <span className="text-3xl font-bold leading-none tracking-normal">
+                      {initials || "SA"}
+                    </span>
                   )}
                 </div>
                 <button

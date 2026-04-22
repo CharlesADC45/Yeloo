@@ -19,6 +19,9 @@ DEFAULT_FEATURE_MODULES = [
     ("lease_requests", "Demandes de bail", "Reserve la zone bail pour les prochains workflows de location.", "leasing"),
     ("listing_chat", "Chat des annonces", "Autorise les conversations locataire-proprietaire depuis chaque annonce.", "engagement"),
     ("notifications", "Notifications", "Diffuse les notifications de nouvelles annonces et alertes utilisateurs.", "engagement"),
+    ("app_status_alerts", "Alertes statut app", "Affiche les alertes de connexion instable, hors ligne et nouveaux messages.", "engagement"),
+    ("public_announcements", "Alertes publiques", "Diffuse les messages publics en carousel sur l'accueil.", "engagement"),
+    ("listing_promos", "Promos annonces", "Affiche les reductions et offres visibles sur les images des logements.", "engagement"),
 ]
 
 

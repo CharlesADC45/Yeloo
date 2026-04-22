@@ -3,6 +3,7 @@ import { Poppins } from "next/font/google";
 import "./globals.css";
 import { AuthSync } from "@/components/AuthSync";
 import { AppInteractionGuards } from "@/components/AppInteractionGuards";
+import { AppStatusNotifier } from "@/components/AppStatusNotifier";
 import { YelooSplash } from "@/components/YelooSplash";
 
 const poppins = Poppins({
@@ -50,6 +51,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-white text-neutral-900">
         <AuthSync />
         <AppInteractionGuards />
+        <AppStatusNotifier />
         <YelooSplash />
         {children}
       </body>

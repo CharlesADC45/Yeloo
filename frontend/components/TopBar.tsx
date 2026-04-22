@@ -134,22 +134,42 @@ function TopBarContent({
   const notificationPrefs = getNotificationPrefs(prefsByUser, user?.id);
   const notificationsEnabled = notificationPrefs.ownerPostNotifications;
   const visibleNotifications = useMemo(() => {
-    if (!user?.id || isAdminRole) return [];
+    if (!user?.id) return [];
+    const messageNotifications = notificationItems.filter(
+      (item) => item.type === "message" && item.targetUserId === user.id
+    );
+    if (isAdminRole) return messageNotifications;
     if (isOwnerRole) {
       return notificationItems.filter(
         (item) => item.type === "owner_verification" && item.targetUserId === user.id
-      );
+      ).concat(messageNotifications);
     }
-    return notificationItems.filter((item) => item.type === "owner_post");
-  }, [isAdminRole, isOwnerRole, notificationItems, user?.id]);
+    const ownerPostNotifications = notificationsEnabled
+      ? notificationItems.filter((item) => item.type === "owner_post")
+      : [];
+    return ownerPostNotifications.concat(messageNotifications);
+  }, [isAdminRole, isOwnerRole, notificationItems, notificationsEnabled, user?.id]);
   const unreadNotifications = useMemo(() => {
-    if (!isOwnerRole && !notificationsEnabled) return [];
-    return getUnreadNotifications(visibleNotifications, readByUser, user?.id);
-  }, [isOwnerRole, notificationsEnabled, readByUser, user?.id, visibleNotifications]);
+    if (!user?.id) return [];
+    return getUnreadNotifications(visibleNotifications, readByUser, user.id);
+  }, [readByUser, user?.id, visibleNotifications]);
+
+  const notificationPanelState = useMemo(() => {
+    if (isOwnerRole) return `${unreadNotifications.length} non lue(s)`;
+    if (unreadNotifications.length > 0) return `${unreadNotifications.length} non lue(s)`;
+    return notificationsEnabled ? "Aucune alerte non lue" : "Annonces desactivees";
+  }, [isOwnerRole, notificationsEnabled, unreadNotifications.length]);
+
+  const showNotificationPreferenceNotice =
+    !isAdminRole &&
+    !isOwnerRole &&
+    !notificationsEnabled &&
+    visibleNotifications.length === 0;
 
   useEffect(() => {
     const [latest] = unreadNotifications;
     if (!latest || latest.id === lastDeviceNotificationIdRef.current) return;
+    if (latest.type === "message") return;
     lastDeviceNotificationIdRef.current = latest.id;
     void showDeviceNotification({
       title: latest.title,
@@ -460,16 +480,10 @@ function TopBarContent({
                         <div>
                           <p className="text-sm font-semibold text-neutral-900">Notifications</p>
                           <p className="text-xs text-neutral-500">
-                            {isAdminRole
-                              ? "Alertes de pilotage."
-                              : isOwnerRole
-                                ? `${unreadNotifications.length} non lue(s)`
-                                : notificationsEnabled
-                                ? `${unreadNotifications.length} non lue(s)`
-                                : "Notifications désactivées"}
+                            {notificationPanelState}
                           </p>
                         </div>
-                        {!isAdminRole && (isOwnerRole || notificationsEnabled) && visibleNotifications.length > 0 && (
+                        {visibleNotifications.length > 0 && (
                           <button
                             type="button"
                             onClick={() => user?.id && markAllRead(user.id)}
@@ -481,11 +495,7 @@ function TopBarContent({
                       </div>
 
                       <div className="max-h-[24rem] overflow-y-auto p-3">
-                        {isAdminRole ? (
-                          <div className="rounded-2xl bg-neutral-50 px-4 py-5 text-sm text-neutral-600">
-                            Les alertes admin restent dans les pages de pilotage.
-                          </div>
-                        ) : !isOwnerRole && !notificationsEnabled ? (
+                        {showNotificationPreferenceNotice ? (
                           <div className="rounded-2xl bg-neutral-50 px-4 py-5 text-sm text-neutral-600">
                             Activez les notifications dans <Link href="/compte/parametres" className="font-semibold text-blue-700">Paramètres</Link> pour recevoir les nouvelles annonces.
                           </div>
