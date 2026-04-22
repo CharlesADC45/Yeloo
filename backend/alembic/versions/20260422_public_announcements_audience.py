@@ -1,7 +1,7 @@
 """add target audience to public announcements
 
-Revision ID: 20260422_public_announcements_audience
-Revises: 20260422_public_announcements_promos
+Revision ID: 20260422_pub_announce_audience
+Revises: 20260422_pub_announce_promos
 Create Date: 2026-04-22 01:00:00.000000
 """
 
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 from sqlalchemy import inspect
 
 
-revision = "20260422_public_announcements_audience"
-down_revision = "20260422_public_announcements_promos"
+revision = "20260422_pub_announce_audience"
+down_revision = "20260422_pub_announce_promos"
 branch_labels = None
 depends_on = None
 

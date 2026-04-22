@@ -1,6 +1,6 @@
 """add public announcements and property promos
 
-Revision ID: 20260422_public_announcements_promos
+Revision ID: 20260422_pub_announce_promos
 Revises: 20260420_property_advance_months
 Create Date: 2026-04-22 00:00:00.000000
 """
@@ -11,7 +11,7 @@ from sqlalchemy import inspect
 from sqlalchemy.dialects import postgresql
 
 
-revision = "20260422_public_announcements_promos"
+revision = "20260422_pub_announce_promos"
 down_revision = "20260420_property_advance_months"
 branch_labels = None
 depends_on = None
