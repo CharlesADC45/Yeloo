@@ -23,13 +23,14 @@ def upgrade() -> None:
     if "visit_requests" in set(inspector.get_table_names()):
         return
 
-    status_enum = sa.Enum(
+    status_enum = postgresql.ENUM(
         "pending",
         "accepted",
         "declined",
         "rescheduled",
         "cancelled",
         name="visit_request_status",
+        create_type=False,
     )
     status_enum.create(bind, checkfirst=True)
 
@@ -72,12 +73,13 @@ def downgrade() -> None:
         op.drop_index(op.f("ix_visit_requests_owner_id"), table_name="visit_requests")
         op.drop_table("visit_requests")
 
-    status_enum = sa.Enum(
+    status_enum = postgresql.ENUM(
         "pending",
         "accepted",
         "declined",
         "rescheduled",
         "cancelled",
         name="visit_request_status",
+        create_type=False,
     )
     status_enum.drop(bind, checkfirst=True)

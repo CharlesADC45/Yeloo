@@ -8,6 +8,7 @@ Create Date: 2026-04-22 03:00:00.000000
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy import inspect
+from sqlalchemy.dialects import postgresql
 
 
 revision = "20260422_property_availability"
@@ -25,11 +26,12 @@ def upgrade() -> None:
     if "availability_status" in columns:
         return
 
-    availability_enum = sa.Enum(
+    availability_enum = postgresql.ENUM(
         "available",
         "reserved",
         "rented",
         name="property_availability_status",
+        create_type=False,
     )
     availability_enum.create(bind, checkfirst=True)
     op.add_column(
@@ -46,10 +48,11 @@ def downgrade() -> None:
         if "availability_status" in columns:
             op.drop_column("properties", "availability_status")
 
-    availability_enum = sa.Enum(
+    availability_enum = postgresql.ENUM(
         "available",
         "reserved",
         "rented",
         name="property_availability_status",
+        create_type=False,
     )
     availability_enum.drop(bind, checkfirst=True)
