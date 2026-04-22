@@ -263,7 +263,7 @@ function HomePageContent() {
         }}
       />
 
-      <main className="flex-1 px-6 pb-32 pt-[15.5rem] sm:px-10 sm:pt-[16.5rem] lg:px-16">
+      <main className="flex-1 px-6 pb-32 pt-[11.5rem] sm:px-10 sm:pt-[16.5rem] lg:px-16">
         <PublicAnnouncementCarousel />
 
         <section ref={recentSectionRef} className="mt-8">
