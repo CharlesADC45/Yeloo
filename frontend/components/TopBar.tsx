@@ -138,16 +138,23 @@ function TopBarContent({
     const messageNotifications = notificationItems.filter(
       (item) => item.type === "message" && item.targetUserId === user.id
     );
-    if (isAdminRole) return messageNotifications;
+    const targetedNotifications = notificationItems.filter(
+      (item) =>
+        (item.type === "visit_request" ||
+          item.type === "visit_update" ||
+          item.type === "property_status") &&
+        item.targetUserId === user.id
+    );
+    if (isAdminRole) return messageNotifications.concat(targetedNotifications);
     if (isOwnerRole) {
       return notificationItems.filter(
         (item) => item.type === "owner_verification" && item.targetUserId === user.id
-      ).concat(messageNotifications);
+      ).concat(messageNotifications, targetedNotifications);
     }
     const ownerPostNotifications = notificationsEnabled
       ? notificationItems.filter((item) => item.type === "owner_post")
       : [];
-    return ownerPostNotifications.concat(messageNotifications);
+    return ownerPostNotifications.concat(messageNotifications, targetedNotifications);
   }, [isAdminRole, isOwnerRole, notificationItems, notificationsEnabled, user?.id]);
   const unreadNotifications = useMemo(() => {
     if (!user?.id) return [];

@@ -23,6 +23,7 @@ class PropertyCreate(BaseModel):
     latitude: float | None = None
     longitude: float | None = None
     is_furnished: bool = False
+    availability_status: str = Field(default="available", pattern="^(available|reserved|rented)$")
     video_url: str | None = Field(default=None, max_length=1000)
     tour_360_url: str | None = Field(default=None, max_length=1000)
 
@@ -47,6 +48,7 @@ class PropertyUpdate(BaseModel):
     longitude: float | None = None
     is_furnished: bool | None = None
     status: str | None = Field(default=None, pattern="^(draft|published|suspendu)$")
+    availability_status: str | None = Field(default=None, pattern="^(available|reserved|rented)$")
     video_url: str | None = Field(default=None, max_length=1000)
     tour_360_url: str | None = Field(default=None, max_length=1000)
 
@@ -75,6 +77,7 @@ class PropertyPublic(BaseModel):
     promo_until: datetime | None = None
     is_furnished: bool
     status: str
+    availability_status: str = "available"
     is_verified_listing: bool
     views_count: int
     created_at: datetime

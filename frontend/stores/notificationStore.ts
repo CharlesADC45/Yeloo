@@ -5,7 +5,7 @@ import { persist } from "zustand/middleware";
 
 export type NotificationItem = {
   id: string;
-  type: "owner_post" | "owner_verification" | "message";
+  type: "owner_post" | "owner_verification" | "message" | "visit_request" | "visit_update" | "property_status";
   title: string;
   message: string;
   propertyId?: string | null;
@@ -47,6 +47,27 @@ type NotificationState = {
     title: string;
     preview?: string | null;
     updatedAt?: string | null;
+  }) => void;
+  pushVisitRequestNotification: (payload: {
+    userId: string;
+    visitRequestId: string;
+    propertyTitle: string;
+    tenantName: string;
+    createdAt?: string | null;
+  }) => void;
+  pushVisitUpdateNotification: (payload: {
+    userId: string;
+    visitRequestId: string;
+    status: string;
+    propertyTitle: string;
+    updatedAt?: string | null;
+  }) => void;
+  pushPropertyStatusNotification: (payload: {
+    userId: string;
+    propertyId: string;
+    title: string;
+    statusLabel: string;
+    changedAt?: string | null;
   }) => void;
   markRead: (userId: string, notificationId: string) => void;
   markAllRead: (userId: string) => void;
@@ -120,6 +141,75 @@ export const useNotificationStore = create<NotificationState>()(
           createdAt: updatedAt || new Date().toISOString(),
           targetUserId: userId,
           href: `/messages/${conversationId}`,
+          severity: "info",
+        };
+
+        set((state) => {
+          if (state.items.some((current) => current.id === id)) return state;
+          return {
+            items: [item, ...state.items].slice(0, 80),
+          };
+        });
+      },
+      pushVisitRequestNotification: ({ userId, visitRequestId, propertyTitle, tenantName, createdAt }) => {
+        const id = `visit-request:${visitRequestId}:${createdAt || "latest"}`;
+        const item: NotificationItem = {
+          id,
+          type: "visit_request",
+          title: "Nouvelle demande de visite",
+          message: `${tenantName || "Un locataire"} veut visiter ${propertyTitle}.`,
+          createdAt: createdAt || new Date().toISOString(),
+          targetUserId: userId,
+          href: "/proprietaire",
+          severity: "info",
+        };
+
+        set((state) => {
+          if (state.items.some((current) => current.id === id)) return state;
+          return {
+            items: [item, ...state.items].slice(0, 80),
+          };
+        });
+      },
+      pushVisitUpdateNotification: ({ userId, visitRequestId, status, propertyTitle, updatedAt }) => {
+        const id = `visit-update:${visitRequestId}:${status}:${updatedAt || "latest"}`;
+        const statusLabel =
+          status === "accepted"
+            ? "acceptée"
+            : status === "declined"
+              ? "refusée"
+              : status === "rescheduled"
+                ? "modifiée"
+                : "mise à jour";
+        const item: NotificationItem = {
+          id,
+          type: "visit_update",
+          title: "Votre visite a été mise à jour",
+          message: `La visite pour ${propertyTitle} est ${statusLabel}.`,
+          createdAt: updatedAt || new Date().toISOString(),
+          targetUserId: userId,
+          href: "/messages",
+          severity: status === "declined" ? "warning" : "success",
+        };
+
+        set((state) => {
+          if (state.items.some((current) => current.id === id)) return state;
+          return {
+            items: [item, ...state.items].slice(0, 80),
+          };
+        });
+      },
+      pushPropertyStatusNotification: ({ userId, propertyId, title, statusLabel, changedAt }) => {
+        const id = `property-status:${propertyId}:${statusLabel}:${changedAt || "latest"}`;
+        const item: NotificationItem = {
+          id,
+          type: "property_status",
+          title: "Statut du logement modifié",
+          message: `${title} est maintenant ${statusLabel.toLowerCase()}.`,
+          propertyId,
+          createdAt: changedAt || new Date().toISOString(),
+          targetUserId: userId,
+          href: `/logements/${propertyId}`,
           severity: "info",
         };
 

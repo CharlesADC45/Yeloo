@@ -43,6 +43,11 @@ class Property(Base):
         nullable=False,
         default="draft",
     )
+    availability_status: Mapped[str] = mapped_column(
+        Enum("available", "reserved", "rented", name="property_availability_status"),
+        nullable=False,
+        default="available",
+    )
     is_verified_listing: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     views_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 

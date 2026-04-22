@@ -17,6 +17,7 @@ DEFAULT_FEATURE_MODULES = [
     ("owner_dashboard", "Espace proprietaire", "Active le dashboard proprietaire, la gestion des biens et les statistiques.", "owner"),
     ("owner_kyc", "KYC proprietaire", "Active la revue manuelle des dossiers proprietaires par le super admin.", "owner"),
     ("lease_requests", "Demandes de bail", "Reserve la zone bail pour les prochains workflows de location.", "leasing"),
+    ("visit_requests", "Demandes de visite", "Permet aux locataires de demander une visite et aux proprietaires de repondre.", "leasing"),
     ("listing_chat", "Chat des annonces", "Autorise les conversations locataire-proprietaire depuis chaque annonce.", "engagement"),
     ("notifications", "Notifications", "Diffuse les notifications de nouvelles annonces et alertes utilisateurs.", "engagement"),
     ("app_status_alerts", "Alertes statut app", "Affiche les alertes de connexion instable, hors ligne et nouveaux messages.", "engagement"),

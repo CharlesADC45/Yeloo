@@ -2,19 +2,22 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { FiMessageCircle, FiWifi, FiWifiOff } from "react-icons/fi";
+import { FiCalendar, FiHome, FiMessageCircle, FiWifi, FiWifiOff } from "react-icons/fi";
 import { getApiBaseUrl } from "@/lib/api";
 import { showDeviceNotification } from "@/lib/deviceNotifications";
 import { fetchConversations, type ConversationSummary } from "@/lib/messages";
 import { fetchPublicModules } from "@/lib/modules";
+import { mapApiProperty, type ApiProperty } from "@/lib/properties";
+import { listMyVisitRequests, listOwnerVisitRequests, type VisitRequest } from "@/lib/visitRequests";
 import { useAuthStore } from "@/stores/authStore";
+import { useFavoritesStore } from "@/stores/favoritesStore";
 import { useNotificationStore } from "@/stores/notificationStore";
 
 type ConnectionState = "online" | "offline" | "unstable";
 
 type ToastState = {
   id: string;
-  type: ConnectionState | "message";
+  type: ConnectionState | "message" | "visit" | "property";
   title: string;
   message: string;
 };
@@ -58,22 +61,39 @@ function getConnectionHint() {
   );
 }
 
+function getVisitStatusLabel(status: VisitRequest["status"]) {
+  if (status === "accepted") return "acceptée";
+  if (status === "declined") return "refusée";
+  if (status === "rescheduled") return "modifiée";
+  return "mise à jour";
+}
+
 export function AppStatusNotifier() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
   const pushMessageNotification = useNotificationStore((state) => state.pushMessageNotification);
+  const pushVisitRequestNotification = useNotificationStore((state) => state.pushVisitRequestNotification);
+  const pushVisitUpdateNotification = useNotificationStore((state) => state.pushVisitUpdateNotification);
+  const pushPropertyStatusNotification = useNotificationStore((state) => state.pushPropertyStatusNotification);
+  const favoriteIds = useFavoritesStore((state) => state.favoriteIds);
   const [connectionState, setConnectionState] = useState<ConnectionState>("online");
   const [toast, setToast] = useState<ToastState | null>(null);
   const [isStatusModuleEnabled, setIsStatusModuleEnabled] = useState(true);
   const previousUnreadRef = useRef(0);
   const hasLoadedMessagesRef = useRef(false);
+  const hasLoadedVisitsRef = useRef(false);
+  const previousVisitStateRef = useRef<Record<string, string>>({});
+  const hasLoadedFavoritesRef = useRef(false);
+  const previousFavoriteStatusRef = useRef<Record<string, string>>({});
   const previousConnectionRef = useRef<ConnectionState>("online");
 
   const toastIcon = useMemo(() => {
     if (!toast) return FiWifi;
     if (toast.type === "offline") return FiWifiOff;
     if (toast.type === "message") return FiMessageCircle;
+    if (toast.type === "visit") return FiCalendar;
+    if (toast.type === "property") return FiHome;
     return FiWifi;
   }, [toast]);
 
@@ -264,6 +284,169 @@ export function AppStatusNotifier() {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [isAuthenticated, isStatusModuleEnabled, pushMessageNotification, token, user?.id]);
+
+  useEffect(() => {
+    if (!isStatusModuleEnabled) return;
+    if (!isAuthenticated || !token || !user?.id) {
+      hasLoadedVisitsRef.current = false;
+      previousVisitStateRef.current = {};
+      return;
+    }
+
+    let active = true;
+
+    const notifyFromVisits = (items: VisitRequest[]) => {
+      const nextState: Record<string, string> = {};
+      const isOwner = user.role === "proprietaire" || user.role === "admin";
+
+      for (const item of items) {
+        nextState[item.id] = `${item.status}:${item.updated_at}`;
+        const previous = previousVisitStateRef.current[item.id];
+        const hasChanged = previous && previous !== nextState[item.id];
+
+        if (isOwner && item.status === "pending") {
+          pushVisitRequestNotification({
+            userId: user.id,
+            visitRequestId: item.id,
+            propertyTitle: item.property_title,
+            tenantName: item.tenant_full_name,
+            createdAt: item.created_at,
+          });
+        }
+
+        if (!isOwner && item.status !== "pending") {
+          pushVisitUpdateNotification({
+            userId: user.id,
+            visitRequestId: item.id,
+            status: item.status,
+            propertyTitle: item.property_title,
+            updatedAt: item.updated_at,
+          });
+        }
+
+        if (hasLoadedVisitsRef.current && hasChanged) {
+          const title = isOwner ? "Demande de visite mise à jour" : "Votre visite a été mise à jour";
+          const message = isOwner
+            ? `${item.tenant_full_name} · ${item.property_title}`
+            : `${item.property_title} · ${getVisitStatusLabel(item.status)}`;
+          setToast({
+            id: `visit-${item.id}-${item.updated_at}`,
+            type: "visit",
+            title,
+            message,
+          });
+          void showDeviceNotification({
+            title,
+            body: message,
+            tag: `yeloo-visit-${item.id}`,
+            url: isOwner ? "/proprietaire" : `/logements/${item.property_id}`,
+          });
+        }
+      }
+
+      previousVisitStateRef.current = nextState;
+      hasLoadedVisitsRef.current = true;
+    };
+
+    const loadVisits = async () => {
+      try {
+        const isOwner = user.role === "proprietaire" || user.role === "admin";
+        const items = isOwner ? await listOwnerVisitRequests(token) : await listMyVisitRequests(token);
+        if (!active) return;
+        notifyFromVisits(items);
+      } catch {
+        // Connection and auth problems are handled elsewhere.
+      }
+    };
+
+    void loadVisits();
+    const interval = window.setInterval(loadVisits, 22000);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") void loadVisits();
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [
+    isAuthenticated,
+    isStatusModuleEnabled,
+    pushVisitRequestNotification,
+    pushVisitUpdateNotification,
+    token,
+    user?.id,
+    user?.role,
+  ]);
+
+  useEffect(() => {
+    if (!isStatusModuleEnabled) return;
+    if (!isAuthenticated || !token || !user?.id || user.role === "proprietaire" || user.role === "admin") {
+      hasLoadedFavoritesRef.current = false;
+      previousFavoriteStatusRef.current = {};
+      return;
+    }
+    if (favoriteIds.length === 0) {
+      previousFavoriteStatusRef.current = {};
+      return;
+    }
+
+    let active = true;
+
+    const loadFavoriteStatuses = async () => {
+      try {
+        const response = await fetch(`${getApiBaseUrl()}/api/properties`, { cache: "no-store" });
+        if (!response.ok) return;
+        const payload = (await response.json()) as ApiProperty[];
+        if (!active) return;
+        const favorites = payload.map(mapApiProperty).filter((item) => favoriteIds.includes(item.id));
+        const nextStatus: Record<string, string> = {};
+
+        for (const property of favorites) {
+          nextStatus[property.id] = property.availabilityStatus;
+          const previous = previousFavoriteStatusRef.current[property.id];
+          const changed = previous && previous !== property.availabilityStatus;
+          if (!changed) continue;
+
+          pushPropertyStatusNotification({
+            userId: user.id,
+            propertyId: property.id,
+            title: property.title,
+            statusLabel: property.availabilityLabel,
+            changedAt: new Date().toISOString(),
+          });
+          setToast({
+            id: `property-${property.id}-${property.availabilityStatus}`,
+            type: "property",
+            title: "Favori mis à jour",
+            message: `${property.title} est maintenant ${property.availabilityLabel.toLowerCase()}.`,
+          });
+        }
+
+        previousFavoriteStatusRef.current = nextStatus;
+        hasLoadedFavoritesRef.current = true;
+      } catch {
+        // Silent: the connection checker already informs the user.
+      }
+    };
+
+    void loadFavoriteStatuses();
+    const interval = window.setInterval(loadFavoriteStatuses, 30000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [
+    favoriteIds,
+    isAuthenticated,
+    isStatusModuleEnabled,
+    pushPropertyStatusNotification,
+    token,
+    user?.id,
+    user?.role,
+  ]);
 
   const Icon = toastIcon;
 

@@ -31,6 +31,11 @@ import { TopBar } from "@/components/TopBar";
 import { fetchPublicModules } from "@/lib/modules";
 import { useProperty } from "@/hooks/useProperties";
 import { ensureConversation } from "@/lib/messages";
+import {
+  createVisitRequestForProperty,
+  getVisitRequestForProperty,
+  type VisitRequest,
+} from "@/lib/visitRequests";
 import { useAuthStore } from "@/stores/authStore";
 import { useFavoritesStore } from "@/stores/favoritesStore";
 
@@ -46,6 +51,69 @@ type MapProps = {
 };
 
 const ABIDJAN_CENTER = { latitude: 5.3599517, longitude: -4.0082563 };
+const VISIT_TIME_SLOTS = ["09:00", "10:30", "12:00", "14:00", "15:30", "17:00", "18:30"];
+
+function formatVisitDate(value?: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("fr-FR", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function getVisitStatusLabel(status?: VisitRequest["status"]) {
+  switch (status) {
+    case "accepted":
+      return "Visite acceptée";
+    case "declined":
+      return "Visite refusée";
+    case "rescheduled":
+      return "Nouvelle date proposée";
+    case "cancelled":
+      return "Annulée";
+    default:
+      return "En attente";
+  }
+}
+
+function toDateKey(date: Date) {
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
+}
+
+function dateFromKey(value: string) {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function buildVisitDateOptions() {
+  const date = new Date();
+  if (date.getHours() >= 18) {
+    date.setDate(date.getDate() + 1);
+  }
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const next = new Date(date);
+    next.setDate(date.getDate() + index);
+    const value = toDateKey(next);
+    const displayDate = dateFromKey(value);
+    return {
+      value,
+      weekday: new Intl.DateTimeFormat("fr-FR", { weekday: "short" }).format(displayDate),
+      day: new Intl.DateTimeFormat("fr-FR", { day: "2-digit" }).format(displayDate),
+      month: new Intl.DateTimeFormat("fr-FR", { month: "short" }).format(displayDate),
+    };
+  });
+}
+
+function buildVisitDateTime(day: string, time: string) {
+  return `${day}T${time}`;
+}
 
 function buildDetailLocationIcon() {
   return `
@@ -265,6 +333,12 @@ export function LogementClient({ id }: Props) {
   const [chatError, setChatError] = useState<string | null>(null);
   const [isOpeningChat, setIsOpeningChat] = useState(false);
   const [isChatEnabled, setIsChatEnabled] = useState(true);
+  const [isVisitEnabled, setIsVisitEnabled] = useState(true);
+  const [visitRequest, setVisitRequest] = useState<VisitRequest | null>(null);
+  const [visitDate, setVisitDate] = useState("");
+  const [visitMessage, setVisitMessage] = useState("");
+  const [visitError, setVisitError] = useState<string | null>(null);
+  const [isSendingVisit, setIsSendingVisit] = useState(false);
   const [commentDraft, setCommentDraft] = useState("");
   const [commentSaved, setCommentSaved] = useState(false);
 
@@ -300,6 +374,10 @@ export function LogementClient({ id }: Props) {
   const videoUrl = property?.videoUrl;
   const isTourImage = Boolean(tourUrl && !/\.(mp4|webm|ogg|mov)$/i.test(tourUrl));
   const isOwnerViewer = user?.role === "proprietaire" || user?.role === "admin";
+  const visitDateOptions = useMemo(() => buildVisitDateOptions(), []);
+  const selectedVisitDay = visitDate.slice(0, 10);
+  const selectedVisitTime = visitDate.slice(11, 16);
+  const selectedVisitLabel = visitDate ? formatVisitDate(visitDate) : "Choisissez un jour et une heure";
   const ownerLabel = property?.ownerIsVerified ? "Propriétaire vérifié" : "Propriétaire Yeloo";
   const ownerInitial = ownerLabel.charAt(0).toUpperCase();
   const pricePeriodLabel = property?.pricePeriod || "mois";
@@ -340,8 +418,8 @@ export function LogementClient({ id }: Props) {
         },
         {
           icon: FiShield,
-          label: "Statut",
-          value: property.isVerified ? "Annonce vérifiée" : "Annonce en cours",
+          label: "Disponibilité",
+          value: property.availabilityLabel,
         },
       ]
     : [];
@@ -394,6 +472,46 @@ export function LogementClient({ id }: Props) {
     }
   };
 
+  const handleSelectVisitDay = (day: string) => {
+    setVisitError(null);
+    setVisitDate(buildVisitDateTime(day, selectedVisitTime || VISIT_TIME_SLOTS[0]));
+  };
+
+  const handleSelectVisitTime = (time: string) => {
+    setVisitError(null);
+    setVisitDate(
+      buildVisitDateTime(selectedVisitDay || visitDateOptions[0]?.value || toDateKey(new Date()), time)
+    );
+  };
+
+  const handleCreateVisitRequest = async () => {
+    if (!resolvedId) return;
+    if (!isAuthenticated || !token) {
+      router.push(`/connexion?next=/logements/${resolvedId}`);
+      return;
+    }
+    if (!visitDate) {
+      setVisitError("Choisissez une date et une heure pour la visite.");
+      return;
+    }
+
+    setIsSendingVisit(true);
+    setVisitError(null);
+    try {
+      const preferredAt = new Date(visitDate).toISOString();
+      const request = await createVisitRequestForProperty(resolvedId, token, {
+        preferred_at: preferredAt,
+        message: visitMessage.trim() || undefined,
+      });
+      setVisitRequest(request);
+      setVisitMessage("");
+    } catch (err) {
+      setVisitError(err instanceof Error ? err.message : "Demande de visite impossible.");
+    } finally {
+      setIsSendingVisit(false);
+    }
+  };
+
   const handleSaveComment = () => {
     if (!resolvedId) return;
     try {
@@ -414,10 +532,13 @@ export function LogementClient({ id }: Props) {
         const modules = await fetchPublicModules();
         if (!active) return;
         const chatModule = modules.find((item) => item.key === "listing_chat");
+        const visitModule = modules.find((item) => item.key === "visit_requests");
         setIsChatEnabled(chatModule ? chatModule.is_enabled : true);
+        setIsVisitEnabled(visitModule ? visitModule.is_enabled : true);
       } catch {
         if (active) {
           setIsChatEnabled(true);
+          setIsVisitEnabled(true);
         }
       }
     };
@@ -427,6 +548,24 @@ export function LogementClient({ id }: Props) {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!resolvedId || !token || isOwnerViewer) {
+      setVisitRequest(null);
+      return;
+    }
+    let active = true;
+    getVisitRequestForProperty(resolvedId, token)
+      .then((request) => {
+        if (active) setVisitRequest(request);
+      })
+      .catch(() => {
+        if (active) setVisitRequest(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isOwnerViewer, resolvedId, token]);
 
   useEffect(() => {
     if (!resolvedId || typeof window === "undefined") return;
@@ -768,10 +907,14 @@ export function LogementClient({ id }: Props) {
                       <button
                         type="button"
                         onClick={() => void handleOpenChat()}
-                        disabled={isOpeningChat}
+                        disabled={isOpeningChat || property.availabilityStatus === "rented"}
                         className="mt-5 inline-flex items-center justify-center bg-neutral-950 px-5 py-3 text-sm font-semibold text-white disabled:opacity-70"
                       >
-                        {isOpeningChat ? "Ouverture..." : "Envoyer un message au propriétaire"}
+                        {property.availabilityStatus === "rented"
+                          ? "Logement déjà loué"
+                          : isOpeningChat
+                            ? "Ouverture..."
+                            : "Envoyer un message au propriétaire"}
                       </button>
                     )}
                   </div>
@@ -912,10 +1055,14 @@ export function LogementClient({ id }: Props) {
                     <button
                       type="button"
                       onClick={() => void handleOpenChat()}
-                      disabled={isOpeningChat}
+                      disabled={isOpeningChat || property.availabilityStatus === "rented"}
                       className="inline-flex w-full items-center justify-center rounded-full bg-teal-600 px-5 py-3 text-sm font-semibold text-white disabled:opacity-70"
                     >
-                      {isOpeningChat ? "Ouverture..." : "Contacter le propriétaire"}
+                      {property.availabilityStatus === "rented"
+                        ? "Logement déjà loué"
+                        : isOpeningChat
+                          ? "Ouverture..."
+                          : "Contacter le propriétaire"}
                     </button>
                   )}
                   <button
@@ -947,6 +1094,149 @@ export function LogementClient({ id }: Props) {
                   )}
                 </div>
               </div>
+
+              {!isOwnerViewer && isVisitEnabled && property.availabilityStatus !== "rented" && (
+                <div
+                  data-detail-reveal="true"
+                  className="rounded-[1.8rem] border border-blue-100 bg-blue-50/60 p-6"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-blue-700">
+                      <FiClock />
+                    </span>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+                        Visite
+                      </p>
+                      <h2 className="text-lg font-semibold text-neutral-950">
+                        Demander une visite
+                      </h2>
+                    </div>
+                  </div>
+
+                  {visitRequest ? (
+                    <div className="mt-5 rounded-[1.2rem] border border-blue-100 bg-white p-4 text-sm">
+                      <p className="font-semibold text-blue-700">
+                        {getVisitStatusLabel(visitRequest.status)}
+                      </p>
+                      <p className="mt-2 text-neutral-700">
+                        Date souhaitée: {formatVisitDate(visitRequest.preferred_at)}
+                      </p>
+                      {visitRequest.proposed_at && (
+                        <p className="mt-1 text-neutral-700">
+                          Nouvelle date: {formatVisitDate(visitRequest.proposed_at)}
+                        </p>
+                      )}
+                      {visitRequest.owner_message && (
+                        <p className="mt-3 rounded-2xl bg-blue-50 px-3 py-2 text-xs leading-5 text-neutral-600">
+                          {visitRequest.owner_message}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="mt-5 space-y-4">
+                      <div className="rounded-[1.4rem] border border-blue-100 bg-white p-3 shadow-sm">
+                        <div className="flex items-center justify-between gap-3 px-1">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                              Choisir une date
+                            </p>
+                            <p className="mt-1 text-xs text-neutral-500">
+                              Le propriétaire confirmera le créneau.
+                            </p>
+                          </div>
+                          <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold text-blue-700">
+                            7 jours
+                          </span>
+                        </div>
+
+                        <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                          {visitDateOptions.map((day) => {
+                            const isSelected = selectedVisitDay === day.value;
+                            return (
+                              <button
+                                key={day.value}
+                                type="button"
+                                onClick={() => handleSelectVisitDay(day.value)}
+                                className={`min-h-[4.8rem] rounded-2xl border px-2 py-2 text-center transition ${
+                                  isSelected
+                                    ? "border-blue-700 bg-blue-700 text-white shadow-[0_16px_34px_rgba(29,78,216,0.22)]"
+                                    : "border-neutral-200 bg-white text-neutral-700 hover:border-blue-200 hover:bg-blue-50"
+                                }`}
+                              >
+                                <span className="block text-[11px] font-semibold capitalize">
+                                  {day.weekday.replace(".", "")}
+                                </span>
+                                <span className="mt-1 block text-xl font-semibold">{day.day}</span>
+                                <span className="block text-[11px] font-medium capitalize opacity-80">
+                                  {day.month.replace(".", "")}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        <div className="mt-5">
+                          <p className="px-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                            Créneau préféré
+                          </p>
+                          <div className="mt-2 grid grid-cols-3 gap-2">
+                            {VISIT_TIME_SLOTS.map((time) => {
+                              const isSelected = selectedVisitTime === time;
+                              return (
+                                <button
+                                  key={time}
+                                  type="button"
+                                  onClick={() => handleSelectVisitTime(time)}
+                                  className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
+                                    isSelected
+                                      ? "border-blue-700 bg-blue-700 text-white"
+                                      : "border-neutral-200 bg-white text-neutral-700 hover:border-blue-200 hover:bg-blue-50"
+                                  }`}
+                                >
+                                  {time}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="rounded-[1.2rem] border border-blue-100 bg-white px-4 py-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
+                          Votre sélection
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-neutral-950">{selectedVisitLabel}</p>
+                      </div>
+
+                      <label className="block text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                        Message optionnel
+                        <textarea
+                          value={visitMessage}
+                          onChange={(event) => setVisitMessage(event.target.value)}
+                          rows={3}
+                          maxLength={500}
+                          placeholder="Ex: Je suis disponible ce jour-là en fin de matinée."
+                          className="mt-2 w-full resize-none rounded-2xl border border-blue-100 bg-white px-4 py-3 text-sm text-neutral-900 outline-none placeholder:text-neutral-400 focus:border-blue-500"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => void handleCreateVisitRequest()}
+                        disabled={isSendingVisit}
+                        className="inline-flex w-full items-center justify-center rounded-full bg-blue-700 px-5 py-3 text-sm font-semibold text-white disabled:opacity-70"
+                      >
+                        {isSendingVisit ? "Envoi..." : "Envoyer la demande"}
+                      </button>
+                      {visitError && (
+                        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
+                          {visitError}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
                 <div
                   data-detail-reveal="true"

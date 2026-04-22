@@ -77,6 +77,12 @@ DEFAULT_FEATURE_MODULES = [
         "category": "leasing",
     },
     {
+        "key": "visit_requests",
+        "name": "Demandes de visite",
+        "description": "Permet aux locataires de demander une visite et aux proprietaires de repondre.",
+        "category": "leasing",
+    },
+    {
         "key": "listing_chat",
         "name": "Chat des annonces",
         "description": "Autorise les conversations locataire-proprietaire depuis chaque annonce.",

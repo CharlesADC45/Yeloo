@@ -27,6 +27,7 @@ type FormState = {
   price: string;
   pricePeriod: "jour" | "semaine" | "mois";
   status: "draft" | "published" | "suspendu";
+  availabilityStatus: "available" | "reserved" | "rented";
   surfaceM2: string;
   rooms: string;
   bathrooms: string;
@@ -45,6 +46,7 @@ const DEFAULT_FORM: FormState = {
   price: "",
   pricePeriod: "mois",
   status: "draft",
+  availabilityStatus: "available",
   surfaceM2: "",
   rooms: "",
   bathrooms: "",
@@ -188,6 +190,7 @@ export default function EditPropertyPage() {
           price: data.price ? String(data.price) : "",
           pricePeriod: data.price_period ?? "mois",
           status: data.status ?? "draft",
+          availabilityStatus: data.availability_status ?? "available",
           surfaceM2: data.surface_m2 ? String(data.surface_m2) : "",
           rooms: data.rooms ? String(data.rooms) : "",
           bathrooms: data.bathrooms ? String(data.bathrooms) : "",
@@ -325,6 +328,7 @@ export default function EditPropertyPage() {
       price: priceValue ?? 0,
       price_period: form.pricePeriod,
       status: form.status,
+      availability_status: form.availabilityStatus,
       surface_m2: form.surfaceM2 ? parseLocaleNumber(form.surfaceM2) : null,
       rooms: form.rooms ? parseLocaleNumber(form.rooms) : null,
       bathrooms: form.bathrooms ? parseLocaleNumber(form.bathrooms) : null,
@@ -479,10 +483,17 @@ export default function EditPropertyPage() {
                 <span className="inline-flex items-center gap-2 rounded-full bg-[#EAF1FF] px-3 py-2 text-xs font-semibold text-[#123B8C]">
                   <FiCheckCircle />
                   {form.status === "published"
-                    ? "Disponible"
+                    ? "Publié"
                     : form.status === "suspendu"
                       ? "Suspendu"
                       : "Brouillon"}
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">
+                  {form.availabilityStatus === "reserved"
+                    ? "Réservé"
+                    : form.availabilityStatus === "rented"
+                      ? "Loué"
+                      : "Disponible"}
                 </span>
                 <Link
                   href="/proprietaire"
@@ -534,6 +545,15 @@ export default function EditPropertyPage() {
                         <option value="draft">Brouillon</option>
                         <option value="published">Publié</option>
                         <option value="suspendu">Suspendu</option>
+                      </select>
+                    </label>
+
+                    <label className={labelClass}>
+                      Disponibilité
+                      <select value={form.availabilityStatus} onChange={handleChange("availabilityStatus")} className={fieldClass}>
+                        <option value="available">Disponible</option>
+                        <option value="reserved">Réservé</option>
+                        <option value="rented">Loué</option>
                       </select>
                     </label>
 

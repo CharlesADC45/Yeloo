@@ -89,6 +89,7 @@ def create_property(
         video_url=payload.video_url,
         tour_360_url=payload.tour_360_url,
         is_furnished=payload.is_furnished,
+        availability_status=payload.availability_status,
         status="draft",
     )
     db.add(prop)

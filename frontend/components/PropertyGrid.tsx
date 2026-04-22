@@ -108,8 +108,23 @@ export function PropertyGrid({
                     </span>
                   </div>
                 )}
-                {p.isVerified && (
+                {p.availabilityStatus !== "available" && (
                   <div className={`absolute left-3 ${p.promoLabel ? "top-11" : "top-3"}`}>
+                    <span className="rounded-full bg-white/95 px-3 py-1 text-[11px] font-semibold text-blue-700 shadow-soft">
+                      {p.availabilityLabel}
+                    </span>
+                  </div>
+                )}
+                {p.isVerified && (
+                  <div
+                    className={`absolute left-3 ${
+                      p.promoLabel && p.availabilityStatus !== "available"
+                        ? "top-[4.75rem]"
+                        : p.promoLabel || p.availabilityStatus !== "available"
+                          ? "top-11"
+                          : "top-3"
+                    }`}
+                  >
                     <span className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-medium text-neutral-700 shadow-soft">
                       Annonce vérifiée
                     </span>
@@ -155,6 +170,11 @@ export function PropertyGrid({
                   {p.badgeLabel && (
                     <span className="rounded-full bg-teal-50 px-2.5 py-1 text-[11px] font-medium text-teal-700">
                       {p.badgeLabel}
+                    </span>
+                  )}
+                  {p.availabilityStatus === "available" && (
+                    <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-700">
+                      {p.availabilityLabel}
                     </span>
                   )}
                 </div>

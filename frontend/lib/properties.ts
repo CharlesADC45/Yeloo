@@ -25,6 +25,8 @@ export type Property = {
   isFurnished?: boolean;
   propertyType: string;
   isVerified: boolean;
+  availabilityStatus: "available" | "reserved" | "rented";
+  availabilityLabel: string;
   imageUrl: string;
   badgeLabel?: string;
   promoLabel?: string;
@@ -59,6 +61,7 @@ export type ApiProperty = {
   tour_360_url?: string | null;
   is_verified_listing?: boolean | null;
   status?: string | null;
+  availability_status?: string | null;
   image_url?: string | null;
   imageUrl?: string | null;
   photo_urls?: string[] | null;
@@ -79,6 +82,17 @@ const STATUS_BADGES: Record<string, string> = {
   published: "Disponible",
   draft: "Brouillon",
   suspendu: "Annonce suspendue",
+};
+
+const AVAILABILITY_LABELS: Record<string, string> = {
+  available: "Disponible",
+  reserved: "Réservé",
+  rented: "Loué",
+};
+
+const normalizeAvailability = (value?: string | null): Property["availabilityStatus"] => {
+  if (value === "reserved" || value === "rented") return value;
+  return "available";
 };
 
 const toNumber = (value: number | string | null | undefined) => {
@@ -109,6 +123,7 @@ export const mapApiProperty = (api: ApiProperty): Property => {
     FALLBACK_IMAGES[propertyType] ||
     FALLBACK_IMAGES.default;
   const status = (api.status || "").toLowerCase();
+  const availabilityStatus = normalizeAvailability(api.availability_status);
   const badgeLabel = api.is_verified_listing
     ? "Annonce verifiee"
     : STATUS_BADGES[status];
@@ -135,6 +150,8 @@ export const mapApiProperty = (api: ApiProperty): Property => {
     isFurnished: Boolean(api.is_furnished),
     propertyType,
     isVerified: Boolean(api.is_verified_listing),
+    availabilityStatus,
+    availabilityLabel: AVAILABILITY_LABELS[availabilityStatus],
     imageUrl,
     badgeLabel,
     promoLabel: promoIsActive ? api.promo_label || undefined : undefined,
