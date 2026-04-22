@@ -57,13 +57,13 @@ export function PublicAnnouncementCarousel() {
 
   return (
     <section className="mx-auto w-full max-w-4xl">
-      <div className="rounded-[1.5rem] border border-blue-100 bg-[#f0f2ff] px-4 py-4 shadow-soft sm:px-5">
-        <div className="flex items-center gap-4">
+      <div className="min-h-[7.25rem] rounded-[1.5rem] border border-blue-100 bg-[#f0f2ff] px-4 py-4 shadow-soft sm:min-h-[7rem] sm:px-5">
+        <div className="flex min-h-[4.25rem] items-center gap-4">
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-2xl text-blue-700 shadow-sm">
             <Icon />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold leading-6 text-neutral-950 sm:text-base">
+            <p className="line-clamp-3 text-sm font-semibold leading-6 text-neutral-950 sm:text-base">
               {activeItem.message}
             </p>
           </div>

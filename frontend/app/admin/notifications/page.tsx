@@ -345,7 +345,7 @@ export default function AdminNotificationsPage() {
                   </label>
                 </div>
 
-                <div className="rounded-[1.5rem] border border-blue-100 bg-[#f0f2ff] px-4 py-4">
+                <div className="min-h-[7.25rem] rounded-[1.5rem] border border-blue-100 bg-[#f0f2ff] px-4 py-4">
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
                       Apercu live
@@ -354,11 +354,11 @@ export default function AdminNotificationsPage() {
                       {getAudienceLabel(targetAudience)}
                     </span>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex min-h-[4.25rem] items-center gap-4">
                     <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-2xl text-blue-700 shadow-sm">
                       <PreviewIcon />
                     </span>
-                    <p className="min-w-0 flex-1 text-sm font-semibold leading-6 text-neutral-950">
+                    <p className="line-clamp-3 min-w-0 flex-1 text-sm font-semibold leading-6 text-neutral-950">
                       {message || "Ton message apparaitra ici."}
                     </p>
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-600">
