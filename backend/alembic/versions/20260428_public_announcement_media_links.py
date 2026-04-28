@@ -1,6 +1,6 @@
 """add media and links to public announcements
 
-Revision ID: 20260428_public_announcement_media_links
+Revision ID: 20260428_pub_announce_media
 Revises: 20260422_pub_announce_audience
 Create Date: 2026-04-28 00:00:00.000000
 """
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy import inspect
 
 
-revision = "20260428_public_announcement_media_links"
+revision = "20260428_pub_announce_media"
 down_revision = "20260422_pub_announce_audience"
 branch_labels = None
 depends_on = None
