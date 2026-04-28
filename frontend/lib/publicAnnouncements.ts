@@ -4,9 +4,16 @@ export type PublicAnnouncement = {
   id: string;
   message: string;
   icon: string;
+  display_mode: "text" | "poster_auto" | "poster_manual";
   image_url?: string | null;
   link_url?: string | null;
   cta_label?: string | null;
+  font_family?: string | null;
+  text_color?: string | null;
+  text_size?: string | null;
+  text_position?: string | null;
+  content_inset?: string | null;
+  overlay_strength?: string | null;
   target_audience: "all" | "locataire" | "proprietaire";
   duration_hours: number;
   is_active: boolean;

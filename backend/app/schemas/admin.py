@@ -163,9 +163,16 @@ class PublicAnnouncementPublic(BaseModel):
     id: str
     message: str
     icon: str
+    display_mode: str = "text"
     image_url: str | None = None
     link_url: str | None = None
     cta_label: str | None = None
+    font_family: str | None = None
+    text_color: str | None = None
+    text_size: str | None = None
+    text_position: str | None = None
+    content_inset: str | None = None
+    overlay_strength: str | None = None
     target_audience: str
     duration_hours: int
     is_active: bool
@@ -181,9 +188,16 @@ class PublicAnnouncementPublic(BaseModel):
 class PublicAnnouncementCreate(BaseModel):
     message: str = Field(min_length=3, max_length=500)
     icon: str = Field(default="info", max_length=40)
+    display_mode: str = Field(default="text", pattern="^(text|poster_auto|poster_manual)$")
     image_url: str | None = Field(default=None, max_length=1000)
     link_url: str | None = Field(default=None, max_length=1000)
     cta_label: str | None = Field(default=None, max_length=80)
+    font_family: str | None = Field(default=None, max_length=24)
+    text_color: str | None = Field(default=None, max_length=32)
+    text_size: str | None = Field(default=None, max_length=24)
+    text_position: str | None = Field(default=None, pattern="^(left|right|top|bottom|center)$")
+    content_inset: str | None = Field(default=None, pattern="^(compact|comfortable|airy)$")
+    overlay_strength: str | None = Field(default=None, pattern="^(soft|medium|strong)$")
     target_audience: str = Field(default="all", pattern="^(all|locataire|proprietaire)$")
     duration_hours: int = Field(default=24, ge=1, le=2160)
     is_active: bool = True
@@ -192,9 +206,16 @@ class PublicAnnouncementCreate(BaseModel):
 class PublicAnnouncementUpdate(BaseModel):
     message: str | None = Field(default=None, min_length=3, max_length=500)
     icon: str | None = Field(default=None, max_length=40)
+    display_mode: str | None = Field(default=None, pattern="^(text|poster_auto|poster_manual)$")
     image_url: str | None = Field(default=None, max_length=1000)
     link_url: str | None = Field(default=None, max_length=1000)
     cta_label: str | None = Field(default=None, max_length=80)
+    font_family: str | None = Field(default=None, max_length=24)
+    text_color: str | None = Field(default=None, max_length=32)
+    text_size: str | None = Field(default=None, max_length=24)
+    text_position: str | None = Field(default=None, pattern="^(left|right|top|bottom|center)$")
+    content_inset: str | None = Field(default=None, pattern="^(compact|comfortable|airy)$")
+    overlay_strength: str | None = Field(default=None, pattern="^(soft|medium|strong)$")
     target_audience: str | None = Field(default=None, pattern="^(all|locataire|proprietaire)$")
     duration_hours: int | None = Field(default=None, ge=1, le=2160)
     is_active: bool | None = None

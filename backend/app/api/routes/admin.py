@@ -195,9 +195,16 @@ def _serialize_public_announcement(item: PublicAnnouncement) -> PublicAnnounceme
         id=str(item.id),
         message=item.message,
         icon=item.icon,
+        display_mode=item.display_mode or "text",
         image_url=item.image_url,
         link_url=item.link_url,
         cta_label=item.cta_label,
+        font_family=item.font_family,
+        text_color=item.text_color,
+        text_size=item.text_size,
+        text_position=item.text_position,
+        content_inset=item.content_inset,
+        overlay_strength=item.overlay_strength,
         target_audience=item.target_audience,
         duration_hours=item.duration_hours,
         is_active=item.is_active,
@@ -217,6 +224,18 @@ def _normalize_announcement_url(value: str | None, field_name: str) -> str | Non
     if normalized.startswith(("http://", "https://", "/")):
         return normalized
     raise HTTPException(status_code=400, detail=f"{field_name} invalide.")
+
+
+def _normalize_announcement_string(value: str | None) -> str | None:
+    if value is None:
+        return None
+    normalized = value.strip()
+    return normalized or None
+
+
+def _ensure_announcement_mode_image(mode: str, image_url: str | None) -> None:
+    if mode in {"poster_auto", "poster_manual"} and not image_url:
+        raise HTTPException(status_code=400, detail="Une image est requise pour un poster.")
 
 
 def _save_announcement_image(file: UploadFile) -> str:
@@ -678,9 +697,16 @@ def create_public_announcement(
     item = PublicAnnouncement(
         message=payload.message.strip(),
         icon=payload.icon.strip() or "info",
+        display_mode=payload.display_mode,
         image_url=_normalize_announcement_url(payload.image_url, "Image"),
         link_url=_normalize_announcement_url(payload.link_url, "Lien"),
-        cta_label=(payload.cta_label or "").strip() or None,
+        cta_label=_normalize_announcement_string(payload.cta_label),
+        font_family=_normalize_announcement_string(payload.font_family),
+        text_color=_normalize_announcement_string(payload.text_color),
+        text_size=_normalize_announcement_string(payload.text_size),
+        text_position=_normalize_announcement_string(payload.text_position),
+        content_inset=_normalize_announcement_string(payload.content_inset),
+        overlay_strength=_normalize_announcement_string(payload.overlay_strength),
         target_audience=payload.target_audience,
         duration_hours=payload.duration_hours,
         is_active=payload.is_active,
@@ -689,6 +715,7 @@ def create_public_announcement(
         created_at=now,
         updated_at=now,
     )
+    _ensure_announcement_mode_image(item.display_mode, item.image_url)
     db.add(item)
     db.commit()
     db.refresh(item)
@@ -711,12 +738,26 @@ def update_public_announcement(
         item.message = data["message"].strip()
     if "icon" in data and data["icon"] is not None:
         item.icon = data["icon"].strip() or "info"
+    if "display_mode" in data and data["display_mode"] is not None:
+        item.display_mode = data["display_mode"]
     if "image_url" in data:
         item.image_url = _normalize_announcement_url(data.get("image_url"), "Image")
     if "link_url" in data:
         item.link_url = _normalize_announcement_url(data.get("link_url"), "Lien")
     if "cta_label" in data:
-        item.cta_label = (data.get("cta_label") or "").strip() or None
+        item.cta_label = _normalize_announcement_string(data.get("cta_label"))
+    if "font_family" in data:
+        item.font_family = _normalize_announcement_string(data.get("font_family"))
+    if "text_color" in data:
+        item.text_color = _normalize_announcement_string(data.get("text_color"))
+    if "text_size" in data:
+        item.text_size = _normalize_announcement_string(data.get("text_size"))
+    if "text_position" in data:
+        item.text_position = _normalize_announcement_string(data.get("text_position"))
+    if "content_inset" in data:
+        item.content_inset = _normalize_announcement_string(data.get("content_inset"))
+    if "overlay_strength" in data:
+        item.overlay_strength = _normalize_announcement_string(data.get("overlay_strength"))
     if "target_audience" in data and data["target_audience"] is not None:
         item.target_audience = data["target_audience"]
     if "duration_hours" in data and data["duration_hours"] is not None:
@@ -724,6 +765,7 @@ def update_public_announcement(
         item.expires_at = datetime.utcnow() + timedelta(hours=data["duration_hours"])
     if "is_active" in data and data["is_active"] is not None:
         item.is_active = bool(data["is_active"])
+    _ensure_announcement_mode_image(item.display_mode or "text", item.image_url)
     item.updated_at = datetime.utcnow()
 
     db.add(item)

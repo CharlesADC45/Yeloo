@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { motion } from "framer-motion";
 import {
   FiBell,
   FiCheckCircle,
   FiClock,
   FiEdit3,
-  FiExternalLink,
   FiImage,
   FiInfo,
   FiTag,
@@ -15,7 +14,6 @@ import {
   FiToggleLeft,
   FiToggleRight,
   FiTrash2,
-  FiX,
 } from "react-icons/fi";
 import {
   type AdminPropertySummary,
@@ -24,11 +22,12 @@ import {
   deletePublicAnnouncement,
   fetchAdminProperties,
   fetchPublicAnnouncementsAdmin,
-  uploadPublicAnnouncementImage,
   updateAdminPropertyPromo,
   updatePublicAnnouncement,
+  uploadPublicAnnouncementImage,
 } from "@/lib/admin";
 import { getApiBaseUrl } from "@/lib/api";
+import { PublicAnnouncementCard } from "@/components/PublicAnnouncementCard";
 import { useAuthStore } from "@/stores/authStore";
 
 const iconOptions = [
@@ -36,7 +35,7 @@ const iconOptions = [
   { value: "maintenance", label: "Maintenance", Icon: FiTool },
   { value: "promo", label: "Promo", Icon: FiTag },
   { value: "alert", label: "Alerte", Icon: FiBell },
-];
+] as const;
 
 const audienceOptions = [
   { value: "all", label: "Tout le monde" },
@@ -44,7 +43,100 @@ const audienceOptions = [
   { value: "proprietaire", label: "Proprietaires" },
 ] as const;
 
+const modeOptions = [
+  { value: "text", label: "Annonce normale", description: "Texte simple, rapide a publier." },
+  {
+    value: "poster_auto",
+    label: "Poster auto",
+    description: "Image plein format avec mise en page Yeloo automatique.",
+  },
+  {
+    value: "poster_manual",
+    label: "Poster manuel",
+    description: "Image + texte avec police, taille, couleur et position personnalisees.",
+  },
+] as const;
+
+const fontOptions = [
+  { value: "display", label: "Display" },
+  { value: "sans", label: "Sans" },
+  { value: "serif", label: "Serif" },
+] as const;
+
+const sizeOptions = [
+  { value: "sm", label: "Petit" },
+  { value: "md", label: "Moyen" },
+  { value: "lg", label: "Grand" },
+  { value: "xl", label: "XL" },
+] as const;
+
+const positionOptions = [
+  { value: "left", label: "Gauche" },
+  { value: "right", label: "Droite" },
+  { value: "top", label: "Haut" },
+  { value: "bottom", label: "Bas" },
+  { value: "center", label: "Centre" },
+] as const;
+
+const insetOptions = [
+  { value: "compact", label: "Compact" },
+  { value: "comfortable", label: "Confort" },
+  { value: "airy", label: "Aere" },
+] as const;
+
+const overlayOptions = [
+  { value: "soft", label: "Leger" },
+  { value: "medium", label: "Moyen" },
+  { value: "strong", label: "Fort" },
+] as const;
+
 type AnnouncementAudience = (typeof audienceOptions)[number]["value"];
+type AnnouncementMode = (typeof modeOptions)[number]["value"];
+type PosterFont = (typeof fontOptions)[number]["value"];
+type PosterSize = (typeof sizeOptions)[number]["value"];
+type PosterPosition = (typeof positionOptions)[number]["value"];
+type PosterInset = (typeof insetOptions)[number]["value"];
+type PosterOverlay = (typeof overlayOptions)[number]["value"];
+
+type AnnouncementFormState = {
+  message: string;
+  icon: string;
+  displayMode: AnnouncementMode;
+  imageUrl: string;
+  linkUrl: string;
+  ctaLabel: string;
+  fontFamily: PosterFont;
+  textColor: string;
+  textSize: PosterSize;
+  textPosition: PosterPosition;
+  contentInset: PosterInset;
+  overlayStrength: PosterOverlay;
+  targetAudience: AnnouncementAudience;
+  durationHours: number;
+};
+
+const DEFAULT_FORM: AnnouncementFormState = {
+  message: "Maintenance de 1h programmee pour ce soir 23h50. Merci.",
+  icon: "maintenance",
+  displayMode: "text",
+  imageUrl: "",
+  linkUrl: "",
+  ctaLabel: "En savoir plus",
+  fontFamily: "display",
+  textColor: "#ffffff",
+  textSize: "md",
+  textPosition: "left",
+  contentInset: "comfortable",
+  overlayStrength: "medium",
+  targetAudience: "all",
+  durationHours: 24,
+};
+
+const EMPTY_EDIT_FORM: AnnouncementFormState = {
+  ...DEFAULT_FORM,
+  message: "",
+  icon: "info",
+};
 
 const formatDate = (value?: string | null) => {
   if (!value) return "Aucune limite";
@@ -59,8 +151,206 @@ const formatDate = (value?: string | null) => {
 const getAudienceLabel = (value: string) =>
   audienceOptions.find((option) => option.value === value)?.label || "Tout le monde";
 
-const getIcon = (value: string) =>
-  iconOptions.find((option) => option.value === value)?.Icon || FiInfo;
+const getModeLabel = (value: AnnouncementMode) =>
+  modeOptions.find((option) => option.value === value)?.label || "Annonce normale";
+
+const resolveAssetUrl = (value?: string | null) => {
+  if (!value) return "";
+  if (value.startsWith("http") || value.startsWith("data:")) return value;
+  return `${getApiBaseUrl()}${value}`;
+};
+
+function ModeSelector({
+  value,
+  onChange,
+  compact = false,
+}: {
+  value: AnnouncementMode;
+  onChange: (value: AnnouncementMode) => void;
+  compact?: boolean;
+}) {
+  return (
+    <div className={`grid gap-3 ${compact ? "sm:grid-cols-3" : ""}`}>
+      {modeOptions.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          onClick={() => onChange(option.value)}
+          className={`rounded-[1.25rem] border px-4 py-4 text-left transition ${
+            value === option.value
+              ? "border-blue-500 bg-blue-50"
+              : "border-neutral-200 bg-neutral-50 hover:border-blue-200"
+          }`}
+        >
+          <p className="text-sm font-semibold text-neutral-950">{option.label}</p>
+          <p className="mt-1 text-xs text-neutral-500">{option.description}</p>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function ManualPosterControls({
+  form,
+  onChange,
+}: {
+  form: AnnouncementFormState;
+  onChange: (patch: Partial<AnnouncementFormState>) => void;
+}) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      <label className="block text-xs font-semibold uppercase tracking-wide text-neutral-500">
+        Police
+        <select
+          value={form.fontFamily}
+          onChange={(event) => onChange({ fontFamily: event.target.value as PosterFont })}
+          className="mt-2 h-12 w-full rounded-2xl border border-neutral-200 px-4 text-sm font-normal normal-case tracking-normal text-neutral-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        >
+          {fontOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="block text-xs font-semibold uppercase tracking-wide text-neutral-500">
+        Taille du texte
+        <select
+          value={form.textSize}
+          onChange={(event) => onChange({ textSize: event.target.value as PosterSize })}
+          className="mt-2 h-12 w-full rounded-2xl border border-neutral-200 px-4 text-sm font-normal normal-case tracking-normal text-neutral-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        >
+          {sizeOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="block text-xs font-semibold uppercase tracking-wide text-neutral-500">
+        Position
+        <select
+          value={form.textPosition}
+          onChange={(event) => onChange({ textPosition: event.target.value as PosterPosition })}
+          className="mt-2 h-12 w-full rounded-2xl border border-neutral-200 px-4 text-sm font-normal normal-case tracking-normal text-neutral-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        >
+          {positionOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="block text-xs font-semibold uppercase tracking-wide text-neutral-500">
+        Espacement
+        <select
+          value={form.contentInset}
+          onChange={(event) => onChange({ contentInset: event.target.value as PosterInset })}
+          className="mt-2 h-12 w-full rounded-2xl border border-neutral-200 px-4 text-sm font-normal normal-case tracking-normal text-neutral-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        >
+          {insetOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="block text-xs font-semibold uppercase tracking-wide text-neutral-500">
+        Contraste du fond
+        <select
+          value={form.overlayStrength}
+          onChange={(event) => onChange({ overlayStrength: event.target.value as PosterOverlay })}
+          className="mt-2 h-12 w-full rounded-2xl border border-neutral-200 px-4 text-sm font-normal normal-case tracking-normal text-neutral-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        >
+          {overlayOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="block text-xs font-semibold uppercase tracking-wide text-neutral-500">
+        Couleur du texte
+        <div className="mt-2 flex h-12 items-center gap-3 rounded-2xl border border-neutral-200 px-3">
+          <input
+            type="color"
+            value={form.textColor}
+            onChange={(event) => onChange({ textColor: event.target.value })}
+            className="h-8 w-10 rounded-md border border-neutral-200 bg-transparent"
+          />
+          <input
+            value={form.textColor}
+            onChange={(event) => onChange({ textColor: event.target.value })}
+            className="min-w-0 flex-1 bg-transparent text-sm text-neutral-900 outline-none"
+          />
+        </div>
+      </label>
+    </div>
+  );
+}
+
+function PosterUploader({
+  inputRef,
+  pending,
+  imageUrl,
+  onUpload,
+  onRemove,
+}: {
+  inputRef: RefObject<HTMLInputElement | null>;
+  pending: boolean;
+  imageUrl: string;
+  onUpload: (file: File) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Image du poster</p>
+          <p className="mt-1 text-xs text-neutral-500">
+            Ajoute une image large. Elle couvrira toute la carte du carousel.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={pending}
+            className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-semibold text-neutral-700 disabled:opacity-60"
+          >
+            <FiImage />
+            {pending ? "Upload..." : "Ajouter un poster"}
+          </button>
+          {imageUrl && (
+            <button
+              type="button"
+              onClick={onRemove}
+              className="rounded-full bg-white px-3 py-2 text-xs font-semibold text-neutral-500"
+            >
+              Retirer
+            </button>
+          )}
+        </div>
+      </div>
+      <input
+        ref={inputRef as RefObject<HTMLInputElement>}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) onUpload(file);
+          event.currentTarget.value = "";
+        }}
+      />
+      {imageUrl && (
+        <div className="mt-4 overflow-hidden rounded-[1.25rem] border border-neutral-200 bg-white">
+          <img src={resolveAssetUrl(imageUrl)} alt="Poster notification" className="h-44 w-full object-cover" />
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function AdminNotificationsPage() {
   const token = useAuthStore((state) => state.token);
@@ -69,28 +359,14 @@ export default function AdminNotificationsPage() {
   const [announcements, setAnnouncements] = useState<PublicAnnouncement[]>([]);
   const [properties, setProperties] = useState<AdminPropertySummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [message, setMessage] = useState("Maintenance de 1h programmee pour ce soir 23h50. Merci.");
-  const [icon, setIcon] = useState("maintenance");
-  const [imageUrl, setImageUrl] = useState("");
-  const [linkUrl, setLinkUrl] = useState("");
-  const [ctaLabel, setCtaLabel] = useState("En savoir plus");
-  const [targetAudience, setTargetAudience] = useState<AnnouncementAudience>("all");
-  const [durationHours, setDurationHours] = useState(24);
+  const [form, setForm] = useState<AnnouncementFormState>(DEFAULT_FORM);
   const [isActive, setIsActive] = useState(true);
   const [selectedPropertyId, setSelectedPropertyId] = useState("");
   const [promoLabel, setPromoLabel] = useState("Promo speciale");
   const [promoHours, setPromoHours] = useState(72);
   const [pending, setPending] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({
-    message: "",
-    icon: "info",
-    imageUrl: "",
-    linkUrl: "",
-    ctaLabel: "",
-    targetAudience: "all" as AnnouncementAudience,
-    durationHours: 24,
-  });
+  const [editForm, setEditForm] = useState<AnnouncementFormState>(EMPTY_EDIT_FORM);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -99,18 +375,7 @@ export default function AdminNotificationsPage() {
     [properties, selectedPropertyId]
   );
 
-  const promoProperties = useMemo(
-    () => properties.filter((property) => property.promo_label),
-    [properties]
-  );
-
-  const PreviewIcon = getIcon(icon);
-
-  const resolveAssetUrl = (value?: string | null) => {
-    if (!value) return "";
-    if (value.startsWith("http") || value.startsWith("data:")) return value;
-    return `${getApiBaseUrl()}${value}`;
-  };
+  const promoProperties = useMemo(() => properties.filter((property) => property.promo_label), [properties]);
 
   useEffect(() => {
     if (!token) return;
@@ -150,26 +415,43 @@ export default function AdminNotificationsPage() {
     setProperties(propertyData);
   };
 
+  const validateAnnouncementForm = (currentForm: AnnouncementFormState) => {
+    if (currentForm.displayMode !== "text" && !currentForm.imageUrl.trim()) {
+      setError("Ajoute une image pour publier un poster.");
+      return false;
+    }
+    return true;
+  };
+
   const handleCreateAnnouncement = async () => {
     if (!token) return;
     setPending("announcement");
     setError(null);
     setSuccess(null);
+    if (!validateAnnouncementForm(form)) {
+      setPending(null);
+      return;
+    }
     try {
       const created = await createPublicAnnouncement(token, {
-        message,
-        icon,
-        image_url: imageUrl.trim() || null,
-        link_url: linkUrl.trim() || null,
-        cta_label: ctaLabel.trim() || null,
-        target_audience: targetAudience,
-        duration_hours: durationHours,
+        message: form.message,
+        icon: form.icon,
+        display_mode: form.displayMode,
+        image_url: form.imageUrl.trim() || null,
+        link_url: form.linkUrl.trim() || null,
+        cta_label: form.ctaLabel.trim() || null,
+        font_family: form.fontFamily,
+        text_color: form.textColor,
+        text_size: form.textSize,
+        text_position: form.textPosition,
+        content_inset: form.contentInset,
+        overlay_strength: form.overlayStrength,
+        target_audience: form.targetAudience,
+        duration_hours: form.durationHours,
         is_active: isActive,
       });
       setAnnouncements((current) => [created, ...current]);
-      setImageUrl("");
-      setLinkUrl("");
-      setCtaLabel("En savoir plus");
+      setForm(DEFAULT_FORM);
       setSuccess("Notification publique creee.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Creation impossible.");
@@ -201,9 +483,16 @@ export default function AdminNotificationsPage() {
     setEditForm({
       message: item.message,
       icon: item.icon,
+      displayMode: item.display_mode || "text",
       imageUrl: item.image_url || "",
       linkUrl: item.link_url || "",
       ctaLabel: item.cta_label || "",
+      fontFamily: (item.font_family as PosterFont) || "display",
+      textColor: item.text_color || "#ffffff",
+      textSize: (item.text_size as PosterSize) || "md",
+      textPosition: (item.text_position as PosterPosition) || "left",
+      contentInset: (item.content_inset as PosterInset) || "comfortable",
+      overlayStrength: (item.overlay_strength as PosterOverlay) || "medium",
       targetAudience: item.target_audience,
       durationHours: item.duration_hours,
     });
@@ -216,13 +505,24 @@ export default function AdminNotificationsPage() {
     setPending(`edit-${item.id}`);
     setError(null);
     setSuccess(null);
+    if (!validateAnnouncementForm(editForm)) {
+      setPending(null);
+      return;
+    }
     try {
       const updated = await updatePublicAnnouncement(token, item.id, {
         message: editForm.message,
         icon: editForm.icon,
+        display_mode: editForm.displayMode,
         image_url: editForm.imageUrl.trim() || null,
         link_url: editForm.linkUrl.trim() || null,
         cta_label: editForm.ctaLabel.trim() || null,
+        font_family: editForm.fontFamily,
+        text_color: editForm.textColor,
+        text_size: editForm.textSize,
+        text_position: editForm.textPosition,
+        content_inset: editForm.contentInset,
+        overlay_strength: editForm.overlayStrength,
         target_audience: editForm.targetAudience,
         duration_hours: editForm.durationHours,
       });
@@ -294,11 +594,11 @@ export default function AdminNotificationsPage() {
     try {
       const payload = await uploadPublicAnnouncementImage(token, file);
       if (mode === "create") {
-        setImageUrl(payload.url);
+        setForm((current) => ({ ...current, imageUrl: payload.url }));
       } else {
         setEditForm((current) => ({ ...current, imageUrl: payload.url }));
       }
-      setSuccess("Poster ajouté.");
+      setSuccess("Poster ajoute.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload impossible.");
     } finally {
@@ -343,22 +643,35 @@ export default function AdminNotificationsPage() {
               </div>
 
               <div className="mt-5 space-y-4">
+                <ModeSelector
+                  value={form.displayMode}
+                  onChange={(value) => setForm((current) => ({ ...current, displayMode: value }))}
+                />
+
                 <label className="block text-xs font-semibold uppercase tracking-wide text-neutral-500">
                   Texte
                   <textarea
-                    value={message}
-                    onChange={(event) => setMessage(event.target.value)}
+                    value={form.message}
+                    onChange={(event) => setForm((current) => ({ ...current, message: event.target.value }))}
                     rows={4}
                     className="mt-2 w-full rounded-2xl border border-neutral-200 px-4 py-3 text-sm font-normal normal-case tracking-normal text-neutral-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   />
                 </label>
+
+                {form.displayMode === "poster_manual" && (
+                  <ManualPosterControls
+                    form={form}
+                    onChange={(patch) => setForm((current) => ({ ...current, ...patch }))}
+                  />
+                )}
+
                 <div className="grid gap-3 sm:grid-cols-[1.2fr_0.8fr]">
                   <label className="block text-xs font-semibold uppercase tracking-wide text-neutral-500">
                     Lien (optionnel)
                     <input
                       type="url"
-                      value={linkUrl}
-                      onChange={(event) => setLinkUrl(event.target.value)}
+                      value={form.linkUrl}
+                      onChange={(event) => setForm((current) => ({ ...current, linkUrl: event.target.value }))}
                       placeholder="https://yeloo.ci/promo"
                       className="mt-2 h-12 w-full rounded-2xl border border-neutral-200 px-4 text-sm font-normal normal-case tracking-normal text-neutral-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                     />
@@ -366,71 +679,36 @@ export default function AdminNotificationsPage() {
                   <label className="block text-xs font-semibold uppercase tracking-wide text-neutral-500">
                     Texte du bouton
                     <input
-                      value={ctaLabel}
-                      onChange={(event) => setCtaLabel(event.target.value)}
+                      value={form.ctaLabel}
+                      onChange={(event) => setForm((current) => ({ ...current, ctaLabel: event.target.value }))}
                       placeholder="En savoir plus"
                       className="mt-2 h-12 w-full rounded-2xl border border-neutral-200 px-4 text-sm font-normal normal-case tracking-normal text-neutral-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                     />
                   </label>
                 </div>
-                <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                        Poster
-                      </p>
-                      <p className="mt-1 text-xs text-neutral-500">
-                        Ajoute une image large pour un rendu carousel plus premium.
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => createImageInputRef.current?.click()}
-                        disabled={pending === "upload-image"}
-                        className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-semibold text-neutral-700 disabled:opacity-60"
-                      >
-                        <FiImage />
-                        {pending === "upload-image" ? "Upload..." : "Ajouter un poster"}
-                      </button>
-                      {imageUrl && (
-                        <button
-                          type="button"
-                          onClick={() => setImageUrl("")}
-                          className="rounded-full bg-white px-3 py-2 text-xs font-semibold text-neutral-500"
-                        >
-                          Retirer
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  <input
-                    ref={createImageInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    className="hidden"
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      if (file) void handleUploadAnnouncementImage(file, "create");
-                      event.currentTarget.value = "";
-                    }}
+
+                {form.displayMode !== "text" && (
+                  <PosterUploader
+                    inputRef={createImageInputRef}
+                    pending={pending === "upload-image"}
+                    imageUrl={form.imageUrl}
+                    onUpload={(file) => void handleUploadAnnouncementImage(file, "create")}
+                    onRemove={() => setForm((current) => ({ ...current, imageUrl: "" }))}
                   />
-                  {imageUrl && (
-                    <div className="mt-4 overflow-hidden rounded-[1.25rem] border border-neutral-200 bg-white">
-                      <img
-                        src={resolveAssetUrl(imageUrl)}
-                        alt="Poster notification"
-                        className="h-44 w-full object-cover"
-                      />
+                )}
+
+                <div className="grid gap-3 sm:grid-cols-4">
+                  <label className="block text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                    Type
+                    <div className="mt-2 flex h-12 items-center rounded-2xl border border-neutral-200 px-4 text-sm font-semibold normal-case tracking-normal text-neutral-900">
+                      {getModeLabel(form.displayMode)}
                     </div>
-                  )}
-                </div>
-                <div className="grid gap-3 sm:grid-cols-3">
+                  </label>
                   <label className="block text-xs font-semibold uppercase tracking-wide text-neutral-500">
                     Icone
                     <select
-                      value={icon}
-                      onChange={(event) => setIcon(event.target.value)}
+                      value={form.icon}
+                      onChange={(event) => setForm((current) => ({ ...current, icon: event.target.value }))}
                       className="mt-2 h-12 w-full rounded-2xl border border-neutral-200 px-4 text-sm font-normal normal-case tracking-normal text-neutral-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                     >
                       {iconOptions.map((option) => (
@@ -443,8 +721,10 @@ export default function AdminNotificationsPage() {
                   <label className="block text-xs font-semibold uppercase tracking-wide text-neutral-500">
                     Cible
                     <select
-                      value={targetAudience}
-                      onChange={(event) => setTargetAudience(event.target.value as AnnouncementAudience)}
+                      value={form.targetAudience}
+                      onChange={(event) =>
+                        setForm((current) => ({ ...current, targetAudience: event.target.value as AnnouncementAudience }))
+                      }
                       className="mt-2 h-12 w-full rounded-2xl border border-neutral-200 px-4 text-sm font-normal normal-case tracking-normal text-neutral-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                     >
                       {audienceOptions.map((option) => (
@@ -460,54 +740,36 @@ export default function AdminNotificationsPage() {
                       type="number"
                       min={1}
                       max={2160}
-                      value={durationHours}
-                      onChange={(event) => setDurationHours(Number(event.target.value))}
+                      value={form.durationHours}
+                      onChange={(event) =>
+                        setForm((current) => ({ ...current, durationHours: Number(event.target.value) }))
+                      }
                       className="mt-2 h-12 w-full rounded-2xl border border-neutral-200 px-4 text-sm font-normal normal-case tracking-normal text-neutral-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                     />
                   </label>
                 </div>
 
-                <div className="overflow-hidden rounded-[1.5rem] border border-blue-100 bg-[#f0f2ff]">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <div className="flex w-full items-center justify-between gap-3 px-4 pt-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
-                        Apercu live
-                      </p>
-                      <span className="rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-neutral-600">
-                        {getAudienceLabel(targetAudience)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className={`grid gap-0 ${imageUrl ? "sm:grid-cols-[1fr_0.88fr]" : ""}`}>
-                    <div className="flex min-h-[11rem] items-center gap-4 px-4 py-4">
-                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-2xl text-blue-700 shadow-sm">
-                        <PreviewIcon />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="line-clamp-4 text-sm font-semibold leading-6 text-neutral-950 sm:text-base">
-                          {message || "Ton message apparaitra ici."}
-                        </p>
-                        {linkUrl && (
-                          <span className="mt-4 inline-flex items-center gap-2 rounded-full bg-blue-700 px-4 py-2 text-xs font-semibold text-white">
-                            {ctaLabel || "En savoir plus"}
-                            <FiExternalLink />
-                          </span>
-                        )}
-                      </div>
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-600">
-                        <FiX />
-                      </span>
-                    </div>
-                    {imageUrl && (
-                      <div className="min-h-[11rem]">
-                        <img
-                          src={resolveAssetUrl(imageUrl)}
-                          alt="Poster aperçu"
-                          className="h-full min-h-[11rem] w-full object-cover"
-                        />
-                      </div>
-                    )}
-                  </div>
+                <div className="space-y-3">
+                  <p className="px-1 text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">Apercu live</p>
+                  <PublicAnnouncementCard
+                    preview
+                    audienceLabel={getAudienceLabel(form.targetAudience)}
+                    announcement={{
+                      id: "preview",
+                      message: form.message || "Ton message apparaitra ici.",
+                      icon: form.icon,
+                      display_mode: form.displayMode,
+                      image_url: form.imageUrl || null,
+                      link_url: form.linkUrl || null,
+                      cta_label: form.ctaLabel || null,
+                      font_family: form.fontFamily,
+                      text_color: form.textColor,
+                      text_size: form.textSize,
+                      text_position: form.textPosition,
+                      content_inset: form.contentInset,
+                      overlay_strength: form.overlayStrength,
+                    }}
+                  />
                 </div>
 
                 <button
@@ -528,25 +790,35 @@ export default function AdminNotificationsPage() {
                 </button>
               </div>
 
-              <div className="mt-6 space-y-3">
+              <div className="mt-6 space-y-4">
                 {announcements.map((item) => (
                   <article key={item.id} className="rounded-2xl bg-neutral-50 p-4">
                     {editingId === item.id ? (
-                      <div className="space-y-3">
+                      <div className="space-y-4">
+                        <ModeSelector
+                          compact
+                          value={editForm.displayMode}
+                          onChange={(value) => setEditForm((current) => ({ ...current, displayMode: value }))}
+                        />
+
                         <textarea
                           value={editForm.message}
-                          onChange={(event) =>
-                            setEditForm((current) => ({ ...current, message: event.target.value }))
-                          }
+                          onChange={(event) => setEditForm((current) => ({ ...current, message: event.target.value }))}
                           rows={3}
                           className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                         />
-                        <div className="grid gap-3 sm:grid-cols-3">
+
+                        {editForm.displayMode === "poster_manual" && (
+                          <ManualPosterControls
+                            form={editForm}
+                            onChange={(patch) => setEditForm((current) => ({ ...current, ...patch }))}
+                          />
+                        )}
+
+                        <div className="grid gap-3 sm:grid-cols-4">
                           <select
                             value={editForm.icon}
-                            onChange={(event) =>
-                              setEditForm((current) => ({ ...current, icon: event.target.value }))
-                            }
+                            onChange={(event) => setEditForm((current) => ({ ...current, icon: event.target.value }))}
                             className="h-11 rounded-2xl border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-blue-500"
                           >
                             {iconOptions.map((option) => (
@@ -577,73 +849,61 @@ export default function AdminNotificationsPage() {
                             max={2160}
                             value={editForm.durationHours}
                             onChange={(event) =>
-                              setEditForm((current) => ({
-                                ...current,
-                                durationHours: Number(event.target.value),
-                              }))
+                              setEditForm((current) => ({ ...current, durationHours: Number(event.target.value) }))
                             }
                             className="h-11 rounded-2xl border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-blue-500"
                           />
+                          <div className="flex h-11 items-center rounded-2xl border border-neutral-200 bg-white px-3 text-sm font-semibold text-neutral-900">
+                            {getModeLabel(editForm.displayMode)}
+                          </div>
                         </div>
+
                         <div className="grid gap-3 sm:grid-cols-[1.2fr_0.8fr]">
                           <input
                             type="url"
                             value={editForm.linkUrl}
-                            onChange={(event) =>
-                              setEditForm((current) => ({ ...current, linkUrl: event.target.value }))
-                            }
+                            onChange={(event) => setEditForm((current) => ({ ...current, linkUrl: event.target.value }))}
                             placeholder="https://yeloo.ci/promo"
                             className="h-11 rounded-2xl border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-blue-500"
                           />
                           <input
                             value={editForm.ctaLabel}
-                            onChange={(event) =>
-                              setEditForm((current) => ({ ...current, ctaLabel: event.target.value }))
-                            }
+                            onChange={(event) => setEditForm((current) => ({ ...current, ctaLabel: event.target.value }))}
                             placeholder="Texte du bouton"
                             className="h-11 rounded-2xl border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-blue-500"
                           />
                         </div>
-                        <div className="rounded-2xl border border-dashed border-neutral-200 bg-white p-3">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => editImageInputRef.current?.click()}
-                              disabled={pending === "edit-upload-image"}
-                              className="inline-flex items-center gap-2 rounded-full bg-neutral-50 px-4 py-2 text-xs font-semibold text-neutral-700 disabled:opacity-60"
-                            >
-                              <FiImage />
-                              {pending === "edit-upload-image" ? "Upload..." : "Changer le poster"}
-                            </button>
-                            {editForm.imageUrl && (
-                              <button
-                                type="button"
-                                onClick={() => setEditForm((current) => ({ ...current, imageUrl: "" }))}
-                                className="rounded-full bg-neutral-50 px-4 py-2 text-xs font-semibold text-neutral-500"
-                              >
-                                Retirer
-                              </button>
-                            )}
-                          </div>
-                          <input
-                            ref={editImageInputRef}
-                            type="file"
-                            accept="image/jpeg,image/png,image/webp,image/gif"
-                            className="hidden"
-                            onChange={(event) => {
-                              const file = event.target.files?.[0];
-                              if (file) void handleUploadAnnouncementImage(file, "edit");
-                              event.currentTarget.value = "";
-                            }}
+
+                        {editForm.displayMode !== "text" && (
+                          <PosterUploader
+                            inputRef={editImageInputRef}
+                            pending={pending === "edit-upload-image"}
+                            imageUrl={editForm.imageUrl}
+                            onUpload={(file) => void handleUploadAnnouncementImage(file, "edit")}
+                            onRemove={() => setEditForm((current) => ({ ...current, imageUrl: "" }))}
                           />
-                          {editForm.imageUrl && (
-                            <img
-                              src={resolveAssetUrl(editForm.imageUrl)}
-                              alt="Poster notification"
-                              className="mt-3 h-40 w-full rounded-[1rem] object-cover"
-                            />
-                          )}
-                        </div>
+                        )}
+
+                        <PublicAnnouncementCard
+                          preview
+                          audienceLabel={getAudienceLabel(editForm.targetAudience)}
+                          announcement={{
+                            id: item.id,
+                            message: editForm.message || "Ton message apparaitra ici.",
+                            icon: editForm.icon,
+                            display_mode: editForm.displayMode,
+                            image_url: editForm.imageUrl || null,
+                            link_url: editForm.linkUrl || null,
+                            cta_label: editForm.ctaLabel || null,
+                            font_family: editForm.fontFamily,
+                            text_color: editForm.textColor,
+                            text_size: editForm.textSize,
+                            text_position: editForm.textPosition,
+                            content_inset: editForm.contentInset,
+                            overlay_strength: editForm.overlayStrength,
+                          }}
+                        />
+
                         <div className="flex flex-wrap gap-2">
                           <button
                             type="button"
@@ -664,67 +924,51 @@ export default function AdminNotificationsPage() {
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {item.image_url && (
-                          <img
-                            src={resolveAssetUrl(item.image_url)}
-                            alt="Poster notification"
-                            className="h-44 w-full rounded-[1.25rem] object-cover"
-                          />
-                        )}
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
+                        <PublicAnnouncementCard
+                          preview
+                          audienceLabel={getAudienceLabel(item.target_audience)}
+                          announcement={item}
+                        />
+                        <div className="flex flex-wrap items-start justify-between gap-3">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-neutral-600">
-                              {getAudienceLabel(item.target_audience)}
+                              {getModeLabel(item.display_mode || "text")}
                             </span>
                             <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700">
                               {item.icon}
                             </span>
-                          </div>
-                          <p className="mt-3 text-sm font-semibold text-neutral-950">{item.message}</p>
-                          {item.link_url && (
-                            <a
-                              href={item.link_url}
-                              target={item.link_url.startsWith("http") ? "_blank" : undefined}
-                              rel={item.link_url.startsWith("http") ? "noreferrer" : undefined}
-                              className="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-semibold text-blue-700"
-                            >
-                              {item.cta_label || "Ouvrir le lien"}
-                              <FiExternalLink />
-                            </a>
-                          )}
-                          <p className="mt-2 text-xs text-neutral-500">
-                            <FiClock className="mr-1 inline" />
-                            Fin: {formatDate(item.expires_at)}
-                          </p>
+                            <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-neutral-600">
+                              <FiClock className="mr-1 inline" />
+                              Fin: {formatDate(item.expires_at)}
+                            </span>
                           </div>
                           <div className="flex shrink-0 items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => startEditAnnouncement(item)}
-                            className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-neutral-700"
-                            aria-label="Modifier"
-                          >
-                            <FiEdit3 />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void handleDeleteAnnouncement(item)}
-                            disabled={pending === `delete-${item.id}`}
-                            className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-red-600 disabled:opacity-50"
-                            aria-label="Supprimer"
-                          >
-                            <FiTrash2 />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void handleToggleAnnouncement(item)}
-                            disabled={pending === item.id}
-                            className="text-2xl text-blue-700 disabled:opacity-50"
-                            aria-label="Activer ou desactiver"
-                          >
-                            {item.is_active ? <FiToggleRight /> : <FiToggleLeft />}
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() => startEditAnnouncement(item)}
+                              className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-neutral-700"
+                              aria-label="Modifier"
+                            >
+                              <FiEdit3 />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void handleDeleteAnnouncement(item)}
+                              disabled={pending === `delete-${item.id}`}
+                              className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-red-600 disabled:opacity-50"
+                              aria-label="Supprimer"
+                            >
+                              <FiTrash2 />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void handleToggleAnnouncement(item)}
+                              disabled={pending === item.id}
+                              className="text-2xl text-blue-700 disabled:opacity-50"
+                              aria-label="Activer ou desactiver"
+                            >
+                              {item.is_active ? <FiToggleRight /> : <FiToggleLeft />}
+                            </button>
                           </div>
                         </div>
                       </div>
