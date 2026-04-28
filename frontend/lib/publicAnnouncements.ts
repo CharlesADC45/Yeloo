@@ -4,6 +4,9 @@ export type PublicAnnouncement = {
   id: string;
   message: string;
   icon: string;
+  image_url?: string | null;
+  link_url?: string | null;
+  cta_label?: string | null;
   target_audience: "all" | "locataire" | "proprietaire";
   duration_hours: number;
   is_active: boolean;

@@ -696,6 +696,7 @@ function CartePageContent() {
       <div className="hidden xl:block">
         <TopBar />
       </div>
+      
       <main
         className="mx-auto h-[100svh] w-full max-w-full overflow-hidden px-0 pb-0 pt-0 sm:px-6 xl:h-auto xl:overflow-x-hidden xl:pb-32 xl:pt-32 lg:px-12"
       >

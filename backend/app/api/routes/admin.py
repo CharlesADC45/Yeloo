@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import shutil
+import uuid
 from datetime import datetime, timedelta
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.storage import get_upload_dir
+from app.core.storage_minio import build_object_key, is_minio_configured, upload_file
 from app.core.security import get_current_admin
 from app.db.deps import get_db
 from app.models.conversation import Conversation
@@ -192,6 +195,9 @@ def _serialize_public_announcement(item: PublicAnnouncement) -> PublicAnnounceme
         id=str(item.id),
         message=item.message,
         icon=item.icon,
+        image_url=item.image_url,
+        link_url=item.link_url,
+        cta_label=item.cta_label,
         target_audience=item.target_audience,
         duration_hours=item.duration_hours,
         is_active=item.is_active,
@@ -200,6 +206,39 @@ def _serialize_public_announcement(item: PublicAnnouncement) -> PublicAnnounceme
         created_at=item.created_at,
         updated_at=item.updated_at,
     )
+
+
+def _normalize_announcement_url(value: str | None, field_name: str) -> str | None:
+    if value is None:
+        return None
+    normalized = value.strip()
+    if not normalized:
+        return None
+    if normalized.startswith(("http://", "https://", "/")):
+        return normalized
+    raise HTTPException(status_code=400, detail=f"{field_name} invalide.")
+
+
+def _save_announcement_image(file: UploadFile) -> str:
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Format d'image invalide.")
+
+    if is_minio_configured():
+        object_key = build_object_key("announcements", file.filename or "poster.jpg")
+        return upload_file(file.file, object_key, file.content_type)
+
+    upload_dir = get_upload_dir() / "announcements"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    extension = Path(file.filename or "").suffix.lower()
+    if extension not in {".jpg", ".jpeg", ".png", ".webp", ".gif"}:
+        extension = ".jpg"
+
+    filename = f"announcement-{uuid.uuid4().hex}{extension}"
+    destination = upload_dir / filename
+    with destination.open("wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    return f"/uploads/announcements/{filename}"
 
 
 def _serialize_lease(lease_request: LeaseRequest) -> AdminLeaseSummary:
@@ -621,6 +660,14 @@ def list_public_announcements(
     return [_serialize_public_announcement(item) for item in items]
 
 
+@router.post("/public-announcements/upload-image")
+def upload_public_announcement_image(
+    file: UploadFile = File(...),
+    _: User = Depends(get_current_admin),
+):
+    return {"url": _save_announcement_image(file)}
+
+
 @router.post("/public-announcements", response_model=PublicAnnouncementPublic, status_code=status.HTTP_201_CREATED)
 def create_public_announcement(
     payload: PublicAnnouncementCreate,
@@ -631,6 +678,9 @@ def create_public_announcement(
     item = PublicAnnouncement(
         message=payload.message.strip(),
         icon=payload.icon.strip() or "info",
+        image_url=_normalize_announcement_url(payload.image_url, "Image"),
+        link_url=_normalize_announcement_url(payload.link_url, "Lien"),
+        cta_label=(payload.cta_label or "").strip() or None,
         target_audience=payload.target_audience,
         duration_hours=payload.duration_hours,
         is_active=payload.is_active,
@@ -661,6 +711,12 @@ def update_public_announcement(
         item.message = data["message"].strip()
     if "icon" in data and data["icon"] is not None:
         item.icon = data["icon"].strip() or "info"
+    if "image_url" in data:
+        item.image_url = _normalize_announcement_url(data.get("image_url"), "Image")
+    if "link_url" in data:
+        item.link_url = _normalize_announcement_url(data.get("link_url"), "Lien")
+    if "cta_label" in data:
+        item.cta_label = (data.get("cta_label") or "").strip() or None
     if "target_audience" in data and data["target_audience"] is not None:
         item.target_audience = data["target_audience"]
     if "duration_hours" in data and data["duration_hours"] is not None:

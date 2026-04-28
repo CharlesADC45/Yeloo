@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   FiBell,
   FiCheckCircle,
   FiClock,
   FiEdit3,
+  FiExternalLink,
+  FiImage,
   FiInfo,
   FiTag,
   FiTool,
@@ -22,9 +24,11 @@ import {
   deletePublicAnnouncement,
   fetchAdminProperties,
   fetchPublicAnnouncementsAdmin,
+  uploadPublicAnnouncementImage,
   updateAdminPropertyPromo,
   updatePublicAnnouncement,
 } from "@/lib/admin";
+import { getApiBaseUrl } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 
 const iconOptions = [
@@ -60,11 +64,16 @@ const getIcon = (value: string) =>
 
 export default function AdminNotificationsPage() {
   const token = useAuthStore((state) => state.token);
+  const createImageInputRef = useRef<HTMLInputElement | null>(null);
+  const editImageInputRef = useRef<HTMLInputElement | null>(null);
   const [announcements, setAnnouncements] = useState<PublicAnnouncement[]>([]);
   const [properties, setProperties] = useState<AdminPropertySummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState("Maintenance de 1h programmee pour ce soir 23h50. Merci.");
   const [icon, setIcon] = useState("maintenance");
+  const [imageUrl, setImageUrl] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
+  const [ctaLabel, setCtaLabel] = useState("En savoir plus");
   const [targetAudience, setTargetAudience] = useState<AnnouncementAudience>("all");
   const [durationHours, setDurationHours] = useState(24);
   const [isActive, setIsActive] = useState(true);
@@ -76,6 +85,9 @@ export default function AdminNotificationsPage() {
   const [editForm, setEditForm] = useState({
     message: "",
     icon: "info",
+    imageUrl: "",
+    linkUrl: "",
+    ctaLabel: "",
     targetAudience: "all" as AnnouncementAudience,
     durationHours: 24,
   });
@@ -93,6 +105,12 @@ export default function AdminNotificationsPage() {
   );
 
   const PreviewIcon = getIcon(icon);
+
+  const resolveAssetUrl = (value?: string | null) => {
+    if (!value) return "";
+    if (value.startsWith("http") || value.startsWith("data:")) return value;
+    return `${getApiBaseUrl()}${value}`;
+  };
 
   useEffect(() => {
     if (!token) return;
@@ -141,11 +159,17 @@ export default function AdminNotificationsPage() {
       const created = await createPublicAnnouncement(token, {
         message,
         icon,
+        image_url: imageUrl.trim() || null,
+        link_url: linkUrl.trim() || null,
+        cta_label: ctaLabel.trim() || null,
         target_audience: targetAudience,
         duration_hours: durationHours,
         is_active: isActive,
       });
       setAnnouncements((current) => [created, ...current]);
+      setImageUrl("");
+      setLinkUrl("");
+      setCtaLabel("En savoir plus");
       setSuccess("Notification publique creee.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Creation impossible.");
@@ -177,6 +201,9 @@ export default function AdminNotificationsPage() {
     setEditForm({
       message: item.message,
       icon: item.icon,
+      imageUrl: item.image_url || "",
+      linkUrl: item.link_url || "",
+      ctaLabel: item.cta_label || "",
       targetAudience: item.target_audience,
       durationHours: item.duration_hours,
     });
@@ -193,6 +220,9 @@ export default function AdminNotificationsPage() {
       const updated = await updatePublicAnnouncement(token, item.id, {
         message: editForm.message,
         icon: editForm.icon,
+        image_url: editForm.imageUrl.trim() || null,
+        link_url: editForm.linkUrl.trim() || null,
+        cta_label: editForm.ctaLabel.trim() || null,
         target_audience: editForm.targetAudience,
         duration_hours: editForm.durationHours,
       });
@@ -257,6 +287,25 @@ export default function AdminNotificationsPage() {
     }
   };
 
+  const handleUploadAnnouncementImage = async (file: File, mode: "create" | "edit") => {
+    if (!token) return;
+    setPending(mode === "create" ? "upload-image" : "edit-upload-image");
+    setError(null);
+    try {
+      const payload = await uploadPublicAnnouncementImage(token, file);
+      if (mode === "create") {
+        setImageUrl(payload.url);
+      } else {
+        setEditForm((current) => ({ ...current, imageUrl: payload.url }));
+      }
+      setSuccess("Poster ajouté.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload impossible.");
+    } finally {
+      setPending(null);
+    }
+  };
+
   return (
     <main className="mx-auto w-full bg-white px-4 pb-28 pt-24 lg:ml-72 lg:max-w-[calc(100%-18rem)] lg:px-8">
       <motion.section
@@ -303,6 +352,79 @@ export default function AdminNotificationsPage() {
                     className="mt-2 w-full rounded-2xl border border-neutral-200 px-4 py-3 text-sm font-normal normal-case tracking-normal text-neutral-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   />
                 </label>
+                <div className="grid gap-3 sm:grid-cols-[1.2fr_0.8fr]">
+                  <label className="block text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                    Lien (optionnel)
+                    <input
+                      type="url"
+                      value={linkUrl}
+                      onChange={(event) => setLinkUrl(event.target.value)}
+                      placeholder="https://yeloo.ci/promo"
+                      className="mt-2 h-12 w-full rounded-2xl border border-neutral-200 px-4 text-sm font-normal normal-case tracking-normal text-neutral-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    />
+                  </label>
+                  <label className="block text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                    Texte du bouton
+                    <input
+                      value={ctaLabel}
+                      onChange={(event) => setCtaLabel(event.target.value)}
+                      placeholder="En savoir plus"
+                      className="mt-2 h-12 w-full rounded-2xl border border-neutral-200 px-4 text-sm font-normal normal-case tracking-normal text-neutral-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    />
+                  </label>
+                </div>
+                <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                        Poster
+                      </p>
+                      <p className="mt-1 text-xs text-neutral-500">
+                        Ajoute une image large pour un rendu carousel plus premium.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => createImageInputRef.current?.click()}
+                        disabled={pending === "upload-image"}
+                        className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-semibold text-neutral-700 disabled:opacity-60"
+                      >
+                        <FiImage />
+                        {pending === "upload-image" ? "Upload..." : "Ajouter un poster"}
+                      </button>
+                      {imageUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setImageUrl("")}
+                          className="rounded-full bg-white px-3 py-2 text-xs font-semibold text-neutral-500"
+                        >
+                          Retirer
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <input
+                    ref={createImageInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) void handleUploadAnnouncementImage(file, "create");
+                      event.currentTarget.value = "";
+                    }}
+                  />
+                  {imageUrl && (
+                    <div className="mt-4 overflow-hidden rounded-[1.25rem] border border-neutral-200 bg-white">
+                      <img
+                        src={resolveAssetUrl(imageUrl)}
+                        alt="Poster notification"
+                        className="h-44 w-full object-cover"
+                      />
+                    </div>
+                  )}
+                </div>
                 <div className="grid gap-3 sm:grid-cols-3">
                   <label className="block text-xs font-semibold uppercase tracking-wide text-neutral-500">
                     Icone
@@ -345,25 +467,46 @@ export default function AdminNotificationsPage() {
                   </label>
                 </div>
 
-                <div className="min-h-[7.25rem] rounded-[1.5rem] border border-blue-100 bg-[#f0f2ff] px-4 py-4">
+                <div className="overflow-hidden rounded-[1.5rem] border border-blue-100 bg-[#f0f2ff]">
                   <div className="mb-3 flex items-center justify-between gap-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
-                      Apercu live
-                    </p>
-                    <span className="rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-neutral-600">
-                      {getAudienceLabel(targetAudience)}
-                    </span>
+                    <div className="flex w-full items-center justify-between gap-3 px-4 pt-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+                        Apercu live
+                      </p>
+                      <span className="rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-neutral-600">
+                        {getAudienceLabel(targetAudience)}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex min-h-[4.25rem] items-center gap-4">
-                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-2xl text-blue-700 shadow-sm">
-                      <PreviewIcon />
-                    </span>
-                    <p className="line-clamp-3 min-w-0 flex-1 text-sm font-semibold leading-6 text-neutral-950">
-                      {message || "Ton message apparaitra ici."}
-                    </p>
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-600">
-                      <FiX />
-                    </span>
+                  <div className={`grid gap-0 ${imageUrl ? "sm:grid-cols-[1fr_0.88fr]" : ""}`}>
+                    <div className="flex min-h-[11rem] items-center gap-4 px-4 py-4">
+                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-2xl text-blue-700 shadow-sm">
+                        <PreviewIcon />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="line-clamp-4 text-sm font-semibold leading-6 text-neutral-950 sm:text-base">
+                          {message || "Ton message apparaitra ici."}
+                        </p>
+                        {linkUrl && (
+                          <span className="mt-4 inline-flex items-center gap-2 rounded-full bg-blue-700 px-4 py-2 text-xs font-semibold text-white">
+                            {ctaLabel || "En savoir plus"}
+                            <FiExternalLink />
+                          </span>
+                        )}
+                      </div>
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-600">
+                        <FiX />
+                      </span>
+                    </div>
+                    {imageUrl && (
+                      <div className="min-h-[11rem]">
+                        <img
+                          src={resolveAssetUrl(imageUrl)}
+                          alt="Poster aperçu"
+                          className="h-full min-h-[11rem] w-full object-cover"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -442,6 +585,65 @@ export default function AdminNotificationsPage() {
                             className="h-11 rounded-2xl border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-blue-500"
                           />
                         </div>
+                        <div className="grid gap-3 sm:grid-cols-[1.2fr_0.8fr]">
+                          <input
+                            type="url"
+                            value={editForm.linkUrl}
+                            onChange={(event) =>
+                              setEditForm((current) => ({ ...current, linkUrl: event.target.value }))
+                            }
+                            placeholder="https://yeloo.ci/promo"
+                            className="h-11 rounded-2xl border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-blue-500"
+                          />
+                          <input
+                            value={editForm.ctaLabel}
+                            onChange={(event) =>
+                              setEditForm((current) => ({ ...current, ctaLabel: event.target.value }))
+                            }
+                            placeholder="Texte du bouton"
+                            className="h-11 rounded-2xl border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-blue-500"
+                          />
+                        </div>
+                        <div className="rounded-2xl border border-dashed border-neutral-200 bg-white p-3">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => editImageInputRef.current?.click()}
+                              disabled={pending === "edit-upload-image"}
+                              className="inline-flex items-center gap-2 rounded-full bg-neutral-50 px-4 py-2 text-xs font-semibold text-neutral-700 disabled:opacity-60"
+                            >
+                              <FiImage />
+                              {pending === "edit-upload-image" ? "Upload..." : "Changer le poster"}
+                            </button>
+                            {editForm.imageUrl && (
+                              <button
+                                type="button"
+                                onClick={() => setEditForm((current) => ({ ...current, imageUrl: "" }))}
+                                className="rounded-full bg-neutral-50 px-4 py-2 text-xs font-semibold text-neutral-500"
+                              >
+                                Retirer
+                              </button>
+                            )}
+                          </div>
+                          <input
+                            ref={editImageInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/gif"
+                            className="hidden"
+                            onChange={(event) => {
+                              const file = event.target.files?.[0];
+                              if (file) void handleUploadAnnouncementImage(file, "edit");
+                              event.currentTarget.value = "";
+                            }}
+                          />
+                          {editForm.imageUrl && (
+                            <img
+                              src={resolveAssetUrl(editForm.imageUrl)}
+                              alt="Poster notification"
+                              className="mt-3 h-40 w-full rounded-[1rem] object-cover"
+                            />
+                          )}
+                        </div>
                         <div className="flex flex-wrap gap-2">
                           <button
                             type="button"
@@ -461,8 +663,16 @@ export default function AdminNotificationsPage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
+                      <div className="space-y-4">
+                        {item.image_url && (
+                          <img
+                            src={resolveAssetUrl(item.image_url)}
+                            alt="Poster notification"
+                            className="h-44 w-full rounded-[1.25rem] object-cover"
+                          />
+                        )}
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-neutral-600">
                               {getAudienceLabel(item.target_audience)}
@@ -472,12 +682,23 @@ export default function AdminNotificationsPage() {
                             </span>
                           </div>
                           <p className="mt-3 text-sm font-semibold text-neutral-950">{item.message}</p>
+                          {item.link_url && (
+                            <a
+                              href={item.link_url}
+                              target={item.link_url.startsWith("http") ? "_blank" : undefined}
+                              rel={item.link_url.startsWith("http") ? "noreferrer" : undefined}
+                              className="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-semibold text-blue-700"
+                            >
+                              {item.cta_label || "Ouvrir le lien"}
+                              <FiExternalLink />
+                            </a>
+                          )}
                           <p className="mt-2 text-xs text-neutral-500">
                             <FiClock className="mr-1 inline" />
                             Fin: {formatDate(item.expires_at)}
                           </p>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-2">
+                          </div>
+                          <div className="flex shrink-0 items-center gap-2">
                           <button
                             type="button"
                             onClick={() => startEditAnnouncement(item)}
@@ -504,6 +725,7 @@ export default function AdminNotificationsPage() {
                           >
                             {item.is_active ? <FiToggleRight /> : <FiToggleLeft />}
                           </button>
+                          </div>
                         </div>
                       </div>
                     )}

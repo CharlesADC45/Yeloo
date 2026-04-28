@@ -163,6 +163,9 @@ class PublicAnnouncementPublic(BaseModel):
     id: str
     message: str
     icon: str
+    image_url: str | None = None
+    link_url: str | None = None
+    cta_label: str | None = None
     target_audience: str
     duration_hours: int
     is_active: bool
@@ -178,6 +181,9 @@ class PublicAnnouncementPublic(BaseModel):
 class PublicAnnouncementCreate(BaseModel):
     message: str = Field(min_length=3, max_length=500)
     icon: str = Field(default="info", max_length=40)
+    image_url: str | None = Field(default=None, max_length=1000)
+    link_url: str | None = Field(default=None, max_length=1000)
+    cta_label: str | None = Field(default=None, max_length=80)
     target_audience: str = Field(default="all", pattern="^(all|locataire|proprietaire)$")
     duration_hours: int = Field(default=24, ge=1, le=2160)
     is_active: bool = True
@@ -186,6 +192,9 @@ class PublicAnnouncementCreate(BaseModel):
 class PublicAnnouncementUpdate(BaseModel):
     message: str | None = Field(default=None, min_length=3, max_length=500)
     icon: str | None = Field(default=None, max_length=40)
+    image_url: str | None = Field(default=None, max_length=1000)
+    link_url: str | None = Field(default=None, max_length=1000)
+    cta_label: str | None = Field(default=None, max_length=80)
     target_audience: str | None = Field(default=None, pattern="^(all|locataire|proprietaire)$")
     duration_hours: int | None = Field(default=None, ge=1, le=2160)
     is_active: bool | None = None

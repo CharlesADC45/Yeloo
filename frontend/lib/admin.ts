@@ -88,6 +88,9 @@ export type PublicAnnouncement = {
   id: string;
   message: string;
   icon: string;
+  image_url?: string | null;
+  link_url?: string | null;
+  cta_label?: string | null;
   target_audience: "all" | "locataire" | "proprietaire";
   duration_hours: number;
   is_active: boolean;
@@ -286,6 +289,9 @@ export function createPublicAnnouncement(
   payload: {
     message: string;
     icon: string;
+    image_url?: string | null;
+    link_url?: string | null;
+    cta_label?: string | null;
     target_audience: "all" | "locataire" | "proprietaire";
     duration_hours: number;
     is_active: boolean;
@@ -300,6 +306,9 @@ export function updatePublicAnnouncement(
   payload: {
     message?: string;
     icon?: string;
+    image_url?: string | null;
+    link_url?: string | null;
+    cta_label?: string | null;
     target_audience?: "all" | "locataire" | "proprietaire";
     duration_hours?: number;
     is_active?: boolean;
@@ -310,6 +319,23 @@ export function updatePublicAnnouncement(
 
 export function deletePublicAnnouncement(token: string, announcementId: string) {
   return apiDelete(`/api/admin/public-announcements/${announcementId}`, token);
+}
+
+export async function uploadPublicAnnouncementImage(token: string, file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await fetch(`${getApiBaseUrl()}/api/admin/public-announcements/upload-image`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    throw new Error(payload?.detail || "Upload de l'image impossible.");
+  }
+  return (await response.json()) as { url: string };
 }
 
 export function fetchAdminOwnerKyc(token: string, status?: string) {
