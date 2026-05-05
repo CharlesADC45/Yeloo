@@ -27,6 +27,7 @@ export type FeatureModule = {
   description: string;
   category: string;
   is_enabled: boolean;
+  config_value?: number | null;
   updated_at: string;
 };
 
@@ -38,6 +39,8 @@ export type AdminUserSummary = {
   role: string;
   is_verified: boolean;
   is_suspended: boolean;
+  failed_login_attempts: number;
+  is_login_locked: boolean;
   created_at: string;
   owner_verification_status?: string | null;
 };
@@ -168,7 +171,8 @@ export async function fetchAdminDashboard(token: string): Promise<AdminDashboard
 export async function updateFeatureModule(
   token: string,
   key: string,
-  isEnabled: boolean
+  isEnabled: boolean,
+  configValue?: number | null
 ): Promise<FeatureModule> {
   const response = await fetch(`${getApiBaseUrl()}/api/admin/modules/${key}`, {
     method: "PATCH",
@@ -176,7 +180,7 @@ export async function updateFeatureModule(
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ is_enabled: isEnabled }),
+    body: JSON.stringify({ is_enabled: isEnabled, config_value: configValue }),
   });
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
@@ -249,6 +253,10 @@ export function updateAdminUserSuspension(token: string, userId: string, isSuspe
   return apiPatch<AdminUserSummary>(`/api/admin/users/${userId}/suspension`, token, {
     is_suspended: isSuspended,
   });
+}
+
+export function unlockAdminUserLogin(token: string, userId: string) {
+  return apiPost<AdminUserSummary>(`/api/admin/users/${userId}/unlock-login`, token, {});
 }
 
 export function updateAdminUser(token: string, userId: string, payload: AdminUserUpdatePayload) {

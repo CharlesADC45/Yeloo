@@ -14,6 +14,7 @@ import {
   FiShield,
   FiTrash2,
   FiX,
+  FiUnlock,
   FiUserCheck,
   FiUserX,
   FiUsers,
@@ -26,6 +27,7 @@ import {
   deleteAdminUser,
   fetchAdminOwnerKyc,
   fetchAdminUsers,
+  unlockAdminUserLogin,
   updateAdminUser,
   updateAdminUserSuspension,
 } from "@/lib/admin";
@@ -223,6 +225,33 @@ export default function AdminUsersPage() {
 
   const renderActions = (user: AdminUserSummary) => (
     <div className="flex flex-wrap items-center gap-2">
+      {user.is_login_locked && (
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            if (!token) return;
+            setPendingUserId(user.id);
+            void unlockAdminUserLogin(token, user.id)
+              .then((updated) => {
+                setUsers((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+              })
+              .catch((err) => {
+                setError(err instanceof Error ? err.message : "Déblocage impossible.");
+              })
+              .finally(() => {
+                setPendingUserId(null);
+              });
+          }}
+          disabled={pendingUserId === user.id || deletingUserId === user.id}
+          className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+        >
+          <span className="inline-flex items-center gap-2">
+            <FiUnlock />
+            Débloquer
+          </span>
+        </button>
+      )}
       <button
         type="button"
         onClick={(event) => {
@@ -287,6 +316,14 @@ export default function AdminUsersPage() {
       {user.is_suspended && (
         <span className="rounded-full bg-red-50 px-2.5 py-1 text-red-700">Suspendu</span>
       )}
+      {user.is_login_locked && (
+        <span className="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">
+          Connexion bloquée
+        </span>
+      )}
+      <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-neutral-600">
+        Essais : {user.failed_login_attempts}
+      </span>
     </div>
   );
 
@@ -301,6 +338,16 @@ export default function AdminUsersPage() {
           label: "Statut du compte",
           value: selectedUser.is_suspended ? "Suspendu" : "Actif",
           Icon: FiUserCheck,
+        },
+        {
+          label: "Tentatives échouées",
+          value: `${selectedUser.failed_login_attempts}`,
+          Icon: FiShield,
+        },
+        {
+          label: "Connexion",
+          value: selectedUser.is_login_locked ? "Bloquée" : "Autorisée",
+          Icon: FiUnlock,
         },
       ]
     : [];

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 from sqlalchemy.orm import Session
 
 from app.core.modules import is_feature_enabled
+from app.core.phone import find_user_by_phone, normalize_phone
 from app.core.security import get_current_user
 from app.db.deps import get_db
 from app.models.owner_profile import OwnerProfile
@@ -17,6 +18,13 @@ def _require_value(value: str, label: str) -> str:
     if not cleaned:
         raise HTTPException(status_code=400, detail=f"{label} requis.")
     return cleaned
+
+
+def _require_phone(value: str, label: str) -> str:
+    normalized = normalize_phone(value)
+    if not normalized:
+        raise HTTPException(status_code=400, detail=f"{label} requis.")
+    return normalized
 
 
 @router.get("/me", response_model=OwnerProfilePublic)
@@ -100,13 +108,9 @@ def upsert_owner_onboarding(
             raise HTTPException(status_code=400, detail="Cet e-mail est deja utilise.")
         current_user.email = normalized_email
 
-    normalized_phone = _require_value(phone, "Telephone")
+    normalized_phone = _require_phone(phone, "Telephone")
     if normalized_phone != (current_user.phone or ""):
-        phone_exists = (
-            db.query(User)
-            .filter(User.phone == normalized_phone, User.id != current_user.id)
-            .first()
-        )
+        phone_exists = find_user_by_phone(db, normalized_phone, exclude_user_id=current_user.id)
         if phone_exists:
             raise HTTPException(status_code=400, detail="Ce numero est deja utilise.")
         current_user.phone = normalized_phone

@@ -37,6 +37,8 @@ export type Property = {
   videoUrl?: string;
   tour360Url?: string;
   ownerIsVerified?: boolean;
+  ownerName?: string;
+  ownerProfileImageUrl?: string;
 };
 
 export type ApiProperty = {
@@ -66,6 +68,8 @@ export type ApiProperty = {
   imageUrl?: string | null;
   photo_urls?: string[] | null;
   owner_is_verified?: boolean | null;
+  owner_name?: string | null;
+  owner_profile_image_url?: string | null;
   promo_label?: string | null;
   promo_until?: string | null;
 };
@@ -162,6 +166,8 @@ export const mapApiProperty = (api: ApiProperty): Property => {
     videoUrl: resolveImageUrl(api.video_url),
     tour360Url: resolveImageUrl(api.tour_360_url),
     ownerIsVerified: Boolean(api.owner_is_verified),
+    ownerName: api.owner_name || undefined,
+    ownerProfileImageUrl: resolveImageUrl(api.owner_profile_image_url) || undefined,
   };
 };
 

@@ -5,7 +5,9 @@ import uuid
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
+from app.core.phone import find_user_by_phone, normalize_phone
 from app.core.storage import get_upload_dir
+from app.core.storage_minio import build_object_key, is_minio_configured, upload_file
 from app.core.security import get_current_user
 from app.db.deps import get_db
 from app.models.feature_module import FeatureModule
@@ -49,13 +51,9 @@ def update_me(
             current_user.email = normalized_email
 
     if payload.phone is not None:
-        normalized_phone = payload.phone.strip() or None
+        normalized_phone = normalize_phone(payload.phone)
         if normalized_phone and normalized_phone != current_user.phone:
-            existing_phone = (
-                db.query(User)
-                .filter(User.phone == normalized_phone, User.id != current_user.id)
-                .first()
-            )
+            existing_phone = find_user_by_phone(db, normalized_phone, exclude_user_id=current_user.id)
             if existing_phone:
                 raise HTTPException(status_code=400, detail="Ce numéro est déjà utilisé.")
         current_user.phone = normalized_phone
@@ -78,22 +76,36 @@ def upload_avatar(
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Format d'image invalide.")
 
-    upload_dir = get_upload_dir() / "avatars"
-    upload_dir.mkdir(parents=True, exist_ok=True)
-
     extension = Path(file.filename or "").suffix.lower()
     if extension not in {".jpg", ".jpeg", ".png", ".webp", ".gif"}:
         extension = ".jpg"
 
-    filename = f"{current_user.id}-{uuid.uuid4().hex}{extension}"
-    destination = upload_dir / filename
+    if is_minio_configured():
+        object_key = build_object_key(
+            f"users/{current_user.id}/avatar",
+            file.filename or f"avatar{extension}",
+        )
+        try:
+            current_user.profile_image_url = upload_file(
+                file.file,
+                object_key,
+                file.content_type or "image/jpeg",
+            )
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail="Upload avatar impossible.") from exc
+    else:
+        upload_dir = get_upload_dir() / "avatars"
+        upload_dir.mkdir(parents=True, exist_ok=True)
 
-    with destination.open("wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+        filename = f"{current_user.id}-{uuid.uuid4().hex}{extension}"
+        destination = upload_dir / filename
 
-    current_user.profile_image_url = f"/uploads/avatars/{filename}"
+        with destination.open("wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        current_user.profile_image_url = f"/uploads/avatars/{filename}"
+
     db.add(current_user)
     db.commit()
     db.refresh(current_user)
     return current_user
-

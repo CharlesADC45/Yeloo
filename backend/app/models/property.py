@@ -70,3 +70,15 @@ class Property(Base):
     def owner_is_verified(self) -> bool:
         return bool(self.owner and self.owner.is_verified)
 
+    @property
+    def owner_name(self) -> str | None:
+        if not self.owner:
+            return None
+        return self.owner.full_name or self.owner.email
+
+    @property
+    def owner_profile_image_url(self) -> str | None:
+        if not self.owner:
+            return None
+        return self.owner.profile_image_url
+

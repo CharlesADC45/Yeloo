@@ -6,17 +6,20 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { BottomNav } from "@/components/BottomNav";
+import { CiPhoneField } from "@/components/CiPhoneField";
 import { TopBar } from "@/components/TopBar";
 import { getApiBaseUrl } from "@/lib/api";
+import { getApiErrorMessage } from "@/lib/apiErrors";
+import { normalizeIvoryCoastPhoneForApi } from "@/lib/phone";
 import { useAuthStore } from "@/stores/authStore";
 
 type FormState = {
-  email: string;
+  phone: string;
   password: string;
 };
 
 const DEFAULT_FORM: FormState = {
-  email: "",
+  phone: "",
   password: "",
 };
 
@@ -53,7 +56,7 @@ export default function ConnexionPage() {
 
     try {
       const body = new URLSearchParams({
-        email: form.email.trim(),
+        phone: normalizeIvoryCoastPhoneForApi(form.phone),
         password: form.password,
       });
 
@@ -67,10 +70,7 @@ export default function ConnexionPage() {
 
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
-        const detail =
-          payload?.detail ||
-          payload?.message ||
-          `Erreur API (${response.status})`;
+        const detail = getApiErrorMessage(payload, `Erreur API (${response.status})`);
         throw new Error(detail);
       }
 
@@ -129,19 +129,12 @@ export default function ConnexionPage() {
           </p>
 
           <form className="mt-4 space-y-3 text-xs text-neutral-600" onSubmit={handleSubmit}>
-            <label className="flex flex-col gap-1">
-              <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
-                Email
-              </span>
-              <input
-                type="email"
-                required
-                className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-                placeholder="vous@email.com"
-                value={form.email}
-                onChange={handleChange("email")}
-              />
-            </label>
+            <CiPhoneField
+              label="Numéro de téléphone"
+              required
+              value={form.phone}
+              onChange={(value) => setForm((prev) => ({ ...prev, phone: value }))}
+            />
             <label className="flex flex-col gap-1">
               <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
                 Mot de passe

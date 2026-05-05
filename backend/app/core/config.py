@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     frontend_origins: list[str] | None = None
     upload_dir: str = "uploads"
     bootstrap_admin_email: str = "admin@yeloo.ci"
+    bootstrap_admin_phone: str = "+2250102035544"
     bootstrap_admin_password: str = "AdminYeloo123!"
     bootstrap_admin_full_name: str = "Super Admin Yeloo"
 

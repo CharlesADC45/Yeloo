@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, joinedload
 
+from app.core.phone import find_user_by_phone, normalize_phone
 from app.core.storage import get_upload_dir
 from app.core.storage_minio import build_object_key, is_minio_configured, upload_file
 from app.core.security import get_current_admin
@@ -115,6 +116,13 @@ DEFAULT_FEATURE_MODULES = [
         "description": "Affiche les alertes de connexion instable, hors ligne et nouveaux messages.",
         "category": "engagement",
     },
+    {
+        "key": "login_guard",
+        "name": "Protection connexion",
+        "description": "Bloque un compte après un certain nombre d'essais de connexion ratés.",
+        "category": "security",
+        "config_value": 3,
+    },
 ]
 
 
@@ -130,10 +138,20 @@ def _ensure_feature_modules(db: Session) -> list[FeatureModule]:
             description=payload["description"],
             category=payload["category"],
             is_enabled=True,
+            config_value=payload.get("config_value"),
         )
         db.add(item)
         touched = True
         existing[item.key] = item
+    for payload in DEFAULT_FEATURE_MODULES:
+        item = existing.get(payload["key"])
+        if not item:
+            continue
+        default_config = payload.get("config_value")
+        if item.config_value is None and default_config is not None:
+            item.config_value = default_config
+            db.add(item)
+            touched = True
     if touched:
         db.commit()
     return sorted(existing.values(), key=lambda item: (item.category, item.name))
@@ -149,6 +167,8 @@ def _serialize_user(user: User) -> AdminUserSummary:
         role=user.role,
         is_verified=user.is_verified,
         is_suspended=user.is_suspended,
+        failed_login_attempts=user.failed_login_attempts or 0,
+        is_login_locked=bool(user.is_login_locked),
         created_at=user.created_at,
         owner_verification_status=owner_profile.verification_status if owner_profile else None,
     )
@@ -460,6 +480,13 @@ def update_feature_module(
     if not module:
         raise HTTPException(status_code=404, detail="Module introuvable.")
     module.is_enabled = payload.is_enabled
+    if module.key == "login_guard":
+        config_value = payload.config_value if payload.config_value is not None else module.config_value
+        if config_value is None:
+            config_value = 3
+        if config_value < 1:
+            raise HTTPException(status_code=400, detail="La limite doit être supérieure ou égale à 1.")
+        module.config_value = config_value
     db.add(module)
     db.commit()
     db.refresh(module)
@@ -497,6 +524,23 @@ def update_user_suspension(
     return _serialize_user(user)
 
 
+@router.post("/users/{user_id}/unlock-login", response_model=AdminUserSummary)
+def unlock_user_login(
+    user_id: str,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_admin),
+):
+    user = db.query(User).options(joinedload(User.owner_profile)).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable.")
+    user.failed_login_attempts = 0
+    user.is_login_locked = False
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return _serialize_user(user)
+
+
 @router.patch("/users/{user_id}", response_model=AdminUserSummary)
 def update_admin_user(
     user_id: str,
@@ -518,9 +562,9 @@ def update_admin_user(
         user.email = next_email
 
     if "phone" in data:
-        next_phone = (data.get("phone") or "").strip() or None
+        next_phone = normalize_phone(data.get("phone"))
         if next_phone:
-            existing = db.query(User).filter(User.phone == next_phone, User.id != user.id).first()
+            existing = find_user_by_phone(db, next_phone, exclude_user_id=user.id)
             if existing:
                 raise HTTPException(status_code=400, detail="Ce telephone est deja utilise.")
         user.phone = next_phone

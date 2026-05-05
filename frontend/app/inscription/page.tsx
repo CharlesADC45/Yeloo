@@ -4,10 +4,13 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FiHome, FiUser } from "react-icons/fi";
+import { FiEye, FiEyeOff, FiHome, FiUser } from "react-icons/fi";
 import { BottomNav } from "@/components/BottomNav";
+import { CiPhoneField } from "@/components/CiPhoneField";
 import { TopBar } from "@/components/TopBar";
 import { getApiBaseUrl } from "@/lib/api";
+import { getApiErrorMessage } from "@/lib/apiErrors";
+import { normalizeIvoryCoastPhoneForApi } from "@/lib/phone";
 
 type FormState = {
   fullName: string;
@@ -31,6 +34,7 @@ export default function InscriptionPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [shouldRedirectToLogin, setShouldRedirectToLogin] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -66,7 +70,7 @@ export default function InscriptionPage() {
         },
         body: JSON.stringify({
           email: form.email.trim(),
-          phone: form.phone.trim() || null,
+          phone: normalizeIvoryCoastPhoneForApi(form.phone) || null,
           full_name: form.fullName.trim() || null,
           password: form.password,
           role: form.role,
@@ -75,10 +79,7 @@ export default function InscriptionPage() {
 
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
-        const detail =
-          payload?.detail ||
-          payload?.message ||
-          `Erreur API (${response.status})`;
+        const detail = getApiErrorMessage(payload, `Erreur API (${response.status})`);
         throw new Error(detail);
       }
 
@@ -136,29 +137,35 @@ export default function InscriptionPage() {
                 onChange={handleChange("email")}
               />
             </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
-                Telephone
-              </span>
-              <input
-                className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-                placeholder="Ex: +225 07 00 00 00 00"
-                value={form.phone}
-                onChange={handleChange("phone")}
-              />
-            </label>
+            <CiPhoneField
+              label="Telephone"
+              required
+              value={form.phone}
+              onChange={(value) => setForm((prev) => ({ ...prev, phone: value }))}
+            />
             <label className="flex flex-col gap-1">
               <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
                 Mot de passe
               </span>
-              <input
-                type="password"
-                required
-                minLength={6}
-                className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-                value={form.password}
-                onChange={handleChange("password")}
-              />
+              <div className="flex items-center rounded-lg border border-neutral-200 bg-white pr-2 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-200/70">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  minLength={6}
+                  className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm outline-none"
+                  value={form.password}
+                  onChange={handleChange("password")}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((value) => !value)}
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold text-neutral-500 transition hover:text-neutral-900"
+                  aria-label={showPassword ? "Masquer le mot de passe" : "Montrer le mot de passe"}
+                >
+                  {showPassword ? <FiEyeOff /> : <FiEye />}
+                  {showPassword ? "Masquer" : "Montrer"}
+                </button>
+              </div>
             </label>
             <div className="flex flex-col gap-2">
               <span className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">

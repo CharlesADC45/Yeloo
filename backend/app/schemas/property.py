@@ -83,6 +83,8 @@ class PropertyPublic(BaseModel):
     created_at: datetime
     photo_urls: list[str] = []
     owner_is_verified: bool = False
+    owner_name: str | None = None
+    owner_profile_image_url: str | None = None
 
     class Config:
         from_attributes = True

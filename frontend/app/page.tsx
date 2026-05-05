@@ -343,7 +343,7 @@ function HomePageContent() {
                 <Link
                   key={location.city}
                   href={buildLogementsHref(location.city)}
-                  className="group block w-[320px] flex-shrink-0 snap-center overflow-hidden rounded-[2rem] first:ml-0 sm:w-[340px] md:w-auto md:snap-start"
+                  className="group block w-[min(320px,calc(100vw-3rem))] flex-shrink-0 snap-center overflow-hidden rounded-[2rem] first:ml-0 sm:w-[340px] md:w-auto md:snap-start"
                 >
                   <article className="relative h-56 overflow-hidden rounded-[2rem] sm:h-64">
                     <img

@@ -1,6 +1,7 @@
 from sqlalchemy import inspect, text
 
 from app.core.config import settings
+from app.core.phone import normalize_phone
 from app.core.security import hash_password, verify_password
 from app.db.base import Base
 from app.db.session import engine
@@ -153,6 +154,7 @@ def _ensure_bootstrap_super_admin() -> None:
         "adminin@gmail.com",
         "adminzoro@gmail.com",
     ]
+    bootstrap_phone = normalize_phone(settings.bootstrap_admin_phone)
 
     db = SessionLocal()
     try:
@@ -181,6 +183,9 @@ def _ensure_bootstrap_super_admin() -> None:
                 if not admin_user.full_name:
                     admin_user.full_name = settings.bootstrap_admin_full_name
                     changed = True
+                if bootstrap_phone and not admin_user.phone:
+                    admin_user.phone = bootstrap_phone
+                    changed = True
                 db.add(admin_user)
             if changed:
                 db.commit()
@@ -188,6 +193,7 @@ def _ensure_bootstrap_super_admin() -> None:
 
         new_admin = User(
             email=settings.bootstrap_admin_email.lower(),
+            phone=bootstrap_phone,
             full_name=settings.bootstrap_admin_full_name,
             hashed_password=hash_password(settings.bootstrap_admin_password),
             role="admin",

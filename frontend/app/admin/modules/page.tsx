@@ -13,6 +13,7 @@ export default function AdminModulesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pendingModule, setPendingModule] = useState<string | null>(null);
+  const [pendingConfig, setPendingConfig] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!token) return;
@@ -62,13 +63,34 @@ export default function AdminModulesPage() {
       current.map((item) => (item.key === module.key ? { ...item, is_enabled: !item.is_enabled } : item))
     );
     try {
-      const updated = await updateFeatureModule(token, module.key, !module.is_enabled);
+      const updated = await updateFeatureModule(token, module.key, !module.is_enabled, module.config_value ?? null);
       setModules((current) => current.map((item) => (item.key === updated.key ? updated : item)));
     } catch (err) {
       setModules((current) =>
         current.map((item) => (item.key === module.key ? { ...item, is_enabled: module.is_enabled } : item))
       );
       setError(err instanceof Error ? err.message : "Impossible de mettre à jour le module.");
+    } finally {
+      setPendingModule(null);
+    }
+  };
+
+  const handleConfigSave = async (module: FeatureModule) => {
+    if (!token) return;
+    const rawValue = pendingConfig[module.key] ?? String(module.config_value ?? 3);
+    const parsed = Number(rawValue);
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      setError("La limite d'essais doit être supérieure ou égale à 1.");
+      return;
+    }
+    setPendingModule(module.key);
+    setError(null);
+    try {
+      const updated = await updateFeatureModule(token, module.key, module.is_enabled, parsed);
+      setModules((current) => current.map((item) => (item.key === updated.key ? updated : item)));
+      setPendingConfig((current) => ({ ...current, [module.key]: String(parsed) }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Impossible de sauvegarder la limite.");
     } finally {
       setPendingModule(null);
     }
@@ -106,11 +128,8 @@ export default function AdminModulesPage() {
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   {items.map((module) => (
-                    <button
+                    <div
                       key={module.key}
-                      type="button"
-                      onClick={() => void handleToggle(module)}
-                      disabled={pendingModule === module.key}
                       className={`rounded-[1.5rem] px-5 py-4 text-left transition ${
                         module.is_enabled ? "bg-blue-50 text-neutral-950" : "bg-neutral-50 text-neutral-700"
                       }`}
@@ -120,11 +139,49 @@ export default function AdminModulesPage() {
                           <p className="font-semibold">{module.name}</p>
                           <p className="mt-2 text-sm leading-6 text-neutral-500">{module.description}</p>
                         </div>
-                        <span className="text-2xl text-blue-600">
+                        <button
+                          type="button"
+                          onClick={() => void handleToggle(module)}
+                          disabled={pendingModule === module.key}
+                          className="text-2xl text-blue-600 disabled:opacity-60"
+                          aria-label={module.is_enabled ? "Désactiver le module" : "Activer le module"}
+                        >
                           {module.is_enabled ? <FiToggleRight /> : <FiToggleLeft />}
-                        </span>
+                        </button>
                       </div>
-                    </button>
+                      {module.key === "login_guard" && (
+                        <div className="mt-4 rounded-2xl bg-white/80 px-4 py-4 ring-1 ring-blue-100">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
+                            Limite d'essais
+                          </p>
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <input
+                              type="number"
+                              min={1}
+                              value={pendingConfig[module.key] ?? String(module.config_value ?? 3)}
+                              onChange={(event) =>
+                                setPendingConfig((current) => ({
+                                  ...current,
+                                  [module.key]: event.target.value,
+                                }))
+                              }
+                              className="w-24 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-950 outline-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => void handleConfigSave(module)}
+                              disabled={pendingModule === module.key}
+                              className="rounded-full bg-neutral-950 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                            >
+                              Sauvegarder
+                            </button>
+                          </div>
+                          <p className="mt-2 text-xs text-neutral-500">
+                            Exemple : 3 essais ratés, puis le compte est bloqué jusqu'au déblocage admin.
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>

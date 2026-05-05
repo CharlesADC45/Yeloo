@@ -380,6 +380,8 @@ export function LogementClient({ id }: Props) {
   const selectedVisitLabel = visitDate ? formatVisitDate(visitDate) : "Choisissez un jour et une heure";
   const ownerLabel = property?.ownerIsVerified ? "Propriétaire vérifié" : "Propriétaire Yeloo";
   const ownerInitial = ownerLabel.charAt(0).toUpperCase();
+  const ownerName = property?.ownerName || "Hôte Yeloo";
+  const ownerProfileImageUrl = property?.ownerProfileImageUrl;
   const pricePeriodLabel = property?.pricePeriod || "mois";
   const detailStats = property
     ? [
@@ -835,11 +837,20 @@ export function LogementClient({ id }: Props) {
                 <div className="mt-6 grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
                   <div className="border-y border-neutral-200 py-5">
                     <div className="flex items-center gap-4">
-                      <div className="flex h-16 w-16 items-center justify-center bg-neutral-950 text-2xl font-semibold text-white">
-                        {ownerInitial}
-                      </div>
+                      {ownerProfileImageUrl ? (
+                        <img
+                          src={ownerProfileImageUrl}
+                          alt={ownerName}
+                          className="h-16 w-16 rounded-sm object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-16 w-16 items-center justify-center bg-neutral-950 text-2xl font-semibold text-white">
+                          {ownerInitial}
+                        </div>
+                      )}
                       <div>
-                        <p className="text-lg font-semibold text-neutral-950">{ownerLabel}</p>
+                        <p className="text-lg font-semibold text-neutral-950">{ownerName}</p>
+                        <p className="mt-1 text-base font-semibold text-neutral-700">{ownerLabel}</p>
                         <p className="mt-1 text-sm text-neutral-500">
                           Hôte sur Yeloo
                         </p>

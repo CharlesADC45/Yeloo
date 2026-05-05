@@ -123,7 +123,7 @@ function LogementsPageContent() {
                 <Link
                   key={item.city}
                   href={`/logements?city=${encodeURIComponent(item.city)}`}
-                  className="group min-w-[280px] flex-1 overflow-hidden rounded-[1.8rem] border border-neutral-200 bg-white shadow-soft sm:min-w-[340px] lg:min-w-[380px]"
+                  className="group min-w-[min(280px,calc(100vw-3rem))] flex-1 overflow-hidden rounded-[1.8rem] border border-neutral-200 bg-white shadow-soft sm:min-w-[340px] lg:min-w-[380px]"
                 >
                   <div className="relative h-48 overflow-hidden sm:h-56">
                     <img

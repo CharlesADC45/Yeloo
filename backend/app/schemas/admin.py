@@ -9,6 +9,7 @@ class FeatureModulePublic(BaseModel):
     description: str
     category: str
     is_enabled: bool
+    config_value: int | None = None
     updated_at: datetime
 
     class Config:
@@ -17,6 +18,7 @@ class FeatureModulePublic(BaseModel):
 
 class FeatureModuleUpdate(BaseModel):
     is_enabled: bool
+    config_value: int | None = None
 
 
 class AdminUserSummary(BaseModel):
@@ -27,6 +29,8 @@ class AdminUserSummary(BaseModel):
     role: str
     is_verified: bool
     is_suspended: bool
+    failed_login_attempts: int = 0
+    is_login_locked: bool = False
     created_at: datetime
     owner_verification_status: str | None = None
 

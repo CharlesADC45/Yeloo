@@ -9,7 +9,7 @@ EMAIL_PATTERN = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
 
 class UserCreate(BaseModel):
     email: str = Field(pattern=EMAIL_PATTERN)
-    phone: str | None = None
+    phone: str = Field(min_length=5, max_length=50)
     full_name: str | None = None
     password: str = Field(min_length=6)
     role: str = Field(default="locataire", pattern="^(proprietaire|locataire|admin)$")
