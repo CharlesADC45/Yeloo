@@ -5,7 +5,8 @@ import gsap from "gsap";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { FiArrowRight, FiCalendar, FiCheckCircle, FiTrash2, FiXCircle } from "react-icons/fi";
+import { FiArrowRight, FiTrash2 } from "react-icons/fi";
+import { OwnerVisitCalendarPanel } from "@/components/OwnerVisitCalendarPanel";
 import { OwnerSidebar } from "@/components/OwnerSidebar";
 import { OwnerDashboardSkeleton } from "@/components/Skeleton";
 import { TopBar } from "@/components/TopBar";
@@ -57,33 +58,6 @@ const formatConversationDate = (value: string) => {
     day: "2-digit",
     month: "short",
   }).format(date);
-};
-
-const formatVisitDate = (value?: string | null) => {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-};
-
-const getVisitStatusLabel = (status: VisitRequest["status"]) => {
-  switch (status) {
-    case "accepted":
-      return "acceptée";
-    case "declined":
-      return "refusée";
-    case "rescheduled":
-      return "autre date proposée";
-    case "cancelled":
-      return "annulée";
-    default:
-      return "en attente";
-  }
 };
 
 const getAvailabilityLabel = (status?: string | null) => {
@@ -606,114 +580,17 @@ export default function ProprietairePage() {
                 </div>
               </div>
 
-               <div
-                 data-owner-reveal="true"
-                  className="mt-8 rounded-2xl border border-neutral-100 bg-white p-5"
-               >
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-sm font-semibold text-neutral-900">Demandes de visite</h2>
-                    <p className="mt-1 text-xs text-neutral-500">
-                      Acceptez une visite, refusez-la ou proposez une autre date.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="rounded-full bg-blue-50 px-3 py-1 font-semibold text-blue-700">
-                      {pendingVisitCount} en attente
-                    </span>
-                    <span className="rounded-full border border-neutral-200 px-3 py-1 text-neutral-500">
-                      {visitRequests.length} demande(s)
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-4 divide-y divide-neutral-100">
-                  {visitRequests.length === 0 ? (
-                    <div className="rounded-2xl bg-neutral-50 px-4 py-5 text-sm text-neutral-600">
-                      Aucune demande de visite pour le moment.
-                    </div>
-                  ) : (
-                    visitRequests.slice(0, 4).map((item) => (
-                      <div key={item.id} className="py-4">
-                        <div className="flex items-start gap-3">
-                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white">
-                            <FiCalendar />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <p className="truncate text-sm font-semibold text-neutral-950">
-                                  {item.property_title}
-                                </p>
-                                <p className="mt-0.5 text-xs text-neutral-500">
-                                  {item.tenant_full_name} · {item.property_neighborhood || item.property_city}
-                                </p>
-                              </div>
-                              <span className="rounded-full bg-neutral-100 px-3 py-1 text-[11px] font-semibold text-neutral-600">
-                                {getVisitStatusLabel(item.status)}
-                              </span>
-                            </div>
-                            <p className="mt-2 text-sm text-neutral-700">
-                              Souhaitée le {formatVisitDate(item.preferred_at)}
-                            </p>
-                            {item.proposed_at && (
-                              <p className="mt-1 text-xs text-blue-700">
-                                Nouvelle date: {formatVisitDate(item.proposed_at)}
-                              </p>
-                            )}
-                            {item.message && (
-                              <p className="mt-2 line-clamp-2 rounded-2xl bg-neutral-50 px-3 py-2 text-xs leading-5 text-neutral-600">
-                                {item.message}
-                              </p>
-                            )}
-                            {item.status === "pending" && (
-                              <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
-                                <input
-                                  type="datetime-local"
-                                  value={rescheduleDates[item.id] || ""}
-                                  onChange={(event) =>
-                                    setRescheduleDates((current) => ({
-                                      ...current,
-                                      [item.id]: event.target.value,
-                                    }))
-                                  }
-                                  className="rounded-full border border-neutral-200 px-3 py-2 text-xs outline-none focus:border-blue-500"
-                                  aria-label="Nouvelle date de visite"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => void handleVisitAction(item, "accepted")}
-                                  disabled={visitActionId === `${item.id}:accepted`}
-                                  className="inline-flex items-center justify-center gap-1 rounded-full bg-blue-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
-                                >
-                                  <FiCheckCircle />
-                                  Accepter
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => void handleVisitAction(item, "declined")}
-                                  disabled={visitActionId === `${item.id}:declined`}
-                                  className="inline-flex items-center justify-center gap-1 rounded-full border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 disabled:opacity-60"
-                                >
-                                  <FiXCircle />
-                                  Refuser
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => void handleVisitAction(item, "rescheduled")}
-                                  disabled={visitActionId === `${item.id}:rescheduled`}
-                                  className="inline-flex items-center justify-center rounded-full border border-blue-100 px-3 py-2 text-xs font-semibold text-blue-700 disabled:opacity-60 sm:col-span-3"
-                                >
-                                  Proposer cette nouvelle date
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
+              <div data-owner-reveal="true" className="mt-8">
+                <OwnerVisitCalendarPanel
+                  visitRequests={visitRequests}
+                  pendingVisitCount={pendingVisitCount}
+                  visitActionId={visitActionId}
+                  rescheduleDates={rescheduleDates}
+                  setRescheduleDates={setRescheduleDates}
+                  onVisitAction={handleVisitAction}
+                  limit={4}
+                  showCalendarLink
+                />
               </div>
 
                <div

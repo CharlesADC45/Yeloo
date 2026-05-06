@@ -24,6 +24,7 @@ DEFAULT_FEATURE_MODULES = [
     ("app_status_alerts", "Alertes statut app", "Affiche les alertes de connexion instable, hors ligne et nouveaux messages.", "engagement"),
     ("public_announcements", "Alertes publiques", "Diffuse les messages publics en carousel sur l'accueil.", "engagement"),
     ("listing_promos", "Promos annonces", "Affiche les reductions et offres visibles sur les images des logements.", "engagement"),
+    ("login_guard", "Protection connexion", "Bloque un compte apres plusieurs essais de connexion rates.", "security"),
 ]
 
 
@@ -67,11 +68,52 @@ def _ensure_feature_modules_table() -> None:
                     description TEXT NOT NULL,
                     category VARCHAR(80) NOT NULL DEFAULT 'general',
                     is_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+                    config_value INTEGER,
                     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
                 )
                 """
             )
         )
+
+
+def _ensure_feature_module_config_column() -> None:
+    inspector = inspect(engine)
+    if "feature_modules" not in inspector.get_table_names():
+        return
+
+    existing_columns = {column["name"] for column in inspector.get_columns("feature_modules")}
+    if "config_value" in existing_columns:
+        return
+
+    with engine.begin() as connection:
+        connection.execute(
+            text("ALTER TABLE feature_modules ADD COLUMN IF NOT EXISTS config_value INTEGER")
+        )
+
+
+def _ensure_login_guard_columns() -> None:
+    inspector = inspect(engine)
+    if "users" not in inspector.get_table_names():
+        return
+
+    existing_columns = {column["name"] for column in inspector.get_columns("users")}
+    statements: list[str] = []
+
+    if "failed_login_attempts" not in existing_columns:
+        statements.append(
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_login_attempts INTEGER NOT NULL DEFAULT 0"
+        )
+    if "is_login_locked" not in existing_columns:
+        statements.append(
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_login_locked BOOLEAN NOT NULL DEFAULT FALSE"
+        )
+
+    if not statements:
+        return
+
+    with engine.begin() as connection:
+        for statement in statements:
+            connection.execute(text(statement))
 
 
 def _ensure_owner_profile_kyc_columns() -> None:
@@ -139,8 +181,14 @@ def _seed_default_feature_modules() -> None:
                     description=description,
                     category=category,
                     is_enabled=True,
+                    config_value=3 if key == "login_guard" else None,
                 )
             )
+            touched = True
+        login_guard_module = db.query(FeatureModule).filter(FeatureModule.key == "login_guard").first()
+        if login_guard_module and login_guard_module.config_value is None:
+            login_guard_module.config_value = 3
+            db.add(login_guard_module)
             touched = True
         if touched:
             db.commit()
@@ -209,8 +257,10 @@ def _ensure_bootstrap_super_admin() -> None:
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
     _ensure_feature_modules_table()
+    _ensure_feature_module_config_column()
     _ensure_lease_request_v2_columns()
     _ensure_owner_profile_kyc_columns()
     _ensure_property_payment_columns()
+    _ensure_login_guard_columns()
     _seed_default_feature_modules()
     _ensure_bootstrap_super_admin()

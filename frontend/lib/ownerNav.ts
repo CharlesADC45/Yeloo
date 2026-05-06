@@ -1,6 +1,6 @@
 "use client";
 
-import { FiFileText, FiGrid, FiHome, FiMessageCircle, FiUser } from "react-icons/fi";
+import { FiCalendar, FiFileText, FiGrid, FiHome, FiMessageCircle, FiUser } from "react-icons/fi";
 
 export type OwnerNavItem = {
   href: string;
@@ -27,6 +27,12 @@ export const ownerNavItems: OwnerNavItem[] = [
     label: "Mes biens",
     Icon: FiFileText,
     isActive: (pathname) => pathname.startsWith("/proprietaire/biens"),
+  },
+  {
+    href: "/proprietaire/calendrier",
+    label: "Calendrier",
+    Icon: FiCalendar,
+    isActive: (pathname) => pathname.startsWith("/proprietaire/calendrier"),
   },
   {
     href: "/messages?mode=owner",
