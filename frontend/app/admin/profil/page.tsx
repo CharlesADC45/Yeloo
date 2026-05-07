@@ -307,7 +307,7 @@ export default function AdminProfilPage() {
                 <h1 className="text-2xl font-semibold tracking-tight text-neutral-950">
                   {name}
                 </h1>
-                <p className="text-sm font-medium text-neutral-800">Super admin Yeloo</p>
+                <p className="text-sm font-medium text-neutral-800">Super admin Yeloo+</p>
                 <p className="text-sm text-neutral-600">Email: {email}</p>
                 <div className="flex flex-wrap justify-center gap-2 pt-2 text-xs">
                   <span className="rounded-full bg-blue-100 px-3 py-1 font-medium text-blue-700">

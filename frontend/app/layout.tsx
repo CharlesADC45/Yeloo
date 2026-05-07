@@ -14,15 +14,15 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Yeloo - Logements en Cote d'Ivoire",
+  title: "Yeloo+ - Logements en Cote d'Ivoire",
   description:
     "Trouvez un logement en Cote d'Ivoire, directement aupres des proprietaires, sans arnaques.",
   manifest: "/manifest.webmanifest",
-  applicationName: "Yeloo",
+  applicationName: "Yeloo+",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Yeloo",
+    title: "Yeloo+",
   },
   icons: {
     icon: [

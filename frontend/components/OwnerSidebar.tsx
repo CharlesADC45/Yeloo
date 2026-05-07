@@ -46,7 +46,7 @@ export function OwnerSidebar() {
           <FiLogOut />
           Logout
         </button>
-        <div className="mt-8 px-2 text-xs text-neutral-400">Yeloo · Propriétaire</div>
+        <div className="mt-8 px-2 text-xs text-neutral-400">Yeloo+ · Propriétaire</div>
       </div>
     </aside>
   );

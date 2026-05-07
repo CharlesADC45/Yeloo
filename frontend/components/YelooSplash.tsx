@@ -57,9 +57,10 @@ export function YelooSplash() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.28, duration: 0.35 }}
-              className="mt-5 text-3xl font-extrabold tracking-[-0.05em] text-neutral-950"
+              className="mt-5 flex items-end text-3xl font-extrabold tracking-[-0.05em] text-neutral-950"
             >
-              Yeloo
+              <span>Yeloo</span>
+              <span className="ml-0.5 text-[2.2rem] font-black leading-none">+</span>
             </motion.p>
             <motion.div
               initial={{ scaleX: 0 }}

@@ -10,7 +10,13 @@ import {
   FiCheckCircle,
   FiCompass,
   FiGrid,
+  FiHeart,
   FiLogOut,
+  FiMapPin,
+  FiMessageCircle,
+  FiSearch,
+  FiSettings,
+  FiUser,
   FiX,
 } from "react-icons/fi";
 import { adminNavItems } from "@/lib/adminNav";
@@ -58,7 +64,7 @@ type ReverseGeocodeResponse = {
 
 function YelooBrand() {
   return (
-    <Link href="/" className="flex items-center gap-1.5" aria-label="Yeloo accueil">
+    <Link href="/" className="flex items-center gap-1.5" aria-label="Yeloo+ accueil">
       <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[1.15rem] bg-[#2F57FF] shadow-soft sm:h-11 sm:w-11">
         <span className="absolute inset-x-[7px] top-[11px] h-[11px] rounded-full bg-white/12" />
         <span className="flex items-center gap-1.5">
@@ -71,8 +77,9 @@ function YelooBrand() {
         </span>
         <span className="absolute bottom-[8px] h-[8px] w-[18px] rounded-b-full border-b-2 border-white/90" />
       </span>
-      <span className="text-[1.65rem] font-extrabold tracking-[-0.045em] leading-none text-[#111827]">
-        Yeloo
+      <span className="flex items-end text-[1.65rem] font-extrabold tracking-[-0.045em] leading-none text-[#111827]">
+        <span>Yeloo</span>
+        <span className="ml-0.5 text-[1.95rem] font-black leading-none">+</span>
       </span>
     </Link>
   );
@@ -98,6 +105,7 @@ function TopBarContent({
 }: TopBarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
   const setUser = useAuthStore((state) => state.setUser);
@@ -127,12 +135,31 @@ function TopBarContent({
     : isOwnerRole
       ? "/proprietaire"
       : "/proprietaire/nouveau";
-  const actionLabel = isAdminRole ? "Super admin" : isOwnerRole ? "Mon espace" : "Publier un bien";
+  const actionLabel = isAdminRole ? "Super admin" : isOwnerRole ? "Mon espace" : "Devenir bailleur";
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [locationLabel, setLocationLabel] = useState("Localisation");
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const menuPanelRef = useRef<HTMLDivElement | null>(null);
   const notificationPrefs = getNotificationPrefs(prefsByUser, user?.id);
   const notificationsEnabled = notificationPrefs.ownerPostNotifications;
+  const isDesktopViewport = (viewportWidth ?? 0) >= 1024;
+  const publicMenuItems = [
+    { href: "/", label: "Explorer", icon: FiSearch },
+    { href: "/favoris", label: "Favoris", icon: FiHeart },
+    { href: "/carte", label: "Carte", icon: FiMapPin },
+    {
+      href: isAuthenticated ? "/messages" : "/connexion?next=/messages",
+      label: "Messages",
+      icon: FiMessageCircle,
+    },
+    {
+      href: isAuthenticated ? "/compte" : "/connexion",
+      label: "Profil",
+      icon: FiUser,
+    },
+  ];
+
   const visibleNotifications = useMemo(() => {
     if (!user?.id) return [];
     const messageNotifications = notificationItems.filter(
@@ -224,17 +251,31 @@ function TopBarContent({
   }, [setUser, token, user?.id]);
 
   useEffect(() => {
-    if (!isMenuOpen) return;
+    if (!isMenuOpen || isDesktopViewport) return;
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = previous;
     };
-  }, [isMenuOpen]);
+  }, [isDesktopViewport, isMenuOpen]);
 
   useEffect(() => {
     setIsNotificationsOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!isMenuOpen || !isDesktopViewport) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (menuPanelRef.current?.contains(target)) return;
+      if (menuButtonRef.current?.contains(target)) return;
+      setIsMenuOpen(false);
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [isDesktopViewport, isMenuOpen]);
 
   useEffect(() => {
     if (!isNotificationsOpen) return;
@@ -581,12 +622,13 @@ function TopBarContent({
               </Link>
 
               <button
+                ref={menuButtonRef}
                 type="button"
                 onClick={() => setIsMenuOpen(true)}
-                className="flex h-12 w-12 items-center justify-center sm:hidden"
+                className="flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white/90 shadow-soft"
                 aria-label="Menu"
-                >
-                  <img src="/icons/menu.png" alt="" className="h-6 w-6 object-contain" />
+              >
+                <img src="/icons/menu.png" alt="" className="h-6 w-6 object-contain" />
               </button>
             </div>
           </div>
@@ -638,22 +680,24 @@ function TopBarContent({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <motion.button
-              type="button"
-              onClick={() => setIsMenuOpen(false)}
-              className="absolute inset-0 bg-black/30 backdrop-blur-sm"
-              aria-label="Fermer le menu"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            />
-            <motion.aside
-              className="absolute right-0 top-0 flex h-full w-[85%] max-w-xs flex-col bg-white shadow-2xl"
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", stiffness: 260, damping: 26 }}
-            >
+            {!isDesktopViewport ? (
+              <>
+                <motion.button
+                  type="button"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+                  aria-label="Fermer le menu"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                />
+                <motion.aside
+                  className="absolute right-0 top-0 flex h-full w-[85%] max-w-xs flex-col bg-white shadow-2xl"
+                  initial={{ x: "100%" }}
+                  animate={{ x: 0 }}
+                  exit={{ x: "100%" }}
+                  transition={{ type: "spring", stiffness: 260, damping: 26 }}
+                >
               <div className="flex items-center justify-between border-b border-neutral-200 px-5 py-4">
                 <span className="text-lg font-semibold text-neutral-900">Menu</span>
                 <button
@@ -744,20 +788,123 @@ function TopBarContent({
                     </button>
                   </div>
                 ) : (
-                  <Link
-                    href={actionHref}
-                    className="flex items-center justify-between gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <span className="flex items-center gap-3">
-                      <FiGrid />
-                      {actionLabel}
-                    </span>
-                    <FiCompass />
-                  </Link>
+                  <div className="flex flex-1 flex-col gap-3">
+                    <nav className="flex flex-col gap-2">
+                      {publicMenuItems.map(({ href, label, icon: Icon }) => (
+                        <Link
+                          key={label}
+                          href={href}
+                          onClick={() => setIsMenuOpen(false)}
+                          className="flex items-center gap-3 rounded-2xl px-4 py-3 text-neutral-700 transition hover:bg-neutral-50"
+                        >
+                          <Icon />
+                          {label}
+                        </Link>
+                      ))}
+                    </nav>
+                    <div className="my-2 h-px bg-neutral-200" />
+                    <Link
+                      href={actionHref}
+                      className="flex items-center justify-between gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <span className="flex items-center gap-3">
+                        <FiGrid />
+                        {actionLabel}
+                      </span>
+                      <FiCompass />
+                    </Link>
+                    <p className="px-1 text-xs leading-5 text-neutral-500">
+                      Publiez vos logements et gérez vos demandes depuis votre espace bailleur.
+                    </p>
+                    {isAuthenticated ? (
+                      <>
+                        <div className="my-2 h-px bg-neutral-200" />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsMenuOpen(false);
+                            logout();
+                            router.push("/");
+                          }}
+                          className="flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-neutral-600 hover:bg-neutral-50"
+                        >
+                          <FiLogOut />
+                          Déconnexion
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
                 )}
               </div>
-            </motion.aside>
+                </motion.aside>
+              </>
+            ) : (
+              <motion.div
+                ref={menuPanelRef}
+                initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                transition={{ duration: 0.18 }}
+                className="absolute right-6 top-[4.8rem] z-[1102] w-[23rem] overflow-hidden rounded-[1.6rem] border border-neutral-200 bg-white p-3 shadow-[0_24px_60px_rgba(15,23,42,0.12)]"
+              >
+                <div className="grid grid-cols-2 gap-2">
+                  {publicMenuItems.map(({ href, label, icon: Icon }) => (
+                    <Link
+                      key={label}
+                      href={href}
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-700 transition hover:bg-white"
+                    >
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-blue-600 shadow-sm">
+                        <Icon />
+                      </span>
+                      {label}
+                    </Link>
+                  ))}
+                </div>
+                <div className="my-3 h-px bg-neutral-200" />
+                <Link
+                  href={actionHref}
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex items-start justify-between gap-3 rounded-[1.4rem] bg-blue-600 px-4 py-4 text-white"
+                >
+                  <div>
+                    <p className="text-sm font-semibold">{actionLabel}</p>
+                    <p className="mt-1 text-xs text-white/80">
+                      Créez votre espace bailleur et publiez vos logements.
+                    </p>
+                  </div>
+                  <span className="mt-1 flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
+                    <FiCompass />
+                  </span>
+                </Link>
+                <div className="mt-3 flex items-center justify-between">
+                  <Link
+                    href={isAuthenticated ? "/compte/parametres" : "/connexion"}
+                    onClick={() => setIsMenuOpen(false)}
+                    className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50"
+                  >
+                    <FiSettings />
+                    Paramètres
+                  </Link>
+                  {isAuthenticated ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        logout();
+                        router.push("/");
+                      }}
+                      className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50"
+                    >
+                      <FiLogOut />
+                      Déconnexion
+                    </button>
+                  ) : null}
+                </div>
+              </motion.div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

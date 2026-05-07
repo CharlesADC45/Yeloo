@@ -29,8 +29,6 @@ type OwnerProfile = {
   user_id: string;
   city: string;
   main_address: string;
-  bank_name: string;
-  account_number: string;
   mobile_money: string;
   account_holder: string;
   identity_doc_name?: string | null;
@@ -41,12 +39,6 @@ type OwnerProfile = {
   created_at: string;
   updated_at: string;
 };
-
-function maskAccountNumber(value: string) {
-  if (!value) return "-";
-  if (value.length <= 4) return value;
-  return `${"*".repeat(Math.max(0, value.length - 4))}${value.slice(-4)}`;
-}
 
 const getInitials = (value: string) => {
   const parts = value.trim().split(/\s+/).filter(Boolean);
@@ -77,8 +69,6 @@ export default function ProprietaireProfilPage() {
     city: "",
     mainAddress: "",
     accountHolder: "",
-    bankName: "",
-    accountNumber: "",
     mobileMoney: "",
   });
   const [passwordForm, setPasswordForm] = useState({
@@ -159,8 +149,6 @@ export default function ProprietaireProfilPage() {
       city: profile?.city || "",
       mainAddress: profile?.main_address || "",
       accountHolder: profile?.account_holder || "",
-      bankName: profile?.bank_name || "",
-      accountNumber: profile?.account_number || "",
       mobileMoney: profile?.mobile_money || "",
     });
   }, [profile, user?.email, user?.full_name, user?.phone]);
@@ -182,7 +170,7 @@ export default function ProprietaireProfilPage() {
     { label: "Identité", done: Boolean(fullName && email) },
     { label: "Téléphone", done: Boolean(user?.phone) },
     { label: "Adresse", done: Boolean(profile?.city && profile?.main_address) },
-    { label: "Paiement", done: Boolean(profile?.bank_name && profile?.account_number) },
+    { label: "Paiement", done: Boolean(profile?.account_holder && profile?.mobile_money) },
     {
       label: "Documents",
       done: Boolean(profile?.identity_doc_name && profile?.property_proof_name),
@@ -249,8 +237,6 @@ export default function ProprietaireProfilPage() {
             city: profileForm.city,
             main_address: profileForm.mainAddress,
             account_holder: profileForm.accountHolder,
-            bank_name: profileForm.bankName,
-            account_number: profileForm.accountNumber,
             mobile_money: profileForm.mobileMoney,
           }),
         }),
@@ -332,12 +318,6 @@ export default function ProprietaireProfilPage() {
     { label: "Ville", value: profile?.city || "-", icon: FiMapPin },
     { label: "Adresse principale", value: profile?.main_address || "-", icon: FiMapPin },
     { label: "Titulaire du compte", value: profile?.account_holder || "-", icon: FiCreditCard },
-    { label: "Banque", value: profile?.bank_name || "-", icon: FiCreditCard },
-    {
-      label: "Numéro de compte",
-      value: profile?.account_number ? maskAccountNumber(profile.account_number) : "-",
-      icon: FiCreditCard,
-    },
     { label: "Mobile money", value: profile?.mobile_money || "-", icon: FiPhone },
     {
       label: "Document d'identité",
@@ -501,8 +481,6 @@ export default function ProprietaireProfilPage() {
                     { label: "Ville", value: profileForm.city, key: "city", icon: FiMapPin },
                     { label: "Adresse principale", value: profileForm.mainAddress, key: "mainAddress", icon: FiMapPin },
                     { label: "Titulaire du compte", value: profileForm.accountHolder, key: "accountHolder", icon: FiCreditCard },
-                    { label: "Banque", value: profileForm.bankName, key: "bankName", icon: FiCreditCard },
-                    { label: "Numéro de compte", value: profileForm.accountNumber, key: "accountNumber", icon: FiCreditCard },
                     { label: "Mobile money", value: profileForm.mobileMoney, key: "mobileMoney", icon: FiPhone },
                   ].map((field) => (
                     <label key={field.label} className="block">

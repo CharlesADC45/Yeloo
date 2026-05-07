@@ -77,7 +77,7 @@ export function BottomNav() {
       initial={{ y: 80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 260, damping: 22 }}
-      className="fixed bottom-5 left-0 right-0 z-40 mx-auto w-[calc(100%-1rem)] max-w-2xl rounded-3xl border border-neutral-200 bg-white/80 px-3 py-3 shadow-[0_8px_30px_rgba(0,0,0,0.12)] backdrop-blur-md sm:w-[calc(100%-2rem)] sm:px-4"
+      className="fixed bottom-5 left-0 right-0 z-40 mx-auto w-[calc(100%-1rem)] max-w-2xl rounded-3xl border border-neutral-200 bg-white/80 px-3 py-3 shadow-[0_8px_30px_rgba(0,0,0,0.12)] backdrop-blur-md sm:w-[calc(100%-2rem)] sm:px-4 md:hidden"
     >
       <div className="grid grid-cols-5 gap-1 sm:gap-4">
         {tabs.map((tab, index) => {
