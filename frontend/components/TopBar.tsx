@@ -8,6 +8,7 @@ import {
   FiBell,
   FiBellOff,
   FiCheckCircle,
+  FiChevronRight,
   FiCompass,
   FiGrid,
   FiHeart,
@@ -158,7 +159,10 @@ function TopBarContent({
       label: "Profil",
       icon: FiUser,
     },
-  ];
+  ].filter((item) => {
+    if (isAuthenticated) return true;
+    return item.label === "Explorer" || item.label === "Carte";
+  });
 
   const visibleNotifications = useMemo(() => {
     if (!user?.id) return [];
@@ -611,16 +615,6 @@ function TopBarContent({
                 </AnimatePresence>
               </div>
 
-              <Link
-                href={actionHref}
-                className="hidden items-center gap-2 rounded-full border border-blue-100 bg-blue-600 px-4 py-2 text-sm font-semibold tracking-wide text-white shadow-sm sm:flex"
-              >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white">
-                  <FiGrid />
-                </span>
-                {actionLabel}
-              </Link>
-
               <button
                 ref={menuButtonRef}
                 type="button"
@@ -802,6 +796,16 @@ function TopBarContent({
                         </Link>
                       ))}
                     </nav>
+                    {!isAuthenticated ? (
+                      <Link
+                        href="/connexion"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex items-center justify-between gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-800 transition hover:bg-white"
+                      >
+                        <span>Se connecter ou s'inscrire</span>
+                        <FiChevronRight />
+                      </Link>
+                    ) : null}
                     <div className="my-2 h-px bg-neutral-200" />
                     <Link
                       href={actionHref}
@@ -863,6 +867,16 @@ function TopBarContent({
                     </Link>
                   ))}
                 </div>
+                {!isAuthenticated ? (
+                  <Link
+                    href="/connexion"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="mt-3 flex items-center justify-between gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-800 transition hover:bg-white"
+                  >
+                    <span>Se connecter ou s'inscrire</span>
+                    <FiChevronRight />
+                  </Link>
+                ) : null}
                 <div className="my-3 h-px bg-neutral-200" />
                 <Link
                   href={actionHref}
@@ -879,16 +893,16 @@ function TopBarContent({
                     <FiCompass />
                   </span>
                 </Link>
-                <div className="mt-3 flex items-center justify-between">
-                  <Link
-                    href={isAuthenticated ? "/compte/parametres" : "/connexion"}
-                    onClick={() => setIsMenuOpen(false)}
-                    className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50"
-                  >
-                    <FiSettings />
-                    Paramètres
-                  </Link>
-                  {isAuthenticated ? (
+                {isAuthenticated ? (
+                  <div className="mt-3 flex items-center justify-between">
+                    <Link
+                      href="/compte/parametres"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50"
+                    >
+                      <FiSettings />
+                      Paramètres
+                    </Link>
                     <button
                       type="button"
                       onClick={() => {
@@ -901,8 +915,8 @@ function TopBarContent({
                       <FiLogOut />
                       Déconnexion
                     </button>
-                  ) : null}
-                </div>
+                  </div>
+                ) : null}
               </motion.div>
             )}
           </motion.div>

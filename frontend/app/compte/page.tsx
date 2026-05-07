@@ -262,7 +262,7 @@ export default function ComptePage() {
                     </div>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[22rem]">
+                  <div className="hidden gap-3 sm:grid-cols-3 xl:min-w-[22rem] lg:grid">
                     <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4">
                       <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Favoris</p>
                       <p className="mt-3 text-3xl font-semibold tracking-tight text-neutral-950">
