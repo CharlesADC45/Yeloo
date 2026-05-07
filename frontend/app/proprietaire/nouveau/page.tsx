@@ -33,8 +33,6 @@ type OwnerFormState = {
   selfieFile: File | null;
   propertyFile: File | null;
   address: string;
-  bankName: string;
-  accountNumber: string;
   mobileMoney: string;
   accountHolder: string;
 };
@@ -48,7 +46,7 @@ type OwnerDraftPayload = {
 const STEPS: Step[] = [
   { title: "Infos propriétaire", subtitle: "Identité et contact" },
   { title: "Justificatifs", subtitle: "Documents et preuves" },
-  { title: "Paiement", subtitle: "Coordonnées bancaires" },
+  { title: "Paiement", subtitle: "Paiement mobile" },
 ];
 
 const EMPTY_FORM_VALUES: OwnerFormState = {
@@ -60,8 +58,6 @@ const EMPTY_FORM_VALUES: OwnerFormState = {
   selfieFile: null,
   propertyFile: null,
   address: "",
-  bankName: "",
-  accountNumber: "",
   mobileMoney: "",
   accountHolder: "",
 };
@@ -371,7 +367,7 @@ export default function NouveauBienPage() {
     const requiredFieldsByStep: Array<Array<keyof OwnerFormState>> = [
       ["fullName", "phone", "email", "city"],
       ["identityFile", "selfieFile", "propertyFile", "address"],
-      ["bankName", "accountNumber", "mobileMoney", "accountHolder"],
+      ["mobileMoney", "accountHolder"],
     ];
     requiredFieldsByStep[index]?.forEach((field) => {
       const value = formValues[field];
@@ -400,8 +396,6 @@ export default function NouveauBienPage() {
       formData.append("email", formValues.email.trim());
       formData.append("city", formValues.city.trim());
       formData.append("address", formValues.address.trim());
-      formData.append("bank_name", formValues.bankName.trim());
-      formData.append("account_number", formValues.accountNumber.trim());
       formData.append("mobile_money", formValues.mobileMoney.trim());
       formData.append("account_holder", formValues.accountHolder.trim());
       if (formValues.identityFile) {
@@ -735,44 +729,6 @@ export default function NouveauBienPage() {
 
               {stepIndex === 2 && (
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="flex flex-col gap-1 text-xs text-neutral-600">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
-                      Nom de la banque
-                    </span>
-                    <input
-                      value={formValues.bankName}
-                      onChange={(event) => updateField("bankName", event.target.value)}
-                      className={`h-12 rounded-2xl border bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70 ${
-                        errors.bankName ? "border-red-300 ring-red-200" : "border-neutral-200"
-                      }`}
-                      aria-invalid={Boolean(errors.bankName)}
-                    />
-                    {errors.bankName && (
-                      <span className="text-[11px] text-red-500">
-                        {errors.bankName}
-                      </span>
-                    )}
-                  </label>
-                  <label className="flex flex-col gap-1 text-xs text-neutral-600">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
-                      Numéro de compte
-                    </span>
-                    <input
-                      value={formValues.accountNumber}
-                      onChange={(event) => updateField("accountNumber", event.target.value)}
-                      className={`h-12 rounded-2xl border bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70 ${
-                        errors.accountNumber
-                          ? "border-red-300 ring-red-200"
-                          : "border-neutral-200"
-                      }`}
-                      aria-invalid={Boolean(errors.accountNumber)}
-                    />
-                    {errors.accountNumber && (
-                      <span className="text-[11px] text-red-500">
-                        {errors.accountNumber}
-                      </span>
-                    )}
-                  </label>
                   <label className="flex flex-col gap-1 text-xs text-neutral-600">
                     <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
                       Mobile money

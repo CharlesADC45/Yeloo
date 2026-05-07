@@ -80,7 +80,7 @@ const SUBMISSION_STEPS: SubmissionStep[] = [
   { id: "finalization", label: "Soumission du dossier", status: "pending" },
 ];
 
-const PROPERTY_DRAFT_KEY = "yeloo-property-draft-v1";
+const getPropertyDraftKey = (userId?: string | null) => `yeloo-property-draft-v1:${userId || "guest"}`;
 
 const getFreshSubmissionSteps = () =>
   SUBMISSION_STEPS.map((step) => ({ ...step }));
@@ -166,6 +166,7 @@ export default function NouveauBienPage() {
   const cameraTourInputRef = useRef<HTMLInputElement | null>(null);
   const isOwnerRole = user?.role === "proprietaire" || user?.role === "admin";
   const isVerifiedOwner = isOwnerRole && Boolean(user?.is_verified);
+  const propertyDraftKey = getPropertyDraftKey(user?.id);
 
   useEffect(() => {
     if (!isAuthenticated || !user) return;
@@ -179,32 +180,35 @@ export default function NouveauBienPage() {
   }, [isAuthenticated, isOwnerRole, isVerifiedOwner, router, user]);
 
   useEffect(() => {
+    if (!isAuthenticated || !user?.id) return;
     try {
-      const rawDraft = window.localStorage.getItem(PROPERTY_DRAFT_KEY);
+      const rawDraft = window.localStorage.getItem(propertyDraftKey);
       if (rawDraft) {
         const parsed = JSON.parse(rawDraft) as Partial<FormState>;
-        setForm((current) => ({ ...current, ...parsed }));
+        setForm((current) => ({ ...DEFAULT_FORM, ...current, ...parsed }));
         setDraftStatus("restored");
+      } else {
+        setDraftStatus("idle");
       }
     } catch {
       setDraftStatus("unavailable");
     } finally {
       setIsDraftLoaded(true);
     }
-  }, []);
+  }, [isAuthenticated, propertyDraftKey, user?.id]);
 
   useEffect(() => {
-    if (!isDraftLoaded || success) return;
+    if (!isDraftLoaded || success || !isAuthenticated || !user?.id) return;
     const timer = window.setTimeout(() => {
       try {
-        window.localStorage.setItem(PROPERTY_DRAFT_KEY, JSON.stringify(form));
+        window.localStorage.setItem(propertyDraftKey, JSON.stringify(form));
         setDraftStatus("saved");
       } catch {
         setDraftStatus("unavailable");
       }
     }, 650);
     return () => window.clearTimeout(timer);
-  }, [form, isDraftLoaded, success]);
+  }, [form, isAuthenticated, isDraftLoaded, propertyDraftKey, success, user?.id]);
 
   useEffect(() => {
     if (!shouldRedirect) return;
@@ -579,7 +583,7 @@ export default function NouveauBienPage() {
 
       setSubmissionStatus("success");
       setSuccess("Annonce créée. Préparation de votre espace...");
-      window.localStorage.removeItem(PROPERTY_DRAFT_KEY);
+      window.localStorage.removeItem(propertyDraftKey);
       setShouldRedirect(true);
     } catch (err) {
       const message = normalizeFetchError(err, "Publication impossible.");

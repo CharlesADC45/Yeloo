@@ -115,6 +115,10 @@ function buildVisitDateTime(day: string, time: string) {
   return `${day}T${time}`;
 }
 
+function getListingCommentDraftKey(propertyId: string, userId?: string | null) {
+  return `yeloo:listing-comment:${propertyId}:${userId || "guest"}`;
+}
+
 function buildDetailLocationIcon() {
   return `
     <div class="imc-user-location">
@@ -517,10 +521,7 @@ export function LogementClient({ id }: Props) {
   const handleSaveComment = () => {
     if (!resolvedId) return;
     try {
-      window.localStorage.setItem(
-        `yeloo:listing-comment:${resolvedId}`,
-        commentDraft.trim()
-      );
+      window.localStorage.setItem(getListingCommentDraftKey(resolvedId, user?.id), commentDraft.trim());
       setCommentSaved(true);
     } catch {
       setCommentSaved(false);
@@ -572,12 +573,14 @@ export function LogementClient({ id }: Props) {
   useEffect(() => {
     if (!resolvedId || typeof window === "undefined") return;
     try {
-      setCommentDraft(window.localStorage.getItem(`yeloo:listing-comment:${resolvedId}`) || "");
+      setCommentDraft(
+        window.localStorage.getItem(getListingCommentDraftKey(resolvedId, user?.id)) || ""
+      );
       setCommentSaved(false);
     } catch {
       setCommentDraft("");
     }
-  }, [resolvedId]);
+  }, [resolvedId, user?.id]);
 
   useEffect(() => {
     setActiveSlide(0);
@@ -835,22 +838,30 @@ export function LogementClient({ id }: Props) {
                   Faites connaissance avec la personne qui a publié ce logement
                 </h2>
                 <div className="mt-6 grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-                  <div className="border-y border-neutral-200 py-5">
-                    <div className="flex items-center gap-4">
-                      {ownerProfileImageUrl ? (
-                        <img
-                          src={ownerProfileImageUrl}
-                          alt={ownerName}
-                          className="h-16 w-16 rounded-sm object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-16 w-16 items-center justify-center bg-neutral-950 text-2xl font-semibold text-white">
-                          {ownerInitial}
+                    <div className="border-y border-neutral-200 py-5">
+                      <div className="flex items-center gap-4">
+                        <div className="relative shrink-0">
+                          {ownerProfileImageUrl ? (
+                            <img
+                              src={ownerProfileImageUrl}
+                              alt={ownerName}
+                              className="h-16 w-16 rounded-sm object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-16 w-16 items-center justify-center bg-neutral-950 text-2xl font-semibold text-white">
+                              {ownerInitial}
+                            </div>
+                          )}
+                          {property.ownerIsVerified && (
+                            <span className="absolute -bottom-2 -right-2 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 px-2 py-1 text-[10px] font-semibold text-neutral-950 shadow-[0_10px_25px_rgba(245,158,11,0.35)]">
+                              <FiShield className="text-[11px]" />
+                              Premium
+                            </span>
+                          )}
                         </div>
-                      )}
-                      <div>
-                        <p className="text-lg font-semibold text-neutral-950">{ownerName}</p>
-                        <p className="mt-1 text-base font-semibold text-neutral-700">{ownerLabel}</p>
+                        <div>
+                          <p className="text-lg font-semibold text-neutral-950">{ownerName}</p>
+                          <p className="mt-1 text-base font-semibold text-neutral-700">{ownerLabel}</p>
                         <p className="mt-1 text-sm text-neutral-500">
                           Hôte sur Yeloo
                         </p>

@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   FiArrowLeft,
@@ -33,15 +34,42 @@ export default function ParametresPage() {
   const notificationsEnabled = getNotificationPrefs(prefsByUser, user?.id)
     .ownerPostNotifications;
   const devicePermission = getDeviceNotificationPermission();
+  const [notificationMessage, setNotificationMessage] = useState<string | null>(null);
+  const deviceNotificationHint = useMemo(() => {
+    if (devicePermission === "unsupported") {
+      return "Notifications navigateur non supportées sur cet appareil.";
+    }
+    if (devicePermission === "denied") {
+      return "Notifications bloquées par le navigateur. Autorisez-les dans les réglages du navigateur.";
+    }
+    if (devicePermission === "default") {
+      return "Autorisez les notifications navigateur pour recevoir les alertes pendant que l'app est ouverte.";
+    }
+    return "Notifications navigateur autorisées.";
+  }, [devicePermission]);
 
   const toggleNotifications = async () => {
     if (!user?.id) return;
 
     const nextEnabled = !notificationsEnabled;
     if (nextEnabled) {
-      await requestDeviceNotificationPermission();
+      const permission = await requestDeviceNotificationPermission();
+      if (permission !== "granted") {
+        setOwnerPostNotifications(user.id, false);
+        setNotificationMessage(
+          permission === "denied"
+            ? "Les notifications appareil sont bloquées. Autorisez-les dans le navigateur du téléphone."
+            : "Les notifications appareil ne sont pas encore autorisées."
+        );
+        return;
+      }
     }
     setOwnerPostNotifications(user.id, nextEnabled);
+    setNotificationMessage(
+      nextEnabled
+        ? "Notifications appareil activées pour ce compte."
+        : "Notifications appareil désactivées pour ce compte."
+    );
   };
 
   return (
@@ -149,6 +177,15 @@ export default function ParametresPage() {
                         : "à autoriser"}
                 </span>
               </p>
+              <p className="px-1 text-[11px] leading-5 text-neutral-500">{deviceNotificationHint}</p>
+              <p className="px-1 text-[11px] leading-5 text-neutral-500">
+                État actuel : l'application n'envoie que des notifications navigateur locales. Il n'y a pas encore de push distant serveur quand l'app est fermée.
+              </p>
+              {notificationMessage ? (
+                <p className="rounded-2xl border border-blue-100 bg-blue-50 px-3 py-2 text-[11px] leading-5 text-blue-700">
+                  {notificationMessage}
+                </p>
+              ) : null}
 
               {[
                 {

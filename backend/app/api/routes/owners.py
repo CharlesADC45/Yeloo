@@ -20,6 +20,10 @@ def _require_value(value: str, label: str) -> str:
     return cleaned
 
 
+def _optional_value(value: str | None) -> str:
+    return (value or "").strip()
+
+
 def _require_phone(value: str, label: str) -> str:
     normalized = normalize_phone(value)
     if not normalized:
@@ -80,8 +84,8 @@ def upsert_owner_onboarding(
     phone: str = Form(...),
     city: str = Form(...),
     address: str = Form(...),
-    bank_name: str = Form(...),
-    account_number: str = Form(...),
+    bank_name: str = Form(""),
+    account_number: str = Form(""),
     mobile_money: str = Form(...),
     account_holder: str = Form(...),
     identity_selfie: UploadFile | None = File(None),
@@ -132,8 +136,8 @@ def upsert_owner_onboarding(
             user_id=current_user.id,
             city=_require_value(city, "Ville"),
             main_address=_require_value(address, "Adresse"),
-            bank_name=_require_value(bank_name, "Banque"),
-            account_number=_require_value(account_number, "Numero de compte"),
+            bank_name=_optional_value(bank_name),
+            account_number=_optional_value(account_number),
             mobile_money=_require_value(mobile_money, "Mobile money"),
             account_holder=_require_value(account_holder, "Nom du titulaire"),
         )
@@ -141,8 +145,8 @@ def upsert_owner_onboarding(
     else:
         profile.city = _require_value(city, "Ville")
         profile.main_address = _require_value(address, "Adresse")
-        profile.bank_name = _require_value(bank_name, "Banque")
-        profile.account_number = _require_value(account_number, "Numero de compte")
+        profile.bank_name = _optional_value(bank_name)
+        profile.account_number = _optional_value(account_number)
         profile.mobile_money = _require_value(mobile_money, "Mobile money")
         profile.account_holder = _require_value(account_holder, "Nom du titulaire")
 
