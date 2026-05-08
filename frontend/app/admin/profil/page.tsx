@@ -458,7 +458,7 @@ export default function AdminProfilPage() {
                   <input
                     readOnly
                     value="Super admin"
-                    className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-800 outline-none"
+                    className="w-full rounded-2xl bg-neutral-50 px-4 py-3 text-sm text-neutral-800 outline-none ring-1 ring-black/5"
                   />
                 </label>
                 <label className="block">
@@ -469,7 +469,7 @@ export default function AdminProfilPage() {
                   <input
                     readOnly
                     value={user?.is_verified ? "Actif et vérifié" : "Actif"}
-                    className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-800 outline-none"
+                    className="w-full rounded-2xl bg-neutral-50 px-4 py-3 text-sm text-neutral-800 outline-none ring-1 ring-black/5"
                   />
                 </label>
               </div>
@@ -571,7 +571,7 @@ export default function AdminProfilPage() {
                   <Link
                     key={href}
                     href={href}
-                    className="flex items-center justify-between rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-800"
+                    className="flex items-center justify-between rounded-2xl bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-800 ring-1 ring-black/5"
                   >
                     <span className="flex items-center gap-3">
                       <Icon className="text-neutral-500" />

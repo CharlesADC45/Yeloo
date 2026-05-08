@@ -6,7 +6,6 @@ import {
   FiCamera,
   FiChevronRight,
   FiHelpCircle,
-  FiLogOut,
   FiSettings,
   FiUser,
   FiWifiOff,
@@ -27,7 +26,6 @@ const getInitials = (value: string) => {
 
 export default function ComptePage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const logout = useAuthStore((s) => s.logout);
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
   const setUser = useAuthStore((s) => s.setUser);
@@ -39,7 +37,6 @@ export default function ComptePage() {
   const phone = user?.phone || "+2250700000000";
   const isVerified = Boolean(user?.is_verified);
   const isOwnerPending = user?.owner_verification_status === "pending_review";
-  const bottomNav = <BottomNav />;
 
   const resolveAvatarUrl = (value?: string | null) => {
     if (!value) return null;
@@ -99,6 +96,7 @@ export default function ComptePage() {
 
   const displayedAvatar = avatarPreview ?? resolveAvatarUrl(user?.profile_image_url);
   const avatarSrc = avatarLoadFailed ? null : displayedAvatar;
+
   const quickLinks = [
     { label: "Statut de synchro offline", icon: FiWifiOff, href: "/compte/offline" },
     {
@@ -128,7 +126,7 @@ export default function ComptePage() {
             </Link>
           </section>
         </main>
-        {bottomNav}
+        <BottomNav />
       </div>
     );
   }
@@ -151,7 +149,7 @@ export default function ComptePage() {
                     Profil
                   </h1>
                   <p className="mt-2 max-w-xs text-sm leading-6 text-neutral-600">
-                    Gérez votre compte, vos favoris et vos réglages dans un espace plus clair.
+                    Gérez votre compte et vos réglages dans un espace plus clair.
                   </p>
                 </div>
 
@@ -164,15 +162,6 @@ export default function ComptePage() {
                       <FiUser />
                     </span>
                     À propos
-                  </Link>
-                  <Link
-                    href="/favoris"
-                    className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-neutral-600 transition hover:bg-neutral-50 hover:text-neutral-900"
-                  >
-                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-blue-600 shadow-soft">
-                      <FiChevronRight />
-                    </span>
-                    Favoris
                   </Link>
                   {quickLinks.map((item) => (
                     <Link
@@ -192,12 +181,10 @@ export default function ComptePage() {
 
             <div className="space-y-6">
               <header className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft lg:hidden">
-                <div>
-                  <h1 className="text-2xl font-semibold tracking-tight">Profil</h1>
-                  <p className="mt-1 text-sm text-neutral-600">
-                    Gérez vos informations personnelles.
-                  </p>
-                </div>
+                <h1 className="text-2xl font-semibold tracking-tight">Profil</h1>
+                <p className="mt-1 text-sm text-neutral-600">
+                  Gérez vos informations personnelles.
+                </p>
               </header>
 
               <section className="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-soft lg:p-8">
@@ -263,19 +250,19 @@ export default function ComptePage() {
                   </div>
 
                   <div className="hidden gap-3 sm:grid-cols-3 xl:min-w-[22rem] lg:grid">
-                    <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4">
+                    <div className="rounded-2xl bg-neutral-50 px-4 py-4 ring-1 ring-black/5">
                       <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Favoris</p>
                       <p className="mt-3 text-3xl font-semibold tracking-tight text-neutral-950">
                         {favoriteCount}
                       </p>
                     </div>
-                    <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4">
+                    <div className="rounded-2xl bg-neutral-50 px-4 py-4 ring-1 ring-black/5">
                       <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Statut</p>
                       <p className="mt-3 text-lg font-semibold text-neutral-950">
                         {isVerified ? "Vérifié" : "Standard"}
                       </p>
                     </div>
-                    <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4">
+                    <div className="rounded-2xl bg-neutral-50 px-4 py-4 ring-1 ring-black/5">
                       <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Accès</p>
                       <p className="mt-3 text-lg font-semibold text-neutral-950">
                         {user?.role === "admin"
@@ -365,7 +352,7 @@ export default function ComptePage() {
                       ].map((item) => (
                         <div
                           key={item.label}
-                          className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4"
+                          className="rounded-2xl bg-neutral-50 px-4 py-4 ring-1 ring-black/5"
                         >
                           <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">
                             {item.label}
@@ -378,7 +365,7 @@ export default function ComptePage() {
 
                   <section className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft">
                     <h3 className="text-sm font-semibold text-neutral-900">Favoris enregistrés</h3>
-                    <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-5 text-center">
+                    <div className="mt-4 rounded-2xl bg-neutral-50 p-5 text-center ring-1 ring-black/5">
                       <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">
                         Favoris
                       </p>
@@ -394,16 +381,19 @@ export default function ComptePage() {
 
                 <div className="space-y-5">
                   <section className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft">
-                    <h3 className="text-lg font-semibold text-neutral-900">Navigation rapide</h3>
-                    <div className="mt-4 space-y-3">
+                    <h3 className="text-lg font-semibold text-neutral-900">Vos espaces</h3>
+                    <p className="mt-1 text-sm text-neutral-500">
+                      Accédez directement à vos réglages et outils utiles.
+                    </p>
+                    <div className="mt-4 grid gap-3">
                       {quickLinks.map((item) => (
                         <Link
                           key={item.label}
                           href={item.href}
-                          className="flex w-full items-center justify-between rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-700 transition hover:bg-white"
+                          className="flex items-center justify-between rounded-2xl bg-neutral-50 px-4 py-4 text-sm font-medium text-neutral-800 transition hover:bg-neutral-100"
                         >
                           <span className="flex items-center gap-3">
-                            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-blue-600 ring-1 ring-black/5">
                               <item.icon />
                             </span>
                             {item.label}
@@ -414,20 +404,34 @@ export default function ComptePage() {
                     </div>
                   </section>
 
-                  <button
-                    onClick={() => logout()}
-                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-100"
-                  >
-                    <FiLogOut />
-                    Se déconnecter
-                  </button>
+                  <section className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft">
+                    <h3 className="text-lg font-semibold text-neutral-900">Compte</h3>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-2xl bg-neutral-50 px-4 py-4 ring-1 ring-black/5">
+                        <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Statut</p>
+                        <p className="mt-2 text-sm font-semibold text-neutral-900">
+                          {isVerified ? "Vérifié" : "Standard"}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-neutral-50 px-4 py-4 ring-1 ring-black/5">
+                        <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Accès</p>
+                        <p className="mt-2 text-sm font-semibold text-neutral-900">
+                          {user?.role === "admin"
+                            ? "Admin"
+                            : user?.role === "proprietaire"
+                              ? "Bailleur"
+                              : "Locataire"}
+                        </p>
+                      </div>
+                    </div>
+                  </section>
                 </div>
               </div>
             </div>
           </div>
         </motion.section>
       </main>
-      {bottomNav}
+      <BottomNav />
     </div>
   );
 }

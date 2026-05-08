@@ -41,6 +41,15 @@ export default function ConnexionPage() {
     return () => window.clearTimeout(timer);
   }, [shouldRedirect, router]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("logged_out") === "1") {
+      setSuccess("Déconnexion réussie.");
+      setError(null);
+    }
+  }, []);
+
   const handleChange =
     (field: keyof FormState) =>
     (event: React.ChangeEvent<HTMLInputElement>) => {

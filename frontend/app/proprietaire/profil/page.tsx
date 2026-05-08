@@ -522,7 +522,7 @@ export default function ProprietaireProfilPage() {
                       <input
                         readOnly
                         value={field.value}
-                        className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-800 outline-none"
+                        className="w-full rounded-2xl bg-neutral-50 px-4 py-3 text-sm text-neutral-800 outline-none ring-1 ring-black/5"
                       />
                     </label>
                   ))}
@@ -581,7 +581,7 @@ export default function ProprietaireProfilPage() {
                 <div className="mt-4 space-y-3">
                   <Link
                     href="/proprietaire/biens"
-                    className="flex items-center justify-between rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-800"
+                    className="flex items-center justify-between rounded-2xl bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-800 ring-1 ring-black/5"
                   >
                     <span className="flex items-center gap-3">
                       <FiHome className="text-neutral-500" />
@@ -591,7 +591,7 @@ export default function ProprietaireProfilPage() {
                   </Link>
                   <Link
                     href="/proprietaire"
-                    className="flex items-center justify-between rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-800"
+                    className="flex items-center justify-between rounded-2xl bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-800 ring-1 ring-black/5"
                   >
                     <span className="flex items-center gap-3">
                       <FiUser className="text-neutral-500" />

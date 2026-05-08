@@ -804,7 +804,7 @@ function TopBarContent({
                       onClick={() => {
                         setIsMenuOpen(false);
                         logout();
-                        router.push("/");
+                        router.push("/connexion?logged_out=1");
                       }}
                       className="mt-3 flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-neutral-600 hover:bg-neutral-50"
                     >
@@ -843,7 +843,7 @@ function TopBarContent({
                       onClick={() => {
                         setIsMenuOpen(false);
                         logout();
-                        router.push("/");
+                        router.push("/connexion?logged_out=1");
                       }}
                       className="mt-3 flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-neutral-600 hover:bg-neutral-50"
                     >
@@ -899,7 +899,7 @@ function TopBarContent({
                           onClick={() => {
                             setIsMenuOpen(false);
                             logout();
-                            router.push("/");
+                            router.push("/connexion?logged_out=1");
                           }}
                           className="flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-neutral-600 hover:bg-neutral-50"
                         >
@@ -978,7 +978,7 @@ function TopBarContent({
                       onClick={() => {
                         setIsMenuOpen(false);
                         logout();
-                        router.push("/");
+                        router.push("/connexion?logged_out=1");
                       }}
                       className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50"
                     >
