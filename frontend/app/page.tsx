@@ -75,10 +75,44 @@ function HomePageContent() {
       .sort((a, b) => b.count - a.count || a.city.localeCompare(b.city))
       .slice(0, 3);
   }, [visibleProperties]);
+  const activeLocation = filters.city.trim() || "Abidjan";
+  const destinationSuggestions = useMemo(() => {
+    const cities = Array.from(
+      new Set(
+        properties
+          .map((property) => property.city?.trim())
+          .filter((value): value is string => Boolean(value))
+      )
+    ).slice(0, 5);
+
+    const nearbyLabel = activeLocation === "Abidjan" ? "À proximité" : `Près de ${activeLocation}`;
+
+    return [
+      {
+        value: filters.city.trim() || activeLocation,
+        title: nearbyLabel,
+        subtitle: "Découvrez les options proches de vous",
+        tone: "blue" as const,
+      },
+      ...cities.map((city, index) => ({
+        value: city,
+        title: city,
+        subtitle:
+          index === 0
+            ? "Destination populaire sur Yeloo+"
+            : index === 1
+              ? "Logements recommandés en ce moment"
+              : "Explorez les biens disponibles dans cette zone",
+        tone: (index % 3 === 0 ? "amber" : index % 3 === 1 ? "emerald" : "blue") as
+          | "blue"
+          | "amber"
+          | "emerald",
+      })),
+    ].slice(0, 5);
+  }, [activeLocation, filters.city, properties]);
   const showFilterButton =
     isSearchEngaged || Boolean(filters.city.trim()) || isSearchOpen;
   const compactInHeader = isCompactSearch && isDesktop;
-  const activeLocation = filters.city.trim() || "Abidjan";
 
   useEffect(() => {
     const handleResize = () => {
@@ -149,6 +183,12 @@ function HomePageContent() {
 
   const handleSearchSubmit = () => {
     router.push(buildLogementsHref(filters.city));
+  };
+
+  const handleSuggestionSelect = (value: string) => {
+    setFilters((prev) => ({ ...prev, city: value }));
+    setIsSearchEngaged(false);
+    setIsSearchOpen(false);
   };
 
   const renderCarousel = (
@@ -248,6 +288,8 @@ function HomePageContent() {
           compact: compactInHeader,
           value: filters.city,
           showFilterButton,
+          showSuggestions: isSearchEngaged,
+          suggestions: destinationSuggestions,
           onChange: handleQuickSearch,
           onSubmit: handleSearchSubmit,
           onFocus: () => setIsSearchEngaged(true),
@@ -260,6 +302,7 @@ function HomePageContent() {
             setIsSearchEngaged(true);
             setIsSearchOpen(true);
           },
+          onSuggestionSelect: handleSuggestionSelect,
         }}
       />
 

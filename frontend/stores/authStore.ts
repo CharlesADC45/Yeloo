@@ -3,8 +3,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-const LOGOUT_FLASH_KEY = "yeloo-logout-flash";
-
 type AuthUser = {
   id: string;
   email: string;
@@ -38,18 +36,7 @@ export const useAuthStore = create<AuthState>()(
       setUser: (user) => set({ user }),
       setSession: (user, token) =>
         set({ isAuthenticated: true, user, token }),
-      logout: () => {
-        if (typeof window !== "undefined") {
-          const payload = {
-            id: `logout-${Date.now()}`,
-            title: "Deconnexion",
-            message: "Logout...",
-          };
-          window.sessionStorage.setItem(LOGOUT_FLASH_KEY, JSON.stringify(payload));
-          window.dispatchEvent(new CustomEvent("yeloo:logout", { detail: payload }));
-        }
-        set({ isAuthenticated: false, user: null, token: null });
-      },
+      logout: () => set({ isAuthenticated: false, user: null, token: null }),
     }),
     {
       name: "yeloo-auth",

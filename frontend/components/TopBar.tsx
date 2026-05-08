@@ -35,11 +35,19 @@ type HomeSearchConfig = {
   compact: boolean;
   value: string;
   showFilterButton: boolean;
+  showSuggestions?: boolean;
+  suggestions?: Array<{
+    value: string;
+    title: string;
+    subtitle: string;
+    tone?: "blue" | "amber" | "emerald";
+  }>;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onFocus: () => void;
   onBlur: () => void;
   onOpenFilters: () => void;
   onSubmit: () => void;
+  onSuggestionSelect?: (value: string) => void;
 };
 
 type TopBarProps = {
@@ -374,11 +382,10 @@ function TopBarContent({
   const renderHomeSearchBar = () => {
     if (!homeSearch) return null;
 
-    const widthClass = compactHomeSearch
-      ? "max-w-[760px]"
-      : homeSearch.showFilterButton
-        ? "max-w-[980px]"
-        : "max-w-[760px]";
+    const showSuggestionsPanel =
+      Boolean(homeSearch.showSuggestions) && Boolean(homeSearch.suggestions?.length);
+    const expandedSearchWidth = showSuggestionsPanel || homeSearch.showFilterButton ? 800 : 760;
+    const panelMaxWidth = compactHomeSearch ? 760 : expandedSearchWidth;
 
     return (
       <motion.div
@@ -387,18 +394,20 @@ function TopBarContent({
           scale: compactHomeSearch ? 0.91 : 1,
           opacity: 1,
           y: compactHomeSearch ? -8 : 0,
+          maxWidth: panelMaxWidth,
         }}
-        transition={{ type: "spring", stiffness: 130, damping: 24, mass: 0.85 }}
-        className={`pointer-events-none mx-auto w-full ${widthClass}`}
+        transition={{ type: "spring", stiffness: 125, damping: 22, mass: 0.84 }}
+        className="pointer-events-none mx-auto w-full"
         style={{ transformOrigin: "center center" }}
       >
-        <div
-          className={`pointer-events-auto bg-white/94 backdrop-blur-md shadow-[0_18px_45px_rgba(10,23,42,0.10)] ${
-            compactHomeSearch
-              ? "rounded-full border border-neutral-200/70 px-1.5 py-1"
-              : "rounded-[2rem] p-1.5"
-          }`}
-        >
+        <div className="pointer-events-auto relative">
+          <div
+            className={`bg-white/94 backdrop-blur-md shadow-[0_18px_45px_rgba(10,23,42,0.10)] ${
+              compactHomeSearch
+                ? "rounded-full border border-neutral-200/70 px-1.5 py-1"
+                : "rounded-[2rem] p-1.5"
+            }`}
+          >
           <form
             onSubmit={(event) => {
               event.preventDefault();
@@ -465,6 +474,65 @@ function TopBarContent({
               <span>Go</span>
             </button>
           </form>
+          </div>
+
+          <AnimatePresence initial={false}>
+            {showSuggestionsPanel ? (
+              <motion.div
+                key="home-suggestions-panel"
+                initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                animate={{ opacity: 1, y: 10, scale: 1 }}
+                exit={{ opacity: 0, y: -4, scale: 0.985 }}
+                transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-[0_24px_55px_rgba(15,23,42,0.12)]"
+              >
+                <div className="max-h-[24rem] overflow-y-auto px-3 py-3">
+                  <p className="px-3 pb-2 text-sm font-semibold text-neutral-700">
+                    Suggestions de destinations
+                  </p>
+                  <div className="space-y-1">
+                    {homeSearch.suggestions?.map((suggestion) => {
+                      const toneClass =
+                        suggestion.tone === "amber"
+                          ? "bg-amber-50 text-amber-600"
+                          : suggestion.tone === "emerald"
+                            ? "bg-emerald-50 text-emerald-600"
+                            : "bg-blue-50 text-blue-600";
+                      return (
+                        <button
+                          key={`${suggestion.value}-${suggestion.title}`}
+                          type="button"
+                          onMouseDown={(event) => {
+                            event.preventDefault();
+                            homeSearch.onSuggestionSelect?.(suggestion.value);
+                          }}
+                          className="flex w-full items-center gap-4 rounded-[1.4rem] px-3 py-3 text-left transition hover:bg-neutral-50"
+                        >
+                          <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-[1.2rem] ${toneClass}`}>
+                            {suggestion.tone === "amber" ? (
+                              <FiGrid className="h-5 w-5" />
+                            ) : suggestion.tone === "emerald" ? (
+                              <FiMapPin className="h-5 w-5" />
+                            ) : (
+                              <FiCompass className="h-5 w-5" />
+                            )}
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block text-lg font-semibold leading-tight text-neutral-900">
+                              {suggestion.title}
+                            </span>
+                            <span className="mt-1 block text-sm text-neutral-500">
+                              {suggestion.subtitle}
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
         </div>
       </motion.div>
     );
@@ -502,32 +570,33 @@ function TopBarContent({
                 isOwnerRoute ? "lg:pr-8" : ""
               }`}
             >
-              <div className="relative">
-                <button
-                  ref={notificationButtonRef}
-                  type="button"
-                  onClick={() => setIsNotificationsOpen((value) => !value)}
-                  className="relative flex h-12 w-12 items-center justify-center text-blue-700 sm:h-[3.25rem] sm:w-[3.25rem]"
-                  aria-label="Notifications"
-                >
-                  <FiBell className="h-6 w-6" />
-                  {unreadNotifications.length > 0 && (
-                    <span className="absolute -right-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-bold text-white">
-                      {unreadNotifications.length > 9 ? "9+" : unreadNotifications.length}
-                    </span>
-                  )}
-                </button>
+              {isAuthenticated ? (
+                <div className="relative">
+                  <button
+                    ref={notificationButtonRef}
+                    type="button"
+                    onClick={() => setIsNotificationsOpen((value) => !value)}
+                    className="relative flex h-12 w-12 items-center justify-center text-blue-700 sm:h-[3.25rem] sm:w-[3.25rem]"
+                    aria-label="Notifications"
+                  >
+                    <FiBell className="h-6 w-6" />
+                    {unreadNotifications.length > 0 && (
+                      <span className="absolute -right-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-bold text-white">
+                        {unreadNotifications.length > 9 ? "9+" : unreadNotifications.length}
+                      </span>
+                    )}
+                  </button>
 
-                <AnimatePresence>
-                  {isNotificationsOpen && (
-                    <motion.div
-                      ref={notificationPanelRef}
-                      initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 6, scale: 0.98 }}
-                      transition={{ duration: 0.18 }}
-                      className="fixed left-3 right-3 top-20 z-[1100] mx-auto max-w-sm overflow-hidden rounded-[1.5rem] border border-neutral-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.10)] sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+12px)] sm:mx-0 sm:w-[min(24rem,calc(100vw-2rem))]"
-                    >
+                  <AnimatePresence>
+                    {isNotificationsOpen && (
+                      <motion.div
+                        ref={notificationPanelRef}
+                        initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                        transition={{ duration: 0.18 }}
+                        className="fixed left-3 right-3 top-20 z-[1100] mx-auto max-w-sm overflow-hidden rounded-[1.5rem] border border-neutral-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.10)] sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+12px)] sm:mx-0 sm:w-[min(24rem,calc(100vw-2rem))]"
+                      >
                       <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-3">
                         <div>
                           <p className="text-sm font-semibold text-neutral-900">Notifications</p>
@@ -610,10 +679,11 @@ function TopBarContent({
                           </div>
                         )}
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : null}
 
               <button
                 ref={menuButtonRef}

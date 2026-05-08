@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { FiCalendar, FiHome, FiLogOut, FiMessageCircle, FiWifi, FiWifiOff } from "react-icons/fi";
+import { FiCalendar, FiHome, FiMessageCircle, FiWifi, FiWifiOff } from "react-icons/fi";
 import { getApiBaseUrl } from "@/lib/api";
 import { showDeviceNotification } from "@/lib/deviceNotifications";
 import { fetchConversations, type ConversationSummary } from "@/lib/messages";
@@ -14,11 +14,9 @@ import { useFavoritesStore } from "@/stores/favoritesStore";
 import { useNotificationStore } from "@/stores/notificationStore";
 
 type ConnectionState = "online" | "offline" | "unstable";
-const LOGOUT_FLASH_KEY = "yeloo-logout-flash";
-
 type ToastState = {
   id: string;
-  type: ConnectionState | "message" | "visit" | "property" | "logout";
+  type: ConnectionState | "message" | "visit" | "property";
   title: string;
   message: string;
 };
@@ -92,7 +90,6 @@ export function AppStatusNotifier() {
   const toastIcon = useMemo(() => {
     if (!toast) return FiWifi;
     if (toast.type === "offline") return FiWifiOff;
-    if (toast.type === "logout") return FiLogOut;
     if (toast.type === "message") return FiMessageCircle;
     if (toast.type === "visit") return FiCalendar;
     if (toast.type === "property") return FiHome;
@@ -127,43 +124,6 @@ export function AppStatusNotifier() {
     const timeout = window.setTimeout(() => setToast(null), 5200);
     return () => window.clearTimeout(timeout);
   }, [isStatusModuleEnabled, toast]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const showLogoutToast = (payload?: Partial<ToastState>) => {
-      setToast({
-        id: payload?.id || `logout-${Date.now()}`,
-        type: "logout",
-        title: payload?.title || "Deconnexion",
-        message: payload?.message || "Logout...",
-      });
-    };
-
-    const consumeStoredLogout = () => {
-      const raw = window.sessionStorage.getItem(LOGOUT_FLASH_KEY);
-      if (!raw) return;
-      window.sessionStorage.removeItem(LOGOUT_FLASH_KEY);
-      try {
-        const parsed = JSON.parse(raw) as Partial<ToastState>;
-        showLogoutToast(parsed);
-      } catch {
-        showLogoutToast();
-      }
-    };
-
-    const handleLogout = (event: Event) => {
-      const customEvent = event as CustomEvent<Partial<ToastState>>;
-      showLogoutToast(customEvent.detail);
-      window.sessionStorage.removeItem(LOGOUT_FLASH_KEY);
-    };
-
-    consumeStoredLogout();
-    window.addEventListener("yeloo:logout", handleLogout as EventListener);
-    return () => {
-      window.removeEventListener("yeloo:logout", handleLogout as EventListener);
-    };
-  }, []);
 
   useEffect(() => {
     if (!isStatusModuleEnabled) {
