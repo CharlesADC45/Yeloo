@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -45,7 +45,6 @@ export default function InformationsPersonnellesPage() {
     if (value.startsWith("http") || value.startsWith("data:")) return value;
     return `${getApiBaseUrl()}${value}`;
   };
-
 
   useEffect(() => {
     setForm({
@@ -117,15 +116,22 @@ export default function InformationsPersonnellesPage() {
     );
   }
 
+  const details = [
+    { icon: FiUser, label: "Nom complet", value: name },
+    { icon: FiPhone, label: "Téléphone", value: phone },
+    { icon: FiMail, label: "Email", value: email },
+    { icon: FiCalendar, label: "Compte créé le", value: "26 février 2026" },
+  ];
+
   return (
     <div className="min-h-screen bg-transparent">
       <TopBar />
-      <main className="mx-auto max-w-2xl px-4 pb-28 pt-24">
+      <main className="mx-auto max-w-6xl px-4 pb-28 pt-24 lg:px-8">
         <motion.section
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="space-y-5"
+          className="space-y-6"
         >
           <div className="flex items-center justify-between">
             <Link
@@ -139,12 +145,14 @@ export default function InformationsPersonnellesPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-semibold text-neutral-900">
+              <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 lg:text-[2rem]">
                 Informations personnelles
               </h1>
-              <p className="mt-1 text-sm text-neutral-600">Vos donnees de profil</p>
+              <p className="mt-1 text-sm text-neutral-600">
+                Gérez vos données de profil avec une vue plus claire.
+              </p>
             </div>
             <button
               type="button"
@@ -160,108 +168,152 @@ export default function InformationsPersonnellesPage() {
             </button>
           </div>
 
-          <div className="h-2 w-full overflow-hidden rounded-full bg-blue-100">
-            <div className="h-full w-full rounded-full bg-blue-500" />
-          </div>
-
-          <div className="rounded-3xl border border-neutral-200 bg-white p-6 text-center shadow-soft">
-            <div className="flex flex-col items-center">
-              <div className="relative">
-                <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-blue-600 text-xl font-semibold text-white">
-                  {displayedAvatar ? (
-                    <img
-                      src={displayedAvatar}
-                      alt={name}
-                      className="h-full w-full object-cover"
-                      onError={() => setAvatarLoadFailed(true)}
-                    />
-                  ) : (
-                    <span className="text-2xl font-bold leading-none tracking-normal">
-                      {initials}
-                    </span>
-                  )}
-                </div>
-                <span className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full bg-white text-blue-600 shadow-soft">
-                  <FiCamera />
-                </span>
-              </div>
-              <h2 className="mt-4 text-lg font-semibold text-neutral-900">{name}</h2>
-              <div className="mt-3 flex items-center justify-center gap-2 text-xs">
-                <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700">
-                  Actif
-                </span>
-                {isVerified && (
-                  <span className="rounded-full bg-blue-100 px-3 py-1 text-blue-700">
-                    Verifie
-                  </span>
-                )}
-                {isOwnerPending && (
-                  <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-700">
-                    En attente
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft">
-            <h3 className="text-sm font-semibold text-neutral-900">Details du compte</h3>
-            {isEditing ? (
-              <div className="mt-4 space-y-3 text-sm">
-                {[
-                  { key: "fullName", label: "Nom complet", icon: FiUser, value: form.fullName, type: "text" },
-                  { key: "phone", label: "Telephone", icon: FiPhone, value: form.phone, type: "tel" },
-                  { key: "email", label: "Email", icon: FiMail, value: form.email, type: "email" },
-                ].map((item) => (
-                  <label key={item.key} className="block text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                    <span className="flex items-center gap-2">
-                      <item.icon className="text-neutral-400" />
-                      {item.label}
-                    </span>
-                    <input
-                      type={item.type}
-                      value={item.value}
-                      onChange={(event) =>
-                        setForm((current) => ({ ...current, [item.key]: event.target.value }))
-                      }
-                      className="mt-2 h-12 w-full rounded-2xl border border-neutral-200 bg-white px-4 text-sm font-normal normal-case tracking-normal text-neutral-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                    />
-                  </label>
-                ))}
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="w-full rounded-full bg-blue-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
-                >
-                  {isSaving ? "Sauvegarde..." : "Enregistrer"}
-                </button>
-              </div>
-            ) : (
-              <div className="mt-4 space-y-3 text-sm">
-                {[
-                  { icon: FiUser, label: "Nom complet", value: name },
-                  { icon: FiPhone, label: "Telephone", value: phone },
-                  { icon: FiMail, label: "Email", value: email },
-                  { icon: FiCalendar, label: "Compte cree le", value: "26 fevrier 2026" },
-                ].map((item) => (
-                  <div
-                    key={item.label}
-                    className="flex items-center gap-3 rounded-2xl border border-neutral-100 bg-neutral-50 px-4 py-3"
-                  >
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-                      <item.icon />
-                    </span>
-                    <div>
-                      <p className="text-xs text-neutral-500">{item.label}</p>
-                      <p className="font-semibold text-neutral-900">{item.value}</p>
+          <div className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr]">
+            <aside className="space-y-5">
+              <section className="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-soft">
+                <div className="flex flex-col items-center text-center">
+                  <div className="relative">
+                    <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-blue-600 text-xl font-semibold text-white ring-4 ring-blue-100">
+                      {displayedAvatar ? (
+                        <img
+                          src={displayedAvatar}
+                          alt={name}
+                          className="h-full w-full object-cover"
+                          onError={() => setAvatarLoadFailed(true)}
+                        />
+                      ) : (
+                        <span className="text-3xl font-bold leading-none tracking-normal">
+                          {initials}
+                        </span>
+                      )}
                     </div>
+                    <span className="absolute bottom-1 right-1 flex h-9 w-9 items-center justify-center rounded-full bg-white text-blue-600 shadow-soft">
+                      <FiCamera />
+                    </span>
                   </div>
-                ))}
+                  <h2 className="mt-4 text-2xl font-semibold text-neutral-950">{name}</h2>
+                  <p className="mt-1 text-sm text-neutral-500">{email}</p>
+                  <p className="mt-1 text-sm text-neutral-400">{phone}</p>
+                  <div className="mt-4 flex flex-wrap justify-center gap-2 text-xs">
+                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700">
+                      Actif
+                    </span>
+                    {isVerified && (
+                      <span className="rounded-full bg-blue-100 px-3 py-1 text-blue-700">
+                        Verifie
+                      </span>
+                    )}
+                    {isOwnerPending && (
+                      <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-700">
+                        En attente
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </section>
+
+              <section className="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-soft">
+                <h3 className="text-base font-semibold text-neutral-900">Aperçu rapide</h3>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                  {details.map((item) => (
+                    <div
+                      key={item.label}
+                      className="flex items-center gap-3 rounded-2xl bg-neutral-50 px-4 py-3 ring-1 ring-black/5"
+                    >
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-blue-600 ring-1 ring-black/5">
+                        <item.icon />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-xs text-neutral-500">{item.label}</p>
+                        <p className="truncate font-semibold text-neutral-900">{item.value}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </aside>
+
+            <section className="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-soft lg:p-7">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-neutral-900">Détails du compte</h3>
+                  <p className="mt-1 text-sm text-neutral-500">
+                    Modifiez ici vos informations de contact.
+                  </p>
+                </div>
+                <div className="hidden h-2 w-40 overflow-hidden rounded-full bg-blue-100 lg:block">
+                  <div className="h-full w-full rounded-full bg-blue-500" />
+                </div>
               </div>
-            )}
-            {message && <p className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-xs text-emerald-700">{message}</p>}
-            {error && <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-xs text-red-600">{error}</p>}
+
+              {isEditing ? (
+                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                  {[
+                    { key: "fullName", label: "Nom complet", icon: FiUser, value: form.fullName, type: "text" },
+                    { key: "phone", label: "Téléphone", icon: FiPhone, value: form.phone, type: "tel" },
+                    { key: "email", label: "Email", icon: FiMail, value: form.email, type: "email" },
+                  ].map((item) => (
+                    <label
+                      key={item.key}
+                      className={`block text-xs font-semibold uppercase tracking-wide text-neutral-500 ${
+                        item.key === "email" ? "md:col-span-2" : ""
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <item.icon className="text-neutral-400" />
+                        {item.label}
+                      </span>
+                      <input
+                        type={item.type}
+                        value={item.value}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, [item.key]: event.target.value }))
+                        }
+                        className="mt-2 h-12 w-full rounded-2xl border border-neutral-200 bg-white px-4 text-sm font-normal normal-case tracking-normal text-neutral-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </label>
+                  ))}
+                  <div className="md:col-span-2">
+                    <button
+                      type="button"
+                      onClick={handleSave}
+                      disabled={isSaving}
+                      className="w-full rounded-full bg-blue-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-60 md:w-auto md:min-w-[12rem]"
+                    >
+                      {isSaving ? "Sauvegarde..." : "Enregistrer"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                  {details.map((item) => (
+                    <div
+                      key={item.label}
+                      className="flex items-center gap-3 rounded-2xl bg-neutral-50 px-4 py-4 ring-1 ring-black/5"
+                    >
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-blue-600 ring-1 ring-black/5">
+                        <item.icon />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-xs text-neutral-500">{item.label}</p>
+                        <p className="truncate font-semibold text-neutral-900">{item.value}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {message && (
+                <p className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-xs text-emerald-700">
+                  {message}
+                </p>
+              )}
+              {error && (
+                <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-xs text-red-600">
+                  {error}
+                </p>
+              )}
+            </section>
           </div>
         </motion.section>
       </main>
@@ -269,5 +321,3 @@ export default function InformationsPersonnellesPage() {
     </div>
   );
 }
-
-

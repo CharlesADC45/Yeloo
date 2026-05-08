@@ -109,7 +109,7 @@ export default function ParametresPage() {
             <h3 className="text-sm font-semibold text-neutral-900">Sécurité</h3>
             <Link
               href="/compte/changer-mot-de-passe"
-              className="mt-4 flex items-center justify-between rounded-2xl border border-neutral-100 bg-neutral-50 px-4 py-3"
+              className="mt-4 flex items-center justify-between rounded-2xl bg-neutral-50 px-4 py-3 ring-1 ring-black/5"
             >
               <span className="flex items-center gap-3">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
@@ -131,7 +131,7 @@ export default function ParametresPage() {
           <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft">
             <h3 className="text-sm font-semibold text-neutral-900">Préférences</h3>
             <div className="mt-4 space-y-3">
-              <div className="flex items-center justify-between rounded-2xl border border-neutral-100 bg-neutral-50 px-4 py-3">
+              <div className="flex items-center justify-between rounded-2xl bg-neutral-50 px-4 py-3 ring-1 ring-black/5">
                 <span className="flex items-center gap-3">
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
                     <FiBell />
@@ -201,7 +201,7 @@ export default function ParametresPage() {
               ].map((item) => (
                 <div
                   key={item.label}
-                  className="flex items-center justify-between rounded-2xl border border-neutral-100 bg-neutral-50 px-4 py-3"
+                  className="flex items-center justify-between rounded-2xl bg-neutral-50 px-4 py-3 ring-1 ring-black/5"
                 >
                   <span className="flex items-center gap-3">
                     <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">

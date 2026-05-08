@@ -73,7 +73,7 @@ export default function AideSupportPage() {
               ].map((item) => (
                 <div
                   key={item.label}
-                  className="flex items-center justify-between rounded-2xl border border-neutral-100 bg-neutral-50 px-4 py-3"
+                  className="flex items-center justify-between rounded-2xl bg-neutral-50 px-4 py-3 ring-1 ring-black/5"
                 >
                   <span className="flex items-center gap-3">
                     <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
@@ -107,7 +107,7 @@ export default function AideSupportPage() {
               ].map((item) => (
                 <div
                   key={item.label}
-                  className="flex items-center justify-between rounded-2xl border border-neutral-100 bg-neutral-50 px-4 py-3"
+                  className="flex items-center justify-between rounded-2xl bg-neutral-50 px-4 py-3 ring-1 ring-black/5"
                 >
                   <span className="flex items-center gap-3">
                     <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">

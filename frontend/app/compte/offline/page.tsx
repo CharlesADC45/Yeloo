@@ -154,7 +154,7 @@ export default function OfflineStatusPage() {
             ].map((item) => (
               <div
                 key={item.label}
-                className="flex items-center justify-between rounded-3xl border border-neutral-100 bg-white px-5 py-4"
+                className="flex items-center justify-between rounded-3xl bg-neutral-50 px-5 py-4 ring-1 ring-black/5"
               >
                 <div>
                   <p className="text-xs text-neutral-500">{item.label}</p>
@@ -167,7 +167,7 @@ export default function OfflineStatusPage() {
             ))}
           </div>
 
-          <section className="rounded-3xl border border-neutral-100 bg-white p-5">
+          <section className="rounded-3xl bg-neutral-50 p-5 ring-1 ring-black/5">
             <h2 className="text-sm font-semibold text-neutral-950">Carte offline</h2>
             <p className="mt-2 text-sm leading-6 text-neutral-600">
               Les zones de carte que vous ouvrez en ligne sont gardées quelques jours dans le cache.

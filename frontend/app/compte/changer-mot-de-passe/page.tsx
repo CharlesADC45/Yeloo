@@ -103,7 +103,7 @@ export default function ChangerMotDePassePage() {
             ].map((field) => (
               <label key={field.label} className="block text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">
                 {field.label}
-                <div className="mt-2 flex h-12 items-center rounded-2xl border border-neutral-200 bg-white px-4">
+                <div className="mt-2 flex h-12 items-center rounded-2xl bg-neutral-50 px-4 ring-1 ring-black/5">
                   <input
                     type={inputType}
                     value={field.value}

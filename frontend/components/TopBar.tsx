@@ -31,6 +31,8 @@ import {
   useNotificationStore,
 } from "@/stores/notificationStore";
 
+const RECENT_DESTINATIONS_STORAGE_KEY = "yeloo-recent-destinations";
+
 type HomeSearchConfig = {
   compact: boolean;
   value: string;
@@ -148,6 +150,7 @@ function TopBarContent({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [locationLabel, setLocationLabel] = useState("Localisation");
+  const [recentDestinations, setRecentDestinations] = useState<string[]>([]);
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
   const menuPanelRef = useRef<HTMLDivElement | null>(null);
   const notificationPrefs = getNotificationPrefs(prefsByUser, user?.id);
@@ -313,6 +316,20 @@ function TopBarContent({
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(RECENT_DESTINATIONS_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        setRecentDestinations(
+          parsed.filter((item): item is string => typeof item === "string").slice(0, 4)
+        );
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
     if (typeof window === "undefined" || !("geolocation" in navigator)) return;
 
     const formatCoordinate = (value: number) =>
@@ -379,13 +396,27 @@ function TopBarContent({
     );
   }, []);
 
+  const saveRecentDestination = (value: string) => {
+    const normalized = value.trim();
+    if (!normalized || typeof window === "undefined") return;
+
+    setRecentDestinations((current) => {
+      const next = [normalized, ...current.filter((item) => item !== normalized)].slice(0, 4);
+      window.localStorage.setItem(RECENT_DESTINATIONS_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
   const renderHomeSearchBar = () => {
     if (!homeSearch) return null;
 
+    const hasSuggestions = Boolean(homeSearch.suggestions?.length);
+    const hasRecentDestinations = recentDestinations.length > 0;
     const showSuggestionsPanel =
-      Boolean(homeSearch.showSuggestions) && Boolean(homeSearch.suggestions?.length);
-    const expandedSearchWidth = showSuggestionsPanel || homeSearch.showFilterButton ? 800 : 760;
+      Boolean(homeSearch.showSuggestions) && (hasSuggestions || hasRecentDestinations);
+    const expandedSearchWidth = showSuggestionsPanel || homeSearch.showFilterButton ? 850 : 760;
     const panelMaxWidth = compactHomeSearch ? 760 : expandedSearchWidth;
+    const popularSuggestions = homeSearch.suggestions ?? [];
 
     return (
       <motion.div
@@ -411,6 +442,7 @@ function TopBarContent({
           <form
             onSubmit={(event) => {
               event.preventDefault();
+              saveRecentDestination(homeSearch.value);
               homeSearch.onSubmit();
             }}
             className={`flex w-full flex-nowrap items-center gap-2 rounded-full bg-white px-4 text-sm ${
@@ -487,11 +519,48 @@ function TopBarContent({
                 className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-[0_24px_55px_rgba(15,23,42,0.12)]"
               >
                 <div className="max-h-[24rem] overflow-y-auto px-3 py-3">
-                  <p className="px-3 pb-2 text-sm font-semibold text-neutral-700">
-                    Suggestions de destinations
-                  </p>
-                  <div className="space-y-1">
-                    {homeSearch.suggestions?.map((suggestion) => {
+                  <div className="space-y-4">
+                    {recentDestinations.length > 0 ? (
+                      <div>
+                        <p className="px-3 pb-2 text-sm font-semibold text-neutral-700">
+                          Recherches récentes
+                        </p>
+                        <div className="space-y-1">
+                          {recentDestinations.map((value) => (
+                            <button
+                              key={`recent-${value}`}
+                              type="button"
+                              onMouseDown={(event) => {
+                                event.preventDefault();
+                                saveRecentDestination(value);
+                                homeSearch.onSuggestionSelect?.(value);
+                              }}
+                              className="flex w-full items-center gap-4 rounded-[1.4rem] px-3 py-3 text-left transition hover:bg-neutral-50"
+                            >
+                              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[1.2rem] bg-blue-50 text-blue-600">
+                                <FiSearch className="h-5 w-5" />
+                              </span>
+                              <span className="min-w-0">
+                                <span className="block text-base font-semibold leading-tight text-neutral-900">
+                                  {value}
+                                </span>
+                                <span className="mt-1 block text-sm text-neutral-500">
+                                  Votre dernière recherche
+                                </span>
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {popularSuggestions.length > 0 ? (
+                      <div>
+                        <p className="px-3 pb-2 text-sm font-semibold text-neutral-700">
+                          Suggestions de destinations
+                        </p>
+                        <div className="space-y-1">
+                          {popularSuggestions.map((suggestion) => {
                       const toneClass =
                         suggestion.tone === "amber"
                           ? "bg-amber-50 text-amber-600"
@@ -504,6 +573,7 @@ function TopBarContent({
                           type="button"
                           onMouseDown={(event) => {
                             event.preventDefault();
+                            saveRecentDestination(suggestion.value);
                             homeSearch.onSuggestionSelect?.(suggestion.value);
                           }}
                           className="flex w-full items-center gap-4 rounded-[1.4rem] px-3 py-3 text-left transition hover:bg-neutral-50"
@@ -528,6 +598,9 @@ function TopBarContent({
                         </button>
                       );
                     })}
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </motion.div>

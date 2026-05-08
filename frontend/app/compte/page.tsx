@@ -390,7 +390,7 @@ export default function ComptePage() {
                         <Link
                           key={item.label}
                           href={item.href}
-                          className="flex items-center justify-between rounded-2xl bg-neutral-50 px-4 py-4 text-sm font-medium text-neutral-800 transition hover:bg-neutral-100"
+                          className="flex items-center justify-between rounded-2xl bg-neutral-50 px-4 py-4 text-sm font-medium text-neutral-800 ring-1 ring-black/5 transition hover:bg-neutral-100"
                         >
                           <span className="flex items-center gap-3">
                             <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-blue-600 ring-1 ring-black/5">
