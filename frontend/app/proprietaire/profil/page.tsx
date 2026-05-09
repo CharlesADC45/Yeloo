@@ -353,11 +353,11 @@ export default function ProprietaireProfilPage() {
             <OwnerProfileSkeleton />
           ) : (
             <>
-          <div className="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-soft">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-              <div className="flex items-start gap-5">
-                <div className="relative">
-                  <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-neutral-300 text-3xl font-semibold text-white">
+          <div className="rounded-[2rem] border border-neutral-200 bg-white p-5 shadow-soft lg:p-6">
+            <div className="flex flex-col gap-6">
+              <div className="flex items-start gap-4 lg:gap-5">
+                <div className="relative shrink-0">
+                  <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-[1.8rem] bg-neutral-300 text-3xl font-semibold text-white ring-2 ring-blue-100 lg:h-28 lg:w-28 lg:rounded-full lg:ring-0">
                     {displayedAvatar ? (
                       <img
                         src={displayedAvatar}
@@ -377,7 +377,7 @@ export default function ProprietaireProfilPage() {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="absolute bottom-1 right-1 flex h-9 w-9 items-center justify-center rounded-full bg-white text-blue-600 shadow-soft"
+                    className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-white text-blue-600 shadow-soft lg:bottom-1 lg:right-1 lg:h-9 lg:w-9"
                     aria-label="Changer la photo"
                   >
                     <FiCamera />
@@ -390,12 +390,19 @@ export default function ProprietaireProfilPage() {
                     onChange={handleAvatarChange}
                   />
                 </div>
-                <div className="space-y-2 pt-1">
-                  <h1 className="text-2xl font-semibold tracking-tight text-neutral-950">
-                    [User] {fullName}
+                <div className="min-w-0 flex-1 space-y-2 pt-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
+                    Profil bailleur
+                  </p>
+                  <h1 className="break-words text-[1.6rem] font-semibold leading-tight tracking-tight text-neutral-950 lg:text-2xl">
+                    {fullName}
                   </h1>
-                  <p className="text-sm text-neutral-600">Email: {email}</p>
-                  <div className="flex flex-wrap gap-2 pt-2 text-xs">
+                  <p className="text-sm font-medium text-neutral-500">{phone}</p>
+                  <p className="break-all text-sm leading-6 text-neutral-600">{email}</p>
+                  <div className="flex flex-wrap gap-2 pt-1 text-xs">
+                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700">
+                      Actif
+                    </span>
                     <span className="rounded-full bg-blue-100 px-3 py-1 font-medium text-blue-700">
                       Propriétaire vérifié
                     </span>
@@ -407,7 +414,7 @@ export default function ProprietaireProfilPage() {
               </div>
             </div>
 
-            <div className="mt-6 flex gap-6 border-b border-neutral-200 text-sm">
+            <div className="mt-4 flex gap-6 border-b border-neutral-200 text-sm">
               <button
                 type="button"
                 onClick={() => setActiveTab("account")}

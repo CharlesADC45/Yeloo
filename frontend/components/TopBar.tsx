@@ -414,7 +414,7 @@ function TopBarContent({
     const hasRecentDestinations = recentDestinations.length > 0;
     const showSuggestionsPanel =
       Boolean(homeSearch.showSuggestions) && (hasSuggestions || hasRecentDestinations);
-    const expandedSearchWidth = showSuggestionsPanel || homeSearch.showFilterButton ? 850 : 760;
+    const expandedSearchWidth = showSuggestionsPanel || homeSearch.showFilterButton ? 800 : 760;
     const panelMaxWidth = compactHomeSearch ? 760 : expandedSearchWidth;
     const popularSuggestions = homeSearch.suggestions ?? [];
 
@@ -926,19 +926,21 @@ function TopBarContent({
                   </div>
                 ) : (
                   <div className="flex flex-1 flex-col gap-3">
-                    <nav className="flex flex-col gap-2">
-                      {publicMenuItems.map(({ href, label, icon: Icon }) => (
-                        <Link
-                          key={label}
-                          href={href}
-                          onClick={() => setIsMenuOpen(false)}
-                          className="flex items-center gap-3 rounded-2xl px-4 py-3 text-neutral-700 transition hover:bg-neutral-50"
-                        >
-                          <Icon />
-                          {label}
-                        </Link>
-                      ))}
-                    </nav>
+                    {!isAuthenticated ? (
+                      <nav className="flex flex-col gap-2">
+                        {publicMenuItems.map(({ href, label, icon: Icon }) => (
+                          <Link
+                            key={label}
+                            href={href}
+                            onClick={() => setIsMenuOpen(false)}
+                            className="flex items-center gap-3 rounded-2xl px-4 py-3 text-neutral-700 transition hover:bg-neutral-50"
+                          >
+                            <Icon />
+                            {label}
+                          </Link>
+                        ))}
+                      </nav>
+                    ) : null}
                     {!isAuthenticated ? (
                       <Link
                         href="/connexion"
@@ -961,9 +963,11 @@ function TopBarContent({
                       </span>
                       <FiCompass />
                     </Link>
-                    <p className="px-1 text-xs leading-5 text-neutral-500">
-                      Publiez vos logements et gérez vos demandes depuis votre espace bailleur.
-                    </p>
+                    {!isAuthenticated ? (
+                      <p className="px-1 text-xs leading-5 text-neutral-500">
+                        Publiez vos logements et gérez vos demandes depuis votre espace bailleur.
+                      </p>
+                    ) : null}
                     {isAuthenticated ? (
                       <>
                         <div className="my-2 h-px bg-neutral-200" />

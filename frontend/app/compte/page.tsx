@@ -189,7 +189,7 @@ export default function ComptePage() {
 
               <section className="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-soft lg:p-8">
                 <div className="flex flex-col gap-8 xl:flex-row xl:items-center xl:justify-between">
-                  <div className="hidden flex-col items-center text-center lg:flex lg:items-start lg:text-left xl:flex-row xl:items-center xl:gap-6">
+                  <div className="hidden min-w-0 flex-col items-center text-center lg:flex lg:items-start lg:text-left xl:flex-row xl:items-center xl:gap-6">
                     <div className="relative shrink-0">
                       <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-blue-600 text-xl font-semibold text-white ring-4 ring-blue-100">
                         {avatarSrc ? (
@@ -224,12 +224,12 @@ export default function ComptePage() {
                       />
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-sm font-medium text-neutral-500">Compte personnel</p>
-                      <h2 className="mt-1 text-3xl font-semibold tracking-tight text-neutral-950">
+                      <h2 className="mt-1 break-words text-3xl font-semibold tracking-tight text-neutral-950">
                         {name}
                       </h2>
-                      <p className="mt-2 text-sm text-neutral-600">{email}</p>
+                      <p className="mt-2 break-all text-sm text-neutral-600">{email}</p>
                       <p className="mt-1 text-sm text-neutral-500">{phone}</p>
                       <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
                         <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700">
@@ -278,10 +278,10 @@ export default function ComptePage() {
 
               <div className="grid gap-6 xl:grid-cols-[1.1fr_0.95fr]">
                 <div className="space-y-5">
-                  <section className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft lg:hidden">
-                    <div className="flex flex-col items-center text-center">
-                      <div className="relative">
-                        <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-blue-600 text-xl font-semibold text-white ring-4 ring-blue-100">
+                  <section className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-soft lg:hidden">
+                    <div className="flex items-start gap-4">
+                      <div className="relative shrink-0">
+                        <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-[1.75rem] bg-blue-600 text-xl font-semibold text-white ring-2 ring-blue-100">
                           {avatarSrc ? (
                             <img
                               src={avatarSrc}
@@ -301,7 +301,7 @@ export default function ComptePage() {
                         <button
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
-                          className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-white text-blue-600 shadow-soft"
+                          className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-white text-blue-600 shadow-soft"
                         >
                           <FiCamera />
                         </button>
@@ -313,23 +313,30 @@ export default function ComptePage() {
                           onChange={handleAvatarChange}
                         />
                       </div>
-                      <h2 className="mt-4 text-lg font-semibold text-neutral-900">{name}</h2>
-                      <p className="text-sm text-neutral-500">{phone}</p>
-                      <p className="text-xs text-neutral-400">{email}</p>
-                      <div className="mt-4 flex items-center gap-2 text-xs">
-                        <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700">
-                          Actif
-                        </span>
-                        {isVerified && (
-                          <span className="rounded-full bg-blue-100 px-3 py-1 text-blue-700">
-                            Vérifié
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
+                          Compte personnel
+                        </p>
+                        <h2 className="mt-1 break-words text-[1.45rem] font-semibold leading-tight text-neutral-950">
+                          {name}
+                        </h2>
+                        <p className="mt-2 text-sm font-medium text-neutral-600">{phone}</p>
+                        <p className="mt-1 break-all text-xs leading-5 text-neutral-400">{email}</p>
+                        <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                          <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700">
+                            Actif
                           </span>
-                        )}
-                        {isOwnerPending && (
-                          <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-700">
-                            En attente
-                          </span>
-                        )}
+                          {isVerified && (
+                            <span className="rounded-full bg-blue-100 px-3 py-1 text-blue-700">
+                              Vérifié
+                            </span>
+                          )}
+                          {isOwnerPending && (
+                            <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-700">
+                              En attente
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </section>
@@ -357,7 +364,9 @@ export default function ComptePage() {
                           <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">
                             {item.label}
                           </p>
-                          <p className="mt-2 text-sm font-medium text-neutral-900">{item.value}</p>
+                          <p className="mt-2 break-words text-sm font-medium text-neutral-900">
+                            {item.value}
+                          </p>
                         </div>
                       ))}
                     </div>
