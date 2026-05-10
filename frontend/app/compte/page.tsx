@@ -148,9 +148,9 @@ export default function ComptePage() {
                   <h1 className="text-[2.25rem] font-semibold tracking-tight text-neutral-950">
                     Profil
                   </h1>
-                  <p className="mt-2 max-w-xs text-sm leading-6 text-neutral-600">
+                  {/* <p className="mt-2 max-w-xs text-sm leading-6 text-neutral-600">
                     Gérez votre compte et vos réglages dans un espace plus clair.
-                  </p>
+                  </p> */}
                 </div>
 
                 <nav className="space-y-2">
