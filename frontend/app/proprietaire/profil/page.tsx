@@ -537,7 +537,7 @@ export default function ProprietaireProfilPage() {
               </section>
             </div>
 
-            <aside className="space-y-6">
+            <aside className="hidden space-y-6 xl:block">
               <section className="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-soft">
                 <div className="flex items-center justify-between gap-3">
                   <div>
