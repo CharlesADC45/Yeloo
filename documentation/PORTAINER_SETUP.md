@@ -1,8 +1,8 @@
-# Setup Portainer pour YELOO
+# Setup Portainer pour YELOO+
 
 ## Réalité importante
 
-Aujourd'hui, YELOO est déployé comme ceci :
+Aujourd'hui, YELOO+ est déployé comme ceci :
 
 - `frontend` sur **Vercel**
 - `backend` sur **Render**
@@ -191,9 +191,9 @@ Si ton but est **observer vite**, fais ceci :
 2. lance `docker compose up -d db minio backend frontend portainer`
 3. lance `docker compose -f docker-compose.observability.yml up -d`
 4. ouvre :
-   - `https://localhost:9443`
-   - `http://localhost:9090`
-   - `http://localhost:3001`
+  - `https://localhost:9443`
+  - `http://localhost:9090`
+  - `http://localhost:3001`
 
 Si ton but est **observer la vraie prod**, alors prochain move :
 
@@ -204,7 +204,7 @@ Si ton but est **observer la vraie prod**, alors prochain move :
 
 ## Liens utiles
 
-- Portainer CE Docker install: https://docs.portainer.io/start/install-ce/server/docker
-- Add Docker environment: https://docs.portainer.io/admin/environments/add/docker
-- Portainer Agent note: https://docs.portainer.io/admin/environments/add/docker/agent
+- Portainer CE Docker install: [https://docs.portainer.io/start/install-ce/server/docker](https://docs.portainer.io/start/install-ce/server/docker)
+- Add Docker environment: [https://docs.portainer.io/admin/environments/add/docker](https://docs.portainer.io/admin/environments/add/docker)
+- Portainer Agent note: [https://docs.portainer.io/admin/environments/add/docker/agent](https://docs.portainer.io/admin/environments/add/docker/agent)
 

@@ -187,7 +187,7 @@ export default function ComptePage() {
                 </p>
               </header>
 
-              <section className="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-soft lg:p-8">
+              <section className="hidden rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-soft lg:block lg:p-8">
                 <div className="flex flex-col gap-8 xl:flex-row xl:items-center xl:justify-between">
                   <div className="hidden min-w-0 flex-col items-center text-center lg:flex lg:items-start lg:text-left xl:flex-row xl:items-center xl:gap-6">
                     <div className="relative shrink-0">
@@ -413,27 +413,6 @@ export default function ComptePage() {
                     </div>
                   </section>
 
-                  <section className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft">
-                    <h3 className="text-lg font-semibold text-neutral-900">Compte</h3>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      <div className="rounded-2xl bg-neutral-50 px-4 py-4 ring-1 ring-black/5">
-                        <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Statut</p>
-                        <p className="mt-2 text-sm font-semibold text-neutral-900">
-                          {isVerified ? "Vérifié" : "Standard"}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl bg-neutral-50 px-4 py-4 ring-1 ring-black/5">
-                        <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Accès</p>
-                        <p className="mt-2 text-sm font-semibold text-neutral-900">
-                          {user?.role === "admin"
-                            ? "Admin"
-                            : user?.role === "proprietaire"
-                              ? "Bailleur"
-                              : "Locataire"}
-                        </p>
-                      </div>
-                    </div>
-                  </section>
                 </div>
               </div>
             </div>

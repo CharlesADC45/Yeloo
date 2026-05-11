@@ -11,7 +11,6 @@ import {
   FiChevronLeft,
   FiChevronRight,
   FiClock,
-  FiExternalLink,
   FiFileText,
   FiHeart,
   FiHome,
@@ -268,55 +267,6 @@ function PropertyMap({ latitude, longitude, title, isApproximate = false }: MapP
     </div>
   );
   }
-
-function PropertyStreetView({ latitude, longitude, title, isApproximate = false }: MapProps) {
-  const hasCoordinates = typeof latitude === "number" && typeof longitude === "number";
-  const streetViewUrl = hasCoordinates
-    ? `https://maps.google.com/maps?q=&layer=c&cbll=${latitude},${longitude}&cbp=11,0,0,0,0&output=svembed`
-    : "";
-  const mapsUrl = hasCoordinates
-    ? `https://www.google.com/maps?q=${latitude},${longitude}`
-    : "https://www.google.com/maps/search/Abidjan";
-
-  return (
-    <div className="overflow-hidden rounded-[1.6rem] border border-neutral-200 bg-white">
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-        <div>
-          <h3 className="text-sm font-semibold text-neutral-950">Street View</h3>
-          <p className="mt-0.5 text-xs text-neutral-500">
-            {hasCoordinates && !isApproximate
-              ? "Aperçu de la zone autour du bien."
-              : "Aperçu approximatif de la zone, selon les informations disponibles."}
-          </p>
-        </div>
-        <a
-          href={mapsUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-2 rounded-full bg-neutral-950 px-3 py-2 text-xs font-semibold text-white"
-        >
-          Ouvrir Maps
-          <FiExternalLink />
-        </a>
-      </div>
-        <div className="relative h-72 min-h-[18rem] bg-neutral-100 sm:h-80">
-        {hasCoordinates ? (
-          <iframe
-            title={`Street View ${title}`}
-            src={streetViewUrl}
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            className="h-full w-full border-0"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center px-6 text-center text-sm text-neutral-500">
-            Street View sera disponible quand les coordonnées exactes seront ajoutées.
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export function LogementClient({ id }: Props) {
   const params = useParams<{ id?: string | string[] }>();
@@ -965,23 +915,66 @@ export function LogementClient({ id }: Props) {
                       Position approximative: les coordonnées exactes n'ont pas encore été ajoutées par le propriétaire.
                     </p>
                   )}
-                  <PropertyStreetView
-                    latitude={mapLatitude}
-                    longitude={mapLongitude}
-                    title={property.title}
-                    isApproximate={!hasExactLocation}
-                  />
                 </div>
               </section>
 
-               <section data-detail-reveal="true" className="grid gap-6 lg:grid-cols-2">
-                  <div
-                    className="border-t border-neutral-200 bg-white py-5"
-                  >
-                  <h2 className="text-lg font-semibold text-neutral-900">Visite 360°</h2>
-                  <div className="relative mt-3 h-52 overflow-hidden bg-neutral-100">
+               <section data-detail-reveal="true" className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_0.95fr]">
+                <div className="border-t border-neutral-200 bg-white py-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <h2 className="text-lg font-semibold text-neutral-900">Visite 360 premium</h2>
+                      <p className="mt-1 text-sm text-neutral-500">
+                        Explorez le logement avec un rendu immersif et des points d'interet.
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-700">
+                      360 immersif
+                    </span>
+                  </div>
+                  <div className="relative mt-4 h-[28rem] overflow-hidden rounded-[1.75rem] bg-neutral-100 sm:h-[34rem]">
                     {tourUrl && isTourImage ? (
-                      <PannellumViewer imageUrl={tourUrl} className="h-full w-full" />
+                      <PannellumViewer
+                        imageUrl={tourUrl}
+                        fallbackImageUrl={tourImage}
+                        title={property.title}
+                        location={locationLabel || property.city}
+                        priceLabel={`${property.price.toLocaleString("fr-FR")} FCFA / ${pricePeriodLabel}`}
+                        className="absolute inset-0"
+                        points={[
+                          {
+                            id: "main-room",
+                            title: "Piece principale",
+                            description: `Vue d'ensemble du ${property.propertyType || "logement"} pour juger les volumes.`,
+                            position: { yaw: -0.2, pitch: 0.02 },
+                          },
+                          {
+                            id: "sleeping-room",
+                            title: (property.rooms ?? 0) > 1 ? "Chambres" : "Espace nuit",
+                            description:
+                              (property.rooms ?? 0) > 1
+                                ? `${property.rooms} piece(s) a visualiser depuis la visite.`
+                                : "Reperez la zone nuit et l'organisation du logement.",
+                            position: { yaw: 1.05, pitch: -0.03 },
+                          },
+                          {
+                            id: "water-room",
+                            title: property.bathrooms ? "Salle d'eau" : "Services",
+                            description:
+                              property.bathrooms
+                                ? `${property.bathrooms} salle(s) d'eau mentionnee(s) dans l'annonce.`
+                                : "Point d'interet pour les zones techniques du logement.",
+                            position: { yaw: 2.12, pitch: 0.04 },
+                          },
+                          {
+                            id: "open-view",
+                            title: "Ouverture",
+                            description: hasExactLocation
+                              ? "Reperez la lumiere naturelle et l'ouverture exterieure."
+                              : "Visualisez la respiration du logement et ses ouvertures.",
+                            position: { yaw: -2.18, pitch: -0.05 },
+                          },
+                        ]}
+                      />
                     ) : (
                       <>
                         {tourImage && (
@@ -996,18 +989,19 @@ export function LogementClient({ id }: Props) {
                         )}
                         <div className="absolute inset-0 flex items-center justify-center">
                           <span className="rounded-full bg-white/90 px-4 py-2 text-xs font-semibold text-neutral-700 shadow-soft">
-                            {tourUrl ? "Visite 360 disponible" : "Photo 360 bientôt disponible"}
+                            {tourUrl ? "Visite immersive disponible" : "Photo 360 bientot disponible"}
                           </span>
                         </div>
                       </>
                     )}
                   </div>
                 </div>
-                  <div
-                    className="border-t border-neutral-200 bg-white py-5"
-                  >
-                  <h2 className="text-lg font-semibold text-neutral-900">Vidéo</h2>
-                  <div className="relative mt-3 h-52 overflow-hidden bg-neutral-100">
+                <div className="border-t border-neutral-200 bg-white py-5">
+                  <h2 className="text-lg font-semibold text-neutral-900">Video</h2>
+                  <p className="mt-1 text-sm text-neutral-500">
+                    Un media court pour completer la visite 360 quand il est disponible.
+                  </p>
+                  <div className="relative mt-4 h-52 overflow-hidden rounded-[1.4rem] bg-neutral-100 sm:h-60">
                     {videoUrl ? (
                       <video
                         controls
@@ -1022,7 +1016,7 @@ export function LogementClient({ id }: Props) {
                         {videoImage && (
                           <img
                             src={videoImage}
-                            alt={`Vidéo ${property.title}`}
+                            alt={`Video ${property.title}`}
                             onError={(event) => {
                               event.currentTarget.src = "/property-fallback.svg";
                             }}
@@ -1032,7 +1026,7 @@ export function LogementClient({ id }: Props) {
                         <div className="absolute inset-0 flex items-center justify-center">
                           <span className="flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-xs font-semibold text-neutral-700 shadow-soft">
                             <FiPlay />
-                            Vidéo de présentation bientôt disponible
+                            Video de presentation bientot disponible
                           </span>
                         </div>
                       </>

@@ -170,7 +170,7 @@ export default function InformationsPersonnellesPage() {
 
           <div className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr]">
             <aside className="space-y-5">
-              <section className="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-soft">
+              <section className="hidden rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-soft xl:block">
                 <div className="flex flex-col items-center text-center">
                   <div className="relative">
                     <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-blue-600 text-xl font-semibold text-white ring-4 ring-blue-100">

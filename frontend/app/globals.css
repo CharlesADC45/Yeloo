@@ -1,4 +1,6 @@
-﻿@tailwind base;
+@import "@photo-sphere-viewer/core/index.css";
+@import "@photo-sphere-viewer/markers-plugin/index.css";
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -522,3 +524,45 @@ button {
 
 
 
+
+
+.yeloo-tour-marker {
+  display: inline-flex;
+  height: 18px;
+  width: 18px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #2f57ff, #0ea5e9);
+  box-shadow: 0 10px 22px rgba(47, 87, 255, 0.28);
+}
+
+.yeloo-tour-marker::after {
+  content: "";
+  height: 7px;
+  width: 7px;
+  border-radius: 9999px;
+  background: white;
+}
+
+.yeloo-tour-shell .psv-container {
+  background: radial-gradient(circle at top, rgba(14, 165, 233, 0.12), rgba(15, 23, 42, 0.94));
+  border-radius: 1.75rem;
+}
+
+.yeloo-tour-shell .psv-loader-container,
+.yeloo-tour-shell .psv-loader {
+  color: white;
+}
+
+.yeloo-tour-shell .psv-tooltip {
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(15, 23, 42, 0.92);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.28);
+}
+
+.yeloo-tour-shell .psv-tooltip-content {
+  padding: 0.85rem 0.95rem;
+  color: white;
+}
