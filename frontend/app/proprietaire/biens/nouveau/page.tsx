@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { FiCamera, FiFilePlus, FiImage, FiUploadCloud, FiVideo } from "react-icons/fi";
+import { FiCamera, FiCheck, FiFilePlus, FiImage, FiLoader, FiUploadCloud, FiVideo } from "react-icons/fi";
 import { CelebrationModal } from "@/components/CelebrationModal";
 import { OwnerSidebar } from "@/components/OwnerSidebar";
 import { TopBar } from "@/components/TopBar";
@@ -122,6 +122,50 @@ const normalizeFetchError = (error: unknown, fallback: string) => {
   }
   return normalized;
 };
+
+type UploadIndicatorState = "idle" | "loading" | "ready" | "error";
+
+function UploadStatusBadge({
+  state,
+  idleLabel,
+  readyLabel = "Pr?t",
+}: {
+  state: UploadIndicatorState;
+  idleLabel: string;
+  readyLabel?: string;
+}) {
+  if (state === "loading") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold text-blue-700">
+        <FiLoader className="h-3 w-3 animate-spin" />
+        Chargement...
+      </span>
+    );
+  }
+
+  if (state === "ready") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700">
+        <FiCheck className="h-3 w-3" />
+        {readyLabel}
+      </span>
+    );
+  }
+
+  if (state === "error") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-3 py-1 text-[11px] font-semibold text-red-700">
+        ? Erreur
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-3 py-1 text-[11px] text-neutral-500">
+      {idleLabel}
+    </span>
+  );
+}
 
 export default function NouveauBienPage() {
   const [stepIndex, setStepIndex] = useState(0);
@@ -634,6 +678,27 @@ export default function NouveauBienPage() {
   const formattedPrice = form.price
     ? new Intl.NumberFormat("fr-FR").format(Number(form.price))
     : "-";
+  const photoUploadState: UploadIndicatorState = errors.photos
+    ? "error"
+    : photoFiles.length === 0
+      ? "idle"
+      : photoPreviews.length < photoFiles.length
+        ? "loading"
+        : "ready";
+  const videoUploadState: UploadIndicatorState = errors.video
+    ? "error"
+    : !videoFile
+      ? "idle"
+      : !videoDisplayUrl
+        ? "loading"
+        : "ready";
+  const tourUploadState: UploadIndicatorState = errors.tour
+    ? "error"
+    : !tourFile
+      ? "idle"
+      : !tourDisplayUrl
+        ? "loading"
+        : "ready";
 
   if (isAuthenticated && user && (!isOwnerRole || !isVerifiedOwner)) {
     return null;
@@ -1088,9 +1153,11 @@ export default function NouveauBienPage() {
                             : "Aucune photo sélectionnée"}
                         </p>
                       </div>
-                      <span className="rounded-full bg-neutral-100 px-3 py-1 text-[11px] text-neutral-500">
-                        Obligatoire
-                      </span>
+                      <UploadStatusBadge
+                        state={photoUploadState}
+                        idleLabel="Obligatoire"
+                        readyLabel="Photos pr?tes"
+                      />
                     </div>
                     {photoFiles.length > 0 && (
                       <div className="mt-4 flex flex-wrap gap-2">
@@ -1135,9 +1202,11 @@ export default function NouveauBienPage() {
                             <p className="text-xs text-neutral-500">MP4, WEBM ou MOV · 150MB max</p>
                           </div>
                         </div>
-                        <span className="rounded-full bg-neutral-100 px-3 py-1 text-[11px] text-neutral-500">
-                          {videoFile ? "1 fichier" : "Optionnel"}
-                        </span>
+                        <UploadStatusBadge
+                          state={videoUploadState}
+                          idleLabel="Optionnel"
+                          readyLabel="Vid?o pr?te"
+                        />
                       </div>
                       {videoFile && (
                         <p className="mt-3 text-[11px] text-neutral-600">{videoFile.name}</p>
@@ -1217,9 +1286,11 @@ export default function NouveauBienPage() {
                             <p className="text-xs text-neutral-500">Image panoramique ou vidéo courte</p>
                           </div>
                         </div>
-                        <span className="rounded-full bg-neutral-100 px-3 py-1 text-[11px] text-neutral-500">
-                          {tourFile ? "1 fichier" : "Optionnel"}
-                        </span>
+                        <UploadStatusBadge
+                          state={tourUploadState}
+                          idleLabel="Optionnel"
+                          readyLabel="Visite pr?te"
+                        />
                       </div>
                       {tourFile && (
                         <p className="mt-3 text-[11px] text-neutral-600">{tourFile.name}</p>
@@ -1412,7 +1483,7 @@ export default function NouveauBienPage() {
           </div>
         </motion.section>
       </main>
-      {(submissionStatus === "running" || submissionStatus === "error") && (
+      {(submissionStatus === "running" || submissionStatus === "error" || submissionStatus === "success") && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/45 px-5 backdrop-blur-sm">
           <motion.div
             initial={{ opacity: 0, scale: 0.94, y: 18 }}
@@ -1466,7 +1537,7 @@ export default function NouveauBienPage() {
                             : "bg-white text-neutral-300"
                     }`}
                   >
-                    {step.status === "success" && "?"}
+                    {step.status === "success" && <FiCheck className="h-3 w-3" />}
                     {step.status === "error" && "×"}
                     {step.status === "running" && (
                       <span className="h-3 w-3 animate-spin rounded-full border border-blue-200 border-t-blue-700" />
