@@ -128,42 +128,51 @@ type UploadIndicatorState = "idle" | "loading" | "ready" | "error";
 function UploadStatusBadge({
   state,
   idleLabel,
-  readyLabel = "Pr?t",
+  readyLabel = "Pr?te",
+  label,
 }: {
   state: UploadIndicatorState;
   idleLabel: string;
   readyLabel?: string;
+  label: string;
 }) {
-  if (state === "loading") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold text-blue-700">
-        <FiLoader className="h-3 w-3 animate-spin" />
-        Chargement...
-      </span>
-    );
-  }
+  const tone =
+    state === "ready"
+      ? "bg-emerald-100 text-emerald-700"
+      : state === "error"
+        ? "bg-red-100 text-red-700"
+        : state === "loading"
+          ? "bg-blue-100 text-blue-700"
+          : "bg-white text-neutral-300";
 
-  if (state === "ready") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700">
-        <FiCheck className="h-3 w-3" />
-        {readyLabel}
-      </span>
-    );
-  }
-
-  if (state === "error") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-3 py-1 text-[11px] font-semibold text-red-700">
-        ? Erreur
-      </span>
-    );
-  }
+  const statusText =
+    state === "ready"
+      ? readyLabel
+      : state === "error"
+        ? "Erreur"
+        : state === "loading"
+          ? "Chargement..."
+          : idleLabel;
 
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-3 py-1 text-[11px] text-neutral-500">
-      {idleLabel}
-    </span>
+    <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-neutral-50 px-4 py-3 text-sm">
+      <span className="min-w-0 truncate text-neutral-600">{label}</span>
+      <span className="inline-flex shrink-0 items-center gap-2">
+        <span
+          className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold ${tone}`}
+        >
+          {state === "ready" && <FiCheck className="h-3.5 w-3.5" />}
+          {state === "error" && "?"}
+          {state === "loading" && (
+            <FiLoader className="h-3.5 w-3.5 animate-spin" />
+          )}
+          {state === "idle" && "-"}
+        </span>
+        <span className="whitespace-nowrap text-xs font-semibold text-neutral-700">
+          {statusText}
+        </span>
+      </span>
+    </div>
   );
 }
 
@@ -1177,6 +1186,7 @@ export default function NouveauBienPage() {
                       </div>
                       <UploadStatusBadge
                         state={photoUploadState}
+                        label="Chargement des photos"
                         idleLabel="Obligatoire"
                         readyLabel="Photos pr?tes"
                       />
@@ -1226,6 +1236,7 @@ export default function NouveauBienPage() {
                         </div>
                         <UploadStatusBadge
                           state={videoUploadState}
+                          label="Chargement de la vid?o"
                           idleLabel="Optionnel"
                           readyLabel="Vid?o pr?te"
                         />
@@ -1310,6 +1321,7 @@ export default function NouveauBienPage() {
                         </div>
                         <UploadStatusBadge
                           state={tourUploadState}
+                          label="Chargement de la visite 360"
                           idleLabel="Optionnel"
                           readyLabel="Visite pr?te"
                         />
