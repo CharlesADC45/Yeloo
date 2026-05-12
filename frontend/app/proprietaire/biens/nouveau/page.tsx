@@ -582,21 +582,20 @@ export default function NouveauBienPage() {
       });
 
       await runStep("media", async () => {
-        if (!propertyId) throw new Error("Annonce créée sans identifiant.");
-        if (videoFile || tourFile) {
-          const mediaPayload = new FormData();
-          if (videoFile) {
-            mediaPayload.append("video", videoFile);
-          }
-          if (tourFile) {
-            mediaPayload.append("tour_360", tourFile);
-          }
+        if (!propertyId) throw new Error("Annonce cr??e sans identifiant.");
+
+        const uploadMediaPart = async (
+          payloadFactory: () => FormData,
+          label: string,
+          onDone: (mediaData: { video_url?: string | null; tour_360_url?: string | null }) => void
+        ) => {
+          updateSubmissionStep("media", "running", label);
           const mediaResponse = await fetch(
             `${getApiBaseUrl()}/api/properties/${propertyId}/media`,
             {
               method: "POST",
               headers: { Authorization: `Bearer ${token}` },
-              body: mediaPayload,
+              body: payloadFactory(),
             }
           );
           if (!mediaResponse.ok) {
@@ -605,11 +604,34 @@ export default function NouveauBienPage() {
               detail?.detail ||
               detail?.message ||
               `Erreur media (${mediaResponse.status})`;
-            throw new Error(`Upload médias: ${message}`);
+            throw new Error(`${label}: ${message}`);
           }
           const mediaData = await mediaResponse.json();
-          setUploadedVideoUrl(mediaData.video_url ?? null);
-          setUploadedTourUrl(mediaData.tour_360_url ?? null);
+          onDone(mediaData);
+        };
+
+        if (videoFile) {
+          await uploadMediaPart(
+            () => {
+              const payload = new FormData();
+              payload.append("video", videoFile);
+              return payload;
+            },
+            "Upload vid?o",
+            (mediaData) => setUploadedVideoUrl(mediaData.video_url ?? null)
+          );
+        }
+
+        if (tourFile) {
+          await uploadMediaPart(
+            () => {
+              const payload = new FormData();
+              payload.append("tour_360", tourFile);
+              return payload;
+            },
+            "Upload visite 360",
+            (mediaData) => setUploadedTourUrl(mediaData.tour_360_url ?? null)
+          );
         }
       });
 
