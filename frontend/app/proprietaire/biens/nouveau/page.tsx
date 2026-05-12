@@ -125,17 +125,7 @@ const normalizeFetchError = (error: unknown, fallback: string) => {
 
 type UploadIndicatorState = "idle" | "loading" | "ready" | "error";
 
-function UploadStatusBadge({
-  state,
-  idleLabel,
-  readyLabel = "Pr?te",
-  label,
-}: {
-  state: UploadIndicatorState;
-  idleLabel: string;
-  readyLabel?: string;
-  label: string;
-}) {
+function UploadStatusBadge({ state }: { state: UploadIndicatorState }) {
   const tone =
     state === "ready"
       ? "bg-emerald-100 text-emerald-700"
@@ -145,34 +135,16 @@ function UploadStatusBadge({
           ? "bg-blue-100 text-blue-700"
           : "bg-white text-neutral-300";
 
-  const statusText =
-    state === "ready"
-      ? readyLabel
-      : state === "error"
-        ? "Erreur"
-        : state === "loading"
-          ? "Chargement..."
-          : idleLabel;
-
   return (
-    <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-neutral-50 px-4 py-3 text-sm">
-      <span className="min-w-0 truncate text-neutral-600">{label}</span>
-      <span className="inline-flex shrink-0 items-center gap-2">
-        <span
-          className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold ${tone}`}
-        >
-          {state === "ready" && <FiCheck className="h-3.5 w-3.5" />}
-          {state === "error" && "?"}
-          {state === "loading" && (
-            <FiLoader className="h-3.5 w-3.5 animate-spin" />
-          )}
-          {state === "idle" && "-"}
-        </span>
-        <span className="whitespace-nowrap text-xs font-semibold text-neutral-700">
-          {statusText}
-        </span>
-      </span>
-    </div>
+    <span
+      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${tone}`}
+      aria-hidden="true"
+    >
+      {state === "ready" && <FiCheck className="h-3 w-3" />}
+      {state === "error" && "?"}
+      {state === "loading" && <FiLoader className="h-3 w-3 animate-spin" />}
+      {state === "idle" && "-"}
+    </span>
   );
 }
 
@@ -216,7 +188,6 @@ export default function NouveauBienPage() {
   const videoInputRef = useRef<HTMLInputElement | null>(null);
   const cameraVideoInputRef = useRef<HTMLInputElement | null>(null);
   const tourInputRef = useRef<HTMLInputElement | null>(null);
-  const cameraTourInputRef = useRef<HTMLInputElement | null>(null);
   const isOwnerRole = user?.role === "proprietaire" || user?.role === "admin";
   const isVerifiedOwner = isOwnerRole && Boolean(user?.is_verified);
   const propertyDraftKey = getPropertyDraftKey(user?.id);
@@ -360,7 +331,7 @@ export default function NouveauBienPage() {
       setTourFile(null);
       return;
     }
-    const isValid = isSupportedImage(file) || isSupportedVideo(file);
+    const isValid = isSupportedImage(file);
     if (!isValid) {
       setTourFile(null);
       event.target.value = "";
@@ -701,11 +672,6 @@ export default function NouveauBienPage() {
   const isLastStep = stepIndex === STEPS.length - 1;
   const videoDisplayUrl = uploadedVideoUrl ?? videoPreview;
   const tourDisplayUrl = uploadedTourUrl ?? tourPreview;
-  const isTourVideo = Boolean(
-    tourDisplayUrl &&
-      (tourFile?.type.startsWith("video/") ||
-        /\.(mp4|webm|ogg|mov)$/i.test(tourDisplayUrl))
-  );
   const formattedPrice = form.price
     ? new Intl.NumberFormat("fr-FR").format(Number(form.price))
     : "-";
@@ -1184,12 +1150,7 @@ export default function NouveauBienPage() {
                             : "Aucune photo sélectionnée"}
                         </p>
                       </div>
-                      <UploadStatusBadge
-                        state={photoUploadState}
-                        label="Chargement des photos"
-                        idleLabel="Obligatoire"
-                        readyLabel="Photos pr?tes"
-                      />
+                      <UploadStatusBadge state={photoUploadState} />
                     </div>
                     {photoFiles.length > 0 && (
                       <div className="mt-4 flex flex-wrap gap-2">
@@ -1223,7 +1184,7 @@ export default function NouveauBienPage() {
                   </div>
 
                   <div className="grid gap-4 lg:grid-cols-2">
-                    <div className="rounded-[1.35rem] border border-neutral-200 bg-white p-4">
+                    <div className="flex min-h-[16.5rem] flex-col rounded-[1.35rem] border border-neutral-200 bg-white p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-3">
                           <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-neutral-50 text-neutral-500">
@@ -1234,12 +1195,7 @@ export default function NouveauBienPage() {
                             <p className="text-xs text-neutral-500">MP4, WEBM ou MOV · 150MB max</p>
                           </div>
                         </div>
-                        <UploadStatusBadge
-                          state={videoUploadState}
-                          label="Chargement de la vid?o"
-                          idleLabel="Optionnel"
-                          readyLabel="Vid?o pr?te"
-                        />
+                        <UploadStatusBadge state={videoUploadState} />
                       </div>
                       {videoFile && (
                         <p className="mt-3 text-[11px] text-neutral-600">{videoFile.name}</p>
@@ -1308,7 +1264,7 @@ export default function NouveauBienPage() {
                       />
                     </div>
 
-                    <div className="rounded-[1.35rem] border border-neutral-200 bg-white p-4">
+                    <div className="flex min-h-[16.5rem] flex-col rounded-[1.35rem] border border-neutral-200 bg-white p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-3">
                           <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-neutral-50 text-neutral-500">
@@ -1319,30 +1275,17 @@ export default function NouveauBienPage() {
                             <p className="text-xs text-neutral-500">Image panoramique ou vidéo courte</p>
                           </div>
                         </div>
-                        <UploadStatusBadge
-                          state={tourUploadState}
-                          label="Chargement de la visite 360"
-                          idleLabel="Optionnel"
-                          readyLabel="Visite pr?te"
-                        />
+                        <UploadStatusBadge state={tourUploadState} />
                       </div>
                       {tourFile && (
                         <p className="mt-3 text-[11px] text-neutral-600">{tourFile.name}</p>
                       )}
                       {tourDisplayUrl ? (
-                        isTourVideo ? (
-                          <video
-                            className="mt-4 h-28 w-full rounded-xl object-cover"
-                            src={tourDisplayUrl}
-                            controls
-                          />
-                        ) : (
-                          <img
-                            src={tourDisplayUrl}
-                            alt="Aperçu visite 360"
-                            className="mt-4 h-28 w-full rounded-xl object-cover"
-                          />
-                        )
+                        <img
+                          src={tourDisplayUrl}
+                          alt="Aper?u visite 360"
+                          className="mt-4 h-28 w-full rounded-xl object-cover"
+                        />
                       ) : null}
                       {errors.tour && (
                         <p className="mt-3 rounded-2xl bg-red-50 px-3 py-2 text-[11px] text-red-600">
@@ -1354,7 +1297,7 @@ export default function NouveauBienPage() {
                         onClick={() => setIsTourOptionsOpen((value) => !value)}
                         className="mt-4 min-h-11 rounded-full bg-neutral-950 px-4 py-2 text-xs font-semibold text-white"
                       >
-                        {isTourOptionsOpen ? "Fermer" : "Ouvrir les options"}
+                        {isTourOptionsOpen ? "Fermer" : "Choisir"}
                       </button>
                       <AnimatePresence initial={false}>
                         {isTourOptionsOpen && (
@@ -1365,14 +1308,6 @@ export default function NouveauBienPage() {
                             transition={{ duration: 0.22 }}
                             className="mt-3 grid gap-2"
                           >
-                            <button
-                              type="button"
-                              onClick={() => cameraTourInputRef.current?.click()}
-                              className="flex min-h-12 items-center gap-3 rounded-2xl bg-neutral-50 px-3 py-2 text-left text-xs font-semibold text-neutral-800 transition hover:bg-neutral-100"
-                            >
-                              <FiCamera className="text-blue-600" />
-                              Capturer une vidéo 360°
-                            </button>
                             <button
                               type="button"
                               onClick={() => tourInputRef.current?.click()}
@@ -1387,15 +1322,7 @@ export default function NouveauBienPage() {
                       <input
                         ref={tourInputRef}
                         type="file"
-                        accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/ogg,video/quicktime"
-                        onChange={handleTourChange}
-                        className="hidden"
-                      />
-                      <input
-                        ref={cameraTourInputRef}
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/ogg,video/quicktime"
-                        capture="environment"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
                         onChange={handleTourChange}
                         className="hidden"
                       />

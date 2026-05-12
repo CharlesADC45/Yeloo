@@ -522,7 +522,7 @@ function TopBarContent({
                   <div className="space-y-4">
                     {recentDestinations.length > 0 ? (
                       <div>
-                        <p className="px-3 pb-2 text-sm font-semibold text-neutral-700">
+                        <p className="px-3 pb-2 text-xs font-semibold text-neutral-700 sm:text-sm">
                           Recherches récentes
                         </p>
                         <div className="space-y-1">
@@ -541,10 +541,10 @@ function TopBarContent({
                                 <FiSearch className="h-5 w-5" />
                               </span>
                               <span className="min-w-0">
-                                <span className="block text-base font-semibold leading-tight text-neutral-900">
+                                <span className="block text-sm font-semibold leading-tight text-neutral-900 sm:text-base">
                                   {value}
                                 </span>
-                                <span className="mt-1 block text-sm text-neutral-500">
+                                <span className="mt-1 block text-xs text-neutral-500 sm:text-sm">
                                   Votre dernière recherche
                                 </span>
                               </span>
@@ -556,7 +556,7 @@ function TopBarContent({
 
                     {popularSuggestions.length > 0 ? (
                       <div>
-                        <p className="px-3 pb-2 text-sm font-semibold text-neutral-700">
+                        <p className="px-3 pb-2 text-xs font-semibold text-neutral-700 sm:text-sm">
                           Suggestions de destinations
                         </p>
                         <div className="space-y-1">
@@ -588,10 +588,10 @@ function TopBarContent({
                             )}
                           </span>
                           <span className="min-w-0">
-                            <span className="block text-lg font-semibold leading-tight text-neutral-900">
+                            <span className="block text-base font-semibold leading-tight text-neutral-900 sm:text-lg">
                               {suggestion.title}
                             </span>
-                            <span className="mt-1 block text-sm text-neutral-500">
+                            <span className="mt-1 block text-xs text-neutral-500 sm:text-sm">
                               {suggestion.subtitle}
                             </span>
                           </span>

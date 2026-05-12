@@ -322,8 +322,7 @@ export function LogementClient({ id }: Props) {
   const mapLatitude = hasExactLocation ? parsedLatitude : ABIDJAN_CENTER.latitude;
   const mapLongitude = hasExactLocation ? parsedLongitude : ABIDJAN_CENTER.longitude;
 
-  const tourImage = gallery[1] ?? gallery[0];
-  const videoImage = gallery[2] ?? gallery[0];
+    const videoImage = gallery[2] ?? gallery[0];
   const tourUrl = property?.tour360Url;
   const videoUrl = property?.videoUrl;
   const isTourImage = Boolean(tourUrl && !/\.(mp4|webm|ogg|mov)$/i.test(tourUrl));
@@ -922,20 +921,15 @@ export function LogementClient({ id }: Props) {
                 <div className="border-t border-neutral-200 bg-white py-5">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <h2 className="text-lg font-semibold text-neutral-900">Visite 360 premium</h2>
-                      <p className="mt-1 text-sm text-neutral-500">
-                        Explorez le logement avec un rendu immersif et des points d'interet.
-                      </p>
+                      <h2 className="text-base font-semibold text-neutral-900 sm:text-lg">Visite 360</h2>
                     </div>
-                    <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-700">
-                      360 immersif
-                    </span>
+                    <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-blue-700 sm:text-[11px]">360</span>
                   </div>
                   <div className="relative mt-4 h-[28rem] overflow-hidden rounded-[1.75rem] bg-neutral-100 sm:h-[34rem]">
                     {tourUrl && isTourImage ? (
                       <PannellumViewer
                         imageUrl={tourUrl}
-                        fallbackImageUrl={tourImage}
+                        fallbackImageUrl="/property-fallback.svg"
                         title={property.title}
                         location={locationLabel || property.city}
                         priceLabel={`${property.price.toLocaleString("fr-FR")} FCFA / ${pricePeriodLabel}`}
@@ -976,23 +970,11 @@ export function LogementClient({ id }: Props) {
                         ]}
                       />
                     ) : (
-                      <>
-                        {tourImage && (
-                          <img
-                            src={tourImage}
-                            alt={`Visite 360 ${property.title}`}
-                            onError={(event) => {
-                              event.currentTarget.src = "/property-fallback.svg";
-                            }}
-                            className="h-full w-full object-cover"
-                          />
-                        )}
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="rounded-full bg-white/90 px-4 py-2 text-xs font-semibold text-neutral-700 shadow-soft">
-                            {tourUrl ? "Visite immersive disponible" : "Photo 360 bientot disponible"}
-                          </span>
-                        </div>
-                      </>
+                      <div className="absolute inset-0 flex items-center justify-center bg-neutral-100">
+                        <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-neutral-600 shadow-soft">
+                          Aucune visite 360
+                        </span>
+                      </div>
                     )}
                   </div>
                 </div>

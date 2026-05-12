@@ -119,9 +119,6 @@ export default function ParametresPage() {
                   <p className="text-sm font-semibold text-neutral-900">
                     Changer le mot de passe
                   </p>
-                  <p className="text-xs text-neutral-500">
-                    Modifier votre mot de passe actuel
-                  </p>
                 </span>
               </span>
               <FiChevronRight className="text-neutral-400" />
@@ -209,7 +206,6 @@ export default function ParametresPage() {
                     </span>
                     <span>
                       <p className="text-sm font-semibold text-neutral-900">{item.label}</p>
-                      <p className="text-xs text-neutral-500">{item.description}</p>
                     </span>
                   </span>
                   <FiChevronRight className="text-neutral-400" />
