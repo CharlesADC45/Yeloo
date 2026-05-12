@@ -135,9 +135,9 @@ export default function ParametresPage() {
                   </span>
                   <span>
                     <p className="text-sm font-semibold text-neutral-900">Notifications</p>
-                    <p className="text-xs text-neutral-500">
+                    {/* <p className="text-xs text-neutral-500">
                       Recevoir les nouvelles annonces publiées par les propriétaires
-                    </p>
+                    </p> */}
                   </span>
                 </span>
                 <button
@@ -162,7 +162,7 @@ export default function ParametresPage() {
                   </span>
                 </button>
               </div>
-              <p className="px-1 text-[11px] leading-5 text-neutral-500">
+              {/* <p className="px-1 text-[11px] leading-5 text-neutral-500">
                 Notifications appareil :{" "}
                 <span className="font-semibold text-neutral-700">
                   {devicePermission === "unsupported"
@@ -173,11 +173,11 @@ export default function ParametresPage() {
                         ? "bloquées par le navigateur"
                         : "à autoriser"}
                 </span>
-              </p>
-              <p className="px-1 text-[11px] leading-5 text-neutral-500">{deviceNotificationHint}</p>
+              </p> */}
+              {/* <p className="px-1 text-[11px] leading-5 text-neutral-500">{deviceNotificationHint}</p>
               <p className="px-1 text-[11px] leading-5 text-neutral-500">
                 État actuel : l'application n'envoie que des notifications navigateur locales. Il n'y a pas encore de push distant serveur quand l'app est fermée.
-              </p>
+              </p> */}
               {notificationMessage ? (
                 <p className="rounded-2xl border border-blue-100 bg-blue-50 px-3 py-2 text-[11px] leading-5 text-blue-700">
                   {notificationMessage}
@@ -227,9 +227,9 @@ export default function ParametresPage() {
                 <p className="text-xs text-neutral-500">Zones téléchargées</p>
               </div>
             </div>
-            <p className="mt-3 text-xs text-neutral-500">
+            {/* <p className="mt-3 text-xs text-neutral-500">
               Tuiles de carte récemment consultées et statut de synchronisation.
-            </p>
+            </p> */}
           </Link>
         </motion.section>
       </main>

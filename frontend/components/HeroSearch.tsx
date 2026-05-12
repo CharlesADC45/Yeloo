@@ -52,10 +52,10 @@ export function HeroSearch({ filters, onChange, isOpen, onClose, onSearch }: Pro
               </button>
             </div>
 
-            <p className="mb-4 text-xs leading-6 text-neutral-600 sm:text-sm">
+            {/* <p className="mb-4 text-xs leading-6 text-neutral-600 sm:text-sm">
               Des annonces vérifiées, un contact direct avec les propriétaires, pensées
               pour Abidjan et les grandes villes ivoiriennes.
-            </p>
+            </p> */}
 
             <div className="flex-1">
               <div className="grid gap-3 rounded-2xl bg-neutral-50 p-3 sm:gap-4 sm:p-4 md:grid-cols-2">
@@ -132,9 +132,9 @@ export function HeroSearch({ filters, onChange, isOpen, onClose, onSearch }: Pro
                 </div>
               </div>
             </div>
-            <p className="mt-3 text-[11px] text-neutral-500 sm:text-xs">
+            {/* <p className="mt-3 text-[11px] text-neutral-500 sm:text-xs">
               Bientôt : filtres avancés, cartes interactives et annonces boostées.
-            </p>
+            </p> */}
           </motion.section>
         </motion.div>
       )}

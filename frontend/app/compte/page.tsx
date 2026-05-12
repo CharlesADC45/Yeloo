@@ -181,10 +181,10 @@ export default function ComptePage() {
 
             <div className="space-y-6">
               <header className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft lg:hidden">
-                <h1 className="text-2xl font-semibold tracking-tight">Profil</h1>
-                <p className="mt-1 text-sm text-neutral-600">
+                <h1 className="text-3xl font-semibold tracking-tight">Profil</h1>
+                {/* <p className="mt-1 text-sm text-neutral-600">
                   Gérez vos informations personnelles.
-                </p>
+                </p> */}
               </header>
 
               <section className="hidden rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-soft lg:block lg:p-8">
@@ -391,9 +391,9 @@ export default function ComptePage() {
                 <div className="space-y-5">
                   <section className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft">
                     <h3 className="text-lg font-semibold text-neutral-900">Vos espaces</h3>
-                    <p className="mt-1 text-sm text-neutral-500">
+                    {/* <p className="mt-1 text-sm text-neutral-500">
                       Accédez directement à vos réglages et outils utiles.
-                    </p>
+                    </p> */}
                     <div className="mt-4 grid gap-3">
                       {quickLinks.map((item) => (
                         <Link
