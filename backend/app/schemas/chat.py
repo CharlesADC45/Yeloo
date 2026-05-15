@@ -17,6 +17,9 @@ class MessagePublic(BaseModel):
     conversation_id: uuid.UUID
     sender_id: uuid.UUID
     body: str
+    attachment_url: str | None = None
+    attachment_name: str | None = None
+    attachment_type: str | None = None
     read_at: datetime | None = None
     created_at: datetime
 
@@ -34,10 +37,14 @@ class ConversationPublic(BaseModel):
     updated_at: datetime
     property_title: str
     property_city: str
+    property_image_url: str | None = None
     last_message_preview: str | None = None
     unread_count: int = 0
     counterpart_name: str | None = None
     counterpart_role: str | None = None
+    counterpart_phone: str | None = None
+    counterpart_email: str | None = None
+    counterpart_avatar_url: str | None = None
 
 
 class ConversationDetailPublic(ConversationPublic):

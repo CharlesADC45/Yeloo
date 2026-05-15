@@ -15,6 +15,7 @@ from app.models.user import User
 DEMO_OWNER_EMAIL = "owner@immoci.local"
 DEMO_OWNER_PHONE = "+22501010101"
 DEMO_OWNER_PASSWORD = "demo1234"
+DEMO_360_PANORAMA = "https://pannellum.org/images/alma.jpg"
 
 PHOTO_SETS = {
     "studio": [
@@ -158,6 +159,7 @@ PROPERTY_DATA = [
         "longitude": -3.7434,
         "is_furnished": True,
         "is_verified_listing": True,
+        "tour_360_url": DEMO_360_PANORAMA,
     },
     {
         "title": "Appartement résidence sécurisée à Port-Bouët",
@@ -606,6 +608,7 @@ def _seed_properties(db: Session, owner_id: uuid.UUID) -> int:
             latitude=item["latitude"],
             longitude=item["longitude"],
             is_furnished=item["is_furnished"],
+            tour_360_url=item.get("tour_360_url"),
             status="published",
             is_verified_listing=item["is_verified_listing"],
             views_count=(index + 1) * 7,

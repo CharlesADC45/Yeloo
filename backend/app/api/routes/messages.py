@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import shutil
 import uuid
 from datetime import datetime
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.modules import is_feature_enabled
 from app.core.security import get_current_user
+from app.core.storage import get_upload_dir
+from app.core.storage_minio import build_object_key, is_minio_configured, upload_file
 from app.db.deps import get_db
 from app.models.conversation import Conversation
 from app.models.message import Message
@@ -29,6 +33,19 @@ def _guard_chat_enabled(db: Session) -> None:
         raise HTTPException(status_code=403, detail="Le chat des annonces est desactive pour le moment.")
 
 
+def _last_message_preview(message: Message | None) -> str | None:
+    if not message:
+        return None
+    content = (message.body or "").strip()
+    if content:
+        return content[:96]
+    if message.attachment_name:
+        return f"Piece jointe ? {message.attachment_name}"
+    if message.attachment_url:
+        return "Piece jointe"
+    return None
+
+
 def _serialize_conversation(conversation: Conversation, current_user: User) -> ConversationPublic:
     last_message = conversation.messages[-1] if conversation.messages else None
     counterpart = conversation.owner if current_user.id != conversation.owner_id else conversation.tenant
@@ -37,6 +54,9 @@ def _serialize_conversation(conversation: Conversation, current_user: User) -> C
         for message in conversation.messages
         if message.sender_id != current_user.id and message.read_at is None
     )
+    property_image = None
+    if conversation.property and conversation.property.photo_urls:
+        property_image = conversation.property.photo_urls[0]
     return ConversationPublic(
         id=conversation.id,
         property_id=conversation.property_id,
@@ -47,10 +67,14 @@ def _serialize_conversation(conversation: Conversation, current_user: User) -> C
         updated_at=conversation.updated_at,
         property_title=conversation.property.title if conversation.property else "Annonce",
         property_city=conversation.property.city if conversation.property else "",
-        last_message_preview=last_message.body[:96] if last_message else None,
+        property_image_url=property_image,
+        last_message_preview=_last_message_preview(last_message),
         unread_count=unread_count,
         counterpart_name=counterpart.full_name if counterpart else None,
         counterpart_role=counterpart.role if counterpart else None,
+        counterpart_phone=counterpart.phone if counterpart else None,
+        counterpart_email=counterpart.email if counterpart else None,
+        counterpart_avatar_url=counterpart.profile_image_url if counterpart else None,
     )
 
 
@@ -62,23 +86,50 @@ def _serialize_conversation_detail(conversation: Conversation, current_user: Use
     )
 
 
-def _get_accessible_conversation(db: Session, conversation_id: uuid.UUID, current_user: User) -> Conversation:
-    conversation = (
-        db.query(Conversation)
-        .options(
-            joinedload(Conversation.property),
-            joinedload(Conversation.owner),
-            joinedload(Conversation.tenant),
-            joinedload(Conversation.messages).joinedload(Message.sender),
-        )
-        .filter(Conversation.id == conversation_id)
-        .first()
+def _conversation_query(db: Session):
+    return db.query(Conversation).options(
+        joinedload(Conversation.property).joinedload(Property.photos),
+        joinedload(Conversation.owner),
+        joinedload(Conversation.tenant),
+        joinedload(Conversation.messages).joinedload(Message.sender),
     )
+
+
+def _get_accessible_conversation(db: Session, conversation_id: uuid.UUID, current_user: User) -> Conversation:
+    conversation = _conversation_query(db).filter(Conversation.id == conversation_id).first()
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation introuvable.")
     if current_user.id not in {conversation.owner_id, conversation.tenant_id}:
         raise HTTPException(status_code=403, detail="Acces interdit a cette conversation.")
     return conversation
+
+
+def _store_attachment(upload: UploadFile, conversation_id: uuid.UUID) -> tuple[str, str | None]:
+    content_type = upload.content_type or "application/octet-stream"
+    if not (
+        content_type.startswith("image/")
+        or content_type.startswith("video/")
+        or content_type.startswith("audio/")
+        or content_type == "application/pdf"
+    ):
+        raise HTTPException(status_code=400, detail="Type de fichier non pris en charge.")
+
+    original_name = upload.filename or "piece-jointe"
+    if is_minio_configured():
+        object_key = build_object_key(f"messages/{conversation_id}/attachments", original_name)
+        try:
+            return upload_file(upload.file, object_key, content_type), content_type
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail="Upload de la piece jointe impossible.") from exc
+
+    target_dir = get_upload_dir() / "messages" / str(conversation_id)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    suffix = Path(original_name).suffix or ".bin"
+    filename = f"{uuid.uuid4().hex}{suffix}"
+    destination = target_dir / filename
+    with destination.open("wb") as buffer:
+        shutil.copyfileobj(upload.file, buffer)
+    return f"/uploads/messages/{conversation_id}/{filename}", content_type
 
 
 @router.get("/", response_model=list[ConversationPublic])
@@ -87,16 +138,7 @@ def list_my_conversations(
     current_user: User = Depends(get_current_user),
 ):
     _guard_chat_enabled(db)
-    query = (
-        db.query(Conversation)
-        .options(
-            joinedload(Conversation.property),
-            joinedload(Conversation.owner),
-            joinedload(Conversation.tenant),
-            joinedload(Conversation.messages).joinedload(Message.sender),
-        )
-        .order_by(Conversation.updated_at.desc())
-    )
+    query = _conversation_query(db).order_by(Conversation.updated_at.desc())
     query = query.filter(
         (Conversation.owner_id == current_user.id) | (Conversation.tenant_id == current_user.id)
     )
@@ -120,21 +162,11 @@ def ensure_conversation_for_property(
     if not property_obj.owner:
         raise HTTPException(status_code=400, detail="Proprietaire introuvable pour cette annonce.")
 
-    conversation = (
-        db.query(Conversation)
-        .options(
-            joinedload(Conversation.property),
-            joinedload(Conversation.owner),
-            joinedload(Conversation.tenant),
-            joinedload(Conversation.messages).joinedload(Message.sender),
-        )
-        .filter(
-            Conversation.property_id == property_obj.id,
-            Conversation.owner_id == property_obj.owner_id,
-            Conversation.tenant_id == current_user.id,
-        )
-        .first()
-    )
+    conversation = _conversation_query(db).filter(
+        Conversation.property_id == property_obj.id,
+        Conversation.owner_id == property_obj.owner_id,
+        Conversation.tenant_id == current_user.id,
+    ).first()
     if not conversation:
         conversation = Conversation(
             property_id=property_obj.id,
@@ -187,6 +219,33 @@ def send_message(
         conversation_id=conversation.id,
         sender_id=current_user.id,
         body=payload.body.strip(),
+    )
+    conversation.updated_at = datetime.utcnow()
+    db.add(message)
+    db.add(conversation)
+    db.commit()
+    db.refresh(message)
+    return MessagePublic.model_validate(message)
+
+
+@router.post("/{conversation_id}/attachments", response_model=MessagePublic, status_code=status.HTTP_201_CREATED)
+def send_attachment(
+    conversation_id: uuid.UUID,
+    file: UploadFile = File(...),
+    body: str | None = Form(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    _guard_chat_enabled(db)
+    conversation = _get_accessible_conversation(db, conversation_id, current_user)
+    attachment_url, attachment_type = _store_attachment(file, conversation.id)
+    message = Message(
+        conversation_id=conversation.id,
+        sender_id=current_user.id,
+        body=(body or "").strip(),
+        attachment_url=attachment_url,
+        attachment_name=file.filename or "piece-jointe",
+        attachment_type=attachment_type,
     )
     conversation.updated_at = datetime.utcnow()
     db.add(message)

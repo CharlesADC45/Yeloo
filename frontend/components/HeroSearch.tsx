@@ -41,14 +41,14 @@ export function HeroSearch({ filters, onChange, isOpen, onClose, onSearch }: Pro
           >
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-[15px] font-semibold leading-tight sm:text-lg">
-                Trouvez un logement fiable en Côte d&apos;Ivoire.
+                Trouvez un logement fiable en CI
               </h2>
               <button
                 type="button"
                 onClick={onClose}
                 className="rounded-full border border-neutral-200 px-3 py-1.5 text-xs text-neutral-500 hover:bg-neutral-50"
               >
-                Fermer
+                X
               </button>
             </div>
 

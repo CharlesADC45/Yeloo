@@ -10,10 +10,14 @@ export type ConversationSummary = {
   updated_at: string;
   property_title: string;
   property_city: string;
+  property_image_url?: string | null;
   last_message_preview?: string | null;
   unread_count: number;
   counterpart_name?: string | null;
   counterpart_role?: string | null;
+  counterpart_phone?: string | null;
+  counterpart_email?: string | null;
+  counterpart_avatar_url?: string | null;
 };
 
 export type ChatMessage = {
@@ -21,6 +25,9 @@ export type ChatMessage = {
   conversation_id: string;
   sender_id: string;
   body: string;
+  attachment_url?: string | null;
+  attachment_name?: string | null;
+  attachment_type?: string | null;
   read_at?: string | null;
   created_at: string;
 };
@@ -79,4 +86,24 @@ export async function sendConversationMessage(
     body: JSON.stringify({ body }),
   });
   return handleResponse<ChatMessage>(response, "Impossible d'envoyer le message.");
+}
+
+export async function sendConversationAttachment(
+  token: string,
+  conversationId: string,
+  file: File,
+  body?: string
+) {
+  const formData = new FormData();
+  formData.append("file", file);
+  if (body?.trim()) formData.append("body", body.trim());
+
+  const response = await fetch(`${getApiBaseUrl()}/api/messages/${conversationId}/attachments`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+  return handleResponse<ChatMessage>(response, "Impossible d'envoyer la pi?ce jointe.");
 }
