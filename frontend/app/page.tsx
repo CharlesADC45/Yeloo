@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FiCheckCircle, FiChevronRight, FiHeart } from "react-icons/fi";
+import { FiArrowRight, FiCheckCircle, FiHeart } from "react-icons/fi";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
 import { HeroSearch } from "@/components/HeroSearch";
@@ -319,9 +319,10 @@ function HomePageContent() {
               </h2>
               <Link
                 href={buildLogementsHref(filters.city)}
-                className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-sm font-semibold text-neutral-600 hover:text-neutral-900"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-neutral-700 shadow-soft ring-1 ring-neutral-200 hover:text-neutral-950"
+                aria-label="Voir toutes les annonces consultées récemment"
               >
-                Voir tout <FiChevronRight />
+                <FiArrowRight />
               </Link>
             </div>
           )}
@@ -353,9 +354,10 @@ function HomePageContent() {
               </h2>
               <Link
                 href={buildLogementsHref(activeLocation)}
-                className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-sm font-semibold text-neutral-600 hover:text-neutral-900"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-neutral-700 shadow-soft ring-1 ring-neutral-200 hover:text-neutral-950"
+                aria-label="Voir tous les logements populaires"
               >
-                Voir tout <FiChevronRight />
+                <FiArrowRight />
               </Link>
             </div>
           )}
@@ -375,9 +377,10 @@ function HomePageContent() {
               <h2 className="min-w-0 text-lg font-semibold sm:text-xl">Popular locations</h2>
               <Link
                 href={buildLogementsHref(filters.city)}
-                className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-sm font-semibold text-neutral-600 hover:text-neutral-900"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-neutral-700 shadow-soft ring-1 ring-neutral-200 hover:text-neutral-950"
+                aria-label="Voir toutes les localisations populaires"
               >
-                Voir tout <FiChevronRight />
+                <FiArrowRight />
               </Link>
             </div>
 

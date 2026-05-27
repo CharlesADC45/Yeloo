@@ -13,6 +13,14 @@ import {
 } from "@/lib/visitRequests";
 import { useAuthStore } from "@/stores/authStore";
 
+function toDatetimeLocalInputValue(value?: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return localDate.toISOString().slice(0, 16);
+}
+
 export default function ProprietaireCalendrierPage() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const token = useAuthStore((state) => state.token);
@@ -50,6 +58,18 @@ export default function ProprietaireCalendrierPage() {
       active = false;
     };
   }, [isAuthenticated, token]);
+
+  useEffect(() => {
+    setRescheduleDates((current) => {
+      const next = { ...current };
+      visitRequests.forEach((item) => {
+        if (!next[item.id]) {
+          next[item.id] = toDatetimeLocalInputValue(item.proposed_at || item.preferred_at);
+        }
+      });
+      return next;
+    });
+  }, [visitRequests]);
 
   const pendingVisitCount = useMemo(
     () => visitRequests.filter((item) => item.status === "pending").length,

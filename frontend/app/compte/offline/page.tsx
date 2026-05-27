@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { FiArrowLeft, FiDatabase, FiFileText, FiMap, FiRefreshCw, FiWifi, FiWifiOff } from "react-icons/fi";
+import { AccountSidebar } from "@/components/AccountSidebar";
 import { BottomNav } from "@/components/BottomNav";
 import { TopBar } from "@/components/TopBar";
 
@@ -78,7 +79,8 @@ export default function OfflineStatusPage() {
   return (
     <div className="min-h-screen bg-white">
       <TopBar />
-      <main className="mx-auto max-w-md px-4 pb-28 pt-24">
+      <AccountSidebar />
+      <main className="mx-auto max-w-md px-4 pb-28 pt-24 lg:ml-72 lg:max-w-[calc(100%-18rem)] lg:px-8">
         <motion.section
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}

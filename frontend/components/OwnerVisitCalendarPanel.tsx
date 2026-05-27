@@ -59,6 +59,8 @@ function getDateBadgeParts(value: string) {
   };
 }
 
+const editableVisitStatuses: VisitRequest["status"][] = ["pending", "accepted", "rescheduled"];
+
 export function OwnerVisitCalendarPanel({
   visitRequests,
   pendingVisitCount,
@@ -107,6 +109,7 @@ export function OwnerVisitCalendarPanel({
         ) : (
           items.map((item) => {
             const badge = getDateBadgeParts(item.proposed_at || item.preferred_at);
+            const canEditSchedule = editableVisitStatuses.includes(item.status);
             return (
               <article
                 key={item.id}
@@ -204,6 +207,37 @@ export function OwnerVisitCalendarPanel({
                           >
                             <FiClock />
                             Proposer
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {canEditSchedule && item.status !== "pending" && (
+                      <div className="mt-4 rounded-[1.2rem] border border-blue-100 bg-blue-50/50 p-3">
+                        <label className="block text-[11px] font-semibold uppercase tracking-wide text-blue-700">
+                          Modifier le creneau
+                        </label>
+                        <div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+                          <input
+                            type="datetime-local"
+                            value={rescheduleDates[item.id] || ""}
+                            onChange={(event) =>
+                              setRescheduleDates((current) => ({
+                                ...current,
+                                [item.id]: event.target.value,
+                              }))
+                            }
+                            className="w-full rounded-full border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
+                            aria-label="Modifier la date de visite"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => void onVisitAction(item, "rescheduled")}
+                            disabled={visitActionId === `${item.id}:rescheduled`}
+                            className="inline-flex items-center justify-center gap-2 rounded-full bg-blue-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                          >
+                            <FiClock />
+                            Enregistrer
                           </button>
                         </div>
                       </div>

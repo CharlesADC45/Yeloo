@@ -12,6 +12,7 @@ import {
   FiSmartphone,
 } from "react-icons/fi";
 import { motion } from "framer-motion";
+import { AccountSidebar } from "@/components/AccountSidebar";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
 import {
@@ -75,7 +76,8 @@ export default function ParametresPage() {
   return (
     <div className="min-h-screen bg-transparent">
       <TopBar />
-      <main className="mx-auto max-w-2xl px-4 pb-28 pt-24">
+      <AccountSidebar />
+      <main className="mx-auto max-w-2xl px-4 pb-28 pt-24 lg:ml-72 lg:max-w-[calc(100%-18rem)] lg:px-8">
         <motion.section
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
