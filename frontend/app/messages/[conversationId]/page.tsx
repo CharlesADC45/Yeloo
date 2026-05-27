@@ -256,12 +256,12 @@ function MessageConversationPageContent() {
   const counterpartAvatarUrl = resolveMediaUrl(conversation?.counterpart_avatar_url);
 
   return (
-    <div className="h-[108svh] max-w-full overflow-hidden bg-white">
+    <div className="h-[100svh] max-w-full overflow-hidden bg-white">
       <TopBar adminShell={isAdmin} ownerShell={isOwnerDashboard} />
       {isAdmin && <AdminSidebar />}
       {isOwnerDashboard && <OwnerSidebar />}
       <main
-        className={`mx-auto h-[calc(108svh-5rem)] max-w-full overflow-hidden px-0 pt-20 sm:h-[calc(108svh-6rem)] sm:px-4 sm:pt-24 ${
+        className={`fixed inset-x-0 bottom-0 top-20 mx-auto max-w-full overflow-hidden px-0 sm:top-24 sm:px-4 ${
           isAdmin
             ? "w-full pb-0 lg:ml-72 lg:max-w-[calc(100%-18rem)]"
             : isOwnerDashboard

@@ -692,13 +692,13 @@ function CartePageContent() {
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-white">
+    <div className="min-h-screen overflow-x-hidden bg-white xl:h-[100svh] xl:overflow-hidden">
       <div className="hidden xl:block">
         <TopBar />
       </div>
       
       <main
-        className="mx-auto h-[100svh] w-full max-w-full overflow-hidden px-0 pb-0 pt-0 sm:px-6 xl:h-auto xl:overflow-x-hidden xl:pb-32 xl:pt-32 lg:px-12"
+        className="mx-auto h-[100svh] w-full max-w-full overflow-hidden px-0 pb-0 pt-0 sm:px-6 lg:px-12 xl:fixed xl:inset-x-0 xl:bottom-0 xl:top-[5.5rem] xl:h-auto xl:overflow-hidden xl:pb-6 xl:pt-6"
       >
 
         <section className="h-full xl:hidden">
@@ -757,6 +757,7 @@ function CartePageContent() {
                   selectedId={selectedId}
                   locateSignal={locateSignal}
                   fitBoundsSignal={fitBoundsSignal}
+                  showLayerToggle={false}
                   className="h-full min-h-[100svh]"
                 />
               )}
@@ -897,13 +898,13 @@ function CartePageContent() {
           </div>
         </section>
 
-        <section className="hidden max-w-full overflow-x-hidden px-0 xl:block xl:px-2 sm:xl:px-0">
-          <div className="grid w-full max-w-full gap-0 overflow-x-hidden xl:grid-cols-2 xl:items-stretch xl:gap-6">
+        <section className="hidden h-full max-w-full overflow-hidden px-0 xl:block">
+          <div className="grid h-full w-full max-w-full gap-0 overflow-hidden xl:grid-cols-2 xl:items-stretch xl:gap-6">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25 }}
-              className="relative order-1 flex h-full min-h-[62vh] w-full min-w-0 max-w-full flex-col overflow-hidden bg-transparent xl:max-w-[calc(100vw-1rem)] xl:rounded-[1.6rem] xl:border xl:border-neutral-200 xl:bg-white xl:shadow-[0_14px_40px_rgba(15,23,42,0.08)] xl:sticky xl:top-32 xl:h-[calc(100vh-9rem)] xl:min-h-0"
+              className="relative order-1 flex h-full min-h-[62vh] w-full min-w-0 max-w-full flex-col overflow-hidden bg-transparent xl:max-w-[calc(100vw-1rem)] xl:rounded-[1.6rem] xl:border xl:border-neutral-200 xl:bg-white xl:shadow-[0_14px_40px_rgba(15,23,42,0.08)] xl:min-h-0"
             >
               {isLoading ? (
                 <Skeleton className="min-h-[62vh] flex-1 xl:min-h-0" />
@@ -959,11 +960,11 @@ function CartePageContent() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25, delay: 0.05 }}
-              className="relative order-2 z-20 -mt-12 mb-24 w-full min-w-0 max-w-full overflow-x-hidden rounded-t-[2rem] bg-white px-4 pb-4 pt-4 shadow-[0_-18px_40px_rgba(15,23,42,0.14)] sm:mx-2 sm:max-w-[calc(100%-1rem)] sm:rounded-[2rem] xl:z-auto xl:mt-0 xl:mb-0 xl:h-[calc(100vh-9rem)] xl:max-w-[calc(100vw-1rem)] xl:min-h-0 xl:overflow-hidden xl:rounded-[1.6rem] xl:border xl:border-neutral-200 xl:bg-white xl:px-0 xl:pb-0 xl:pt-0 xl:shadow-[0_14px_40px_rgba(15,23,42,0.08)] xl:sticky xl:top-32"
+              className="relative order-2 z-20 -mt-12 mb-24 w-full min-w-0 max-w-full overflow-x-hidden rounded-t-[2rem] bg-white px-4 pb-4 pt-4 shadow-[0_-18px_40px_rgba(15,23,42,0.14)] sm:mx-2 sm:max-w-[calc(100%-1rem)] sm:rounded-[2rem] xl:z-auto xl:mt-0 xl:mb-0 xl:h-full xl:max-w-[calc(100vw-1rem)] xl:min-h-0 xl:overflow-hidden xl:rounded-[1.6rem] xl:border xl:border-neutral-200 xl:bg-white xl:px-0 xl:pb-0 xl:pt-0 xl:shadow-[0_14px_40px_rgba(15,23,42,0.08)]"
             >
               <div
                 ref={resultsPanelRef}
-                className="hide-scrollbar xl:h-full xl:overflow-y-auto xl:px-5 xl:py-5"
+                className="hide-scrollbar xl:h-full xl:overflow-y-auto xl:px-5 xl:pb-5"
               >
                 <div className="space-y-5">
                   <div className="space-y-4 xl:hidden">
@@ -1009,7 +1010,7 @@ function CartePageContent() {
                     )}
                   </div>
 
-                <div className="hidden xl:block xl:sticky xl:top-0 xl:z-20 xl:bg-white xl:pb-5">
+                <div className="hidden xl:sticky xl:top-0 xl:z-30 xl:-mx-5 xl:block xl:bg-white xl:px-5 xl:pb-5 xl:pt-5">
                   <div className="space-y-5">
                     <div className="rounded-[1.5rem] border border-neutral-200 bg-white p-3 shadow-[0_8px_24px_rgba(15,23,42,0.035)]">
                       <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center">

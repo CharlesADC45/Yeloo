@@ -20,11 +20,21 @@ type Props = {
   fitBoundsSignal?: number;
   onFitBounds?: () => void;
   className?: string;
+  showLayerToggle?: boolean;
 };
 
 const DEFAULT_CENTER: [number, number] = [5.34, -3.99]; // Abidjan
 const CLUSTER_GRID_SIZE = 60;
 const CLUSTER_BREAK_ZOOM = 15;
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
 function buildUserLocationIcon() {
   return `
@@ -39,33 +49,50 @@ function buildUserLocationIcon() {
 }
 
 function buildMarkerPreview(property: Property) {
-  const title = property.title.replace(/"/g, "&quot;");
-  const price = property.price.toLocaleString("fr-FR");
+  const title = escapeHtml(property.title || "Villa contemporaine");
+  const price = `${property.price.toLocaleString("fr-FR")} F`;
   const rooms = typeof property.rooms === "number" ? property.rooms : "—";
   const bathrooms = typeof property.bathrooms === "number" ? property.bathrooms : "—";
   const surface = typeof property.surfaceM2 === "number" ? property.surfaceM2 : "—";
-  const location = (property.neighborhood || property.city || "Abidjan").replace(
-    /"/g,
-    "&quot;"
-  );
-  const verifiedBadge = property.ownerIsVerified
-    ? `<span class="imc-hover-card__badge">Vérifié</span>`
+  const location = escapeHtml(property.neighborhood || property.city || "Abidjan");
+  const ownerName = property.ownerName || "Proprietaire";
+  const ownerInitials = ownerName
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+  const ownerAvatar = property.ownerProfileImageUrl
+    ? `<img src="${property.ownerProfileImageUrl}" alt="${escapeHtml(ownerName)}" class="imc-hover-card__avatar" />`
+    : `<span class="imc-hover-card__avatar imc-hover-card__avatar--fallback">${escapeHtml(ownerInitials)}</span>`;
+  const verifiedBadge = property.ownerIsVerified || property.isVerified
+    ? `<div class="imc-hover-card__verified"><span class="imc-hover-card__verified-icon"></span><span>Vérifié</span></div>`
     : "";
 
   return `
     <div class="imc-hover-card">
-      <div class="imc-hover-card__header">
-        <p class="imc-hover-card__title">${title}</p>
+      <div class="imc-hover-card__media">
+        <img src="${property.imageUrl}" alt="${title}" class="imc-hover-card__image" />
+        <span class="imc-hover-card__price">${price}</span>
+        <div class="imc-hover-card__actions">
+          <span class="imc-hover-card__action imc-hover-card__action--share" aria-hidden="true"></span>
+          <span class="imc-hover-card__action imc-hover-card__action--heart" aria-hidden="true"></span>
+        </div>
       </div>
       <div class="imc-hover-card__body">
-        <img src="${property.imageUrl}" alt="${title}" class="imc-hover-card__image" />
-        <div class="imc-hover-card__content">
-          <p class="imc-hover-card__price">${price}F</p>
-          <p class="imc-hover-card__location">${location}</p>
-          <div class="imc-hover-card__meta">
-            <span><strong>${rooms}</strong><small>Beds</small></span>
-            <span><strong>${bathrooms}</strong><small>Baths</small></span>
-            <span><strong>${surface}</strong><small>Sqm.</small></span>
+        <div class="imc-hover-card__heading">
+          <h3 class="imc-hover-card__title">${title}</h3>
+          <p class="imc-hover-card__location"><span class="imc-hover-card__pin"></span>${location}</p>
+        </div>
+        <div class="imc-hover-card__meta">
+          <span><span class="imc-hover-card__meta-icon imc-hover-card__meta-icon--bed"></span><strong>${rooms} Beds</strong></span>
+          <span><span class="imc-hover-card__meta-icon imc-hover-card__meta-icon--bath"></span><strong>${bathrooms} Baths</strong></span>
+          <span><span class="imc-hover-card__meta-icon imc-hover-card__meta-icon--area"></span><strong>${surface} Sqm.</strong></span>
+        </div>
+        <div class="imc-hover-card__footer">
+          <div class="imc-hover-card__agent">
+            ${ownerAvatar}
+            <span class="imc-hover-card__contact"><span class="imc-hover-card__phone"></span>Contacter</span>
           </div>
           ${verifiedBadge}
         </div>
@@ -82,6 +109,7 @@ export function MapboxMap({
   fitBoundsSignal,
   onFitBounds,
   className,
+  showLayerToggle = true,
 }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -465,15 +493,17 @@ export function MapboxMap({
       }`}
     >
       <div ref={containerRef} className="absolute inset-0" />
-      <button
-        type="button"
-        onClick={() => setIsSatellite((value) => !value)}
-        className="absolute right-4 top-4 z-[500] inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-neutral-800 shadow-[0_14px_34px_rgba(15,23,42,0.18)] transition hover:scale-105"
-        aria-label={isSatellite ? "Afficher le plan" : "Afficher en mode satellite"}
-        title={isSatellite ? "Plan" : "Satellite"}
-      >
-        <FiLayers className="text-lg" />
-      </button>
+      {showLayerToggle && (
+        <button
+          type="button"
+          onClick={() => setIsSatellite((value) => !value)}
+          className="absolute right-4 top-4 z-20 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-neutral-800 shadow-[0_14px_34px_rgba(15,23,42,0.18)] transition hover:scale-105"
+          aria-label={isSatellite ? "Afficher le plan" : "Afficher en mode satellite"}
+          title={isSatellite ? "Plan" : "Satellite"}
+        >
+          <FiLayers className="text-lg" />
+        </button>
+      )}
     </div>
   );
 }
