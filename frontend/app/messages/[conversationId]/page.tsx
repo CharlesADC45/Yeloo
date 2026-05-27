@@ -256,12 +256,12 @@ function MessageConversationPageContent() {
   const counterpartAvatarUrl = resolveMediaUrl(conversation?.counterpart_avatar_url);
 
   return (
-    <div className="h-screen overflow-hidden bg-white">
+    <div className="h-[108svh] max-w-full overflow-hidden bg-white">
       <TopBar adminShell={isAdmin} ownerShell={isOwnerDashboard} />
       {isAdmin && <AdminSidebar />}
       {isOwnerDashboard && <OwnerSidebar />}
       <main
-        className={`mx-auto h-[calc(108svh-5rem)] overflow-hidden px-0 pt-20 sm:px-4 sm:pt-24 ${
+        className={`mx-auto h-[calc(108svh-5rem)] max-w-full overflow-hidden px-0 pt-20 sm:h-[calc(108svh-6rem)] sm:px-4 sm:pt-24 ${
           isAdmin
             ? "w-full pb-0 lg:ml-72 lg:max-w-[calc(100%-18rem)]"
             : isOwnerDashboard
@@ -276,7 +276,7 @@ function MessageConversationPageContent() {
           className="h-full min-h-0 overflow-hidden border border-neutral-200 bg-white sm:rounded-[1.25rem]"
         >
           {isLoading ? (
-            <div className="grid h-full lg:grid-cols-[22rem_minmax(0,1fr)]">
+            <div className="grid h-full min-w-0 lg:grid-cols-[22rem_minmax(0,1fr)]">
               <div className="hidden border-r border-neutral-200 bg-white p-4 lg:block">
                 <div className="h-10 animate-pulse rounded-full bg-neutral-100" />
                 <div className="mt-5 space-y-3">
@@ -375,9 +375,9 @@ function MessageConversationPageContent() {
                 </div>
               </aside>
 
-              <section className="flex h-full min-h-0 flex-col overflow-hidden bg-white">
-                <div className="relative flex h-16 shrink-0 items-center justify-between gap-3 border-b border-neutral-200 bg-white px-3 shadow-sm sm:px-5">
-                  <div className="flex min-w-0 items-center gap-3">
+              <section className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-white">
+                <div className="relative flex h-16 max-w-full shrink-0 items-center justify-between gap-2 border-b border-neutral-200 bg-white px-2 shadow-sm sm:gap-3 sm:px-5">
+                  <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
                     <Link
                       href={`/messages${messageHrefSuffix}`}
                       className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-neutral-700 hover:bg-neutral-100"
@@ -409,7 +409,7 @@ function MessageConversationPageContent() {
                       </p>
                     </button>
                   </div>
-                  <div className="flex items-center gap-1 text-neutral-700">
+                  <div className="flex shrink-0 items-center gap-1 text-neutral-700">
                     <button
                       type="button"
                       onClick={showComingSoon}
@@ -586,7 +586,7 @@ function MessageConversationPageContent() {
                   <div ref={messagesEndRef} />
                 </div>
 
-                <div className="relative shrink-0 border-t border-neutral-200 bg-white px-3 py-3 sm:px-5">
+                <div className="relative max-w-full shrink-0 border-t border-neutral-200 bg-white px-2 py-3 sm:px-5">
                   {isEmojiPickerOpen && (
                     <div className="absolute bottom-[4.4rem] left-12 z-20 grid w-64 grid-cols-6 gap-1 rounded-2xl border border-neutral-200 bg-white p-3 shadow-[0_18px_45px_rgba(15,23,42,0.16)] sm:left-16">
                       {composerEmojis.map((emoji) => (
@@ -602,7 +602,7 @@ function MessageConversationPageContent() {
                       ))}
                     </div>
                   )}
-                  <div className="flex items-end gap-2">
+                  <div className="flex min-w-0 items-end gap-2">
                     <button
                       type="button"
                       onClick={() => attachmentInputRef.current?.click()}
@@ -623,7 +623,7 @@ function MessageConversationPageContent() {
                       onChange={handleAttachmentChange}
                       className="hidden"
                     />
-                    <div className="flex min-h-11 flex-1 items-end gap-2 rounded-full bg-neutral-100 px-3 py-1.5">
+                    <div className="flex min-h-11 min-w-0 flex-1 items-end gap-2 rounded-full bg-neutral-100 px-3 py-1.5">
                       <button
                         type="button"
                         onClick={() => setIsEmojiPickerOpen((current) => !current)}
