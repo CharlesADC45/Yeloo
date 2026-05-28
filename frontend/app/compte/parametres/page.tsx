@@ -37,27 +37,48 @@ export default function ParametresPage() {
     .ownerPostNotifications;
   const [devicePermission, setDevicePermission] = useState(getDeviceNotificationPermission());
   const [notificationMessage, setNotificationMessage] = useState<string | null>(null);
+  const [isTogglingNotifications, setIsTogglingNotifications] = useState(false);
 
   const toggleNotifications = async () => {
-    if (!user?.id || !token) return;
+    if (!user?.id || !token || isTogglingNotifications) {
+      if (!user?.id || !token) {
+        setNotificationMessage("Connectez-vous pour gérer les notifications sur ce téléphone.");
+      }
+      return;
+    }
 
     const nextEnabled = !notificationsEnabled;
-    if (nextEnabled) {
-      const result = await enablePushNotifications(token);
-      setDevicePermission(result.permission);
-      if (!result.ok) {
-        setOwnerPostNotifications(user.id, false);
+    setIsTogglingNotifications(true);
+
+    try {
+      if (nextEnabled) {
+        const result = await enablePushNotifications(token);
+        setDevicePermission(result.permission);
+        if (!result.ok) {
+          setOwnerPostNotifications(user.id, false);
+          setNotificationMessage(result.message);
+          return;
+        }
+        setOwnerPostNotifications(user.id, true);
         setNotificationMessage(result.message);
         return;
       }
-      setNotificationMessage(result.message);
-    } else if (token) {
-      await disablePushNotifications(token);
-    }
-    setOwnerPostNotifications(user.id, nextEnabled);
-    setDevicePermission(getDeviceNotificationPermission());
-    if (!nextEnabled) {
+
+      setOwnerPostNotifications(user.id, false);
       setNotificationMessage("Notifications push désactivées pour ce téléphone.");
+      await disablePushNotifications(token);
+      setDevicePermission(getDeviceNotificationPermission());
+    } catch (error) {
+      if (nextEnabled) {
+        setOwnerPostNotifications(user.id, false);
+      }
+      setNotificationMessage(
+        error instanceof Error
+          ? error.message
+          : "Impossible de modifier les notifications pour le moment."
+      );
+    } finally {
+      setIsTogglingNotifications(false);
     }
   };
 
@@ -130,12 +151,13 @@ export default function ParametresPage() {
                   role="switch"
                   aria-checked={notificationsEnabled}
                   aria-label={`${t("notifications")} ${devicePermission}`}
+                  disabled={isTogglingNotifications}
                   onClick={() => void toggleNotifications()}
                   className={`relative inline-flex h-9 w-16 shrink-0 items-center rounded-full border p-1 transition ${
                     notificationsEnabled
                       ? "border-blue-600 bg-blue-600"
                       : "border-neutral-200 bg-white"
-                  }`}
+                  } ${isTogglingNotifications ? "cursor-wait opacity-70" : ""}`}
                 >
                   <span
                     className={`inline-flex h-7 w-7 transform items-center justify-center rounded-full transition ${

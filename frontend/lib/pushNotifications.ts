@@ -9,6 +9,8 @@ type VapidKeyResponse = {
   configured: boolean;
 };
 
+const SERVICE_WORKER_TIMEOUT_MS = 6000;
+
 function canUsePushNotifications() {
   return (
     typeof window !== "undefined" &&
@@ -23,6 +25,24 @@ function urlBase64ToUint8Array(value: string) {
   const base64 = `${value}${padding}`.replace(/-/g, "+").replace(/_/g, "/");
   const rawData = window.atob(base64);
   return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs = SERVICE_WORKER_TIMEOUT_MS) {
+  return Promise.race([
+    promise,
+    new Promise<null>((resolve) => {
+      window.setTimeout(() => resolve(null), timeoutMs);
+    }),
+  ]);
+}
+
+async function getReadyServiceWorkerRegistration() {
+  if (!("serviceWorker" in navigator)) return null;
+
+  const existing = await navigator.serviceWorker.getRegistration().catch(() => null);
+  if (existing?.active) return existing;
+
+  return withTimeout(navigator.serviceWorker.ready).catch(() => null);
 }
 
 async function fetchVapidPublicKey(token: string) {
@@ -96,7 +116,15 @@ export async function enablePushNotifications(token: string): Promise<PushSetupR
     };
   }
 
-  const registration = await navigator.serviceWorker.ready;
+  const registration = await getReadyServiceWorkerRegistration();
+  if (!registration) {
+    return {
+      ok: false,
+      permission,
+      message: "Le service de notifications n'est pas encore prêt. Réessayez dans quelques secondes.",
+    };
+  }
+
   const existing = await registration.pushManager.getSubscription();
   const subscription =
     existing ||
@@ -117,7 +145,7 @@ export async function enablePushNotifications(token: string): Promise<PushSetupR
 export async function disablePushNotifications(token: string) {
   if (!canUsePushNotifications()) return;
 
-  const registration = await navigator.serviceWorker.ready.catch(() => null);
+  const registration = await getReadyServiceWorkerRegistration();
   const subscription = await registration?.pushManager.getSubscription();
   if (!subscription) return;
 
