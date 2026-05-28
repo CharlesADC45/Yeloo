@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   FiArrowLeft,
@@ -35,9 +35,14 @@ export default function ParametresPage() {
   );
   const notificationsEnabled = getNotificationPrefs(prefsByUser, user?.id)
     .ownerPostNotifications;
-  const [devicePermission, setDevicePermission] = useState(getDeviceNotificationPermission());
+  const [devicePermission, setDevicePermission] =
+    useState<ReturnType<typeof getDeviceNotificationPermission>>("unsupported");
   const [notificationMessage, setNotificationMessage] = useState<string | null>(null);
   const [isTogglingNotifications, setIsTogglingNotifications] = useState(false);
+
+  useEffect(() => {
+    setDevicePermission(getDeviceNotificationPermission());
+  }, []);
 
   const toggleNotifications = async () => {
     if (!user?.id || !token || isTogglingNotifications) {
