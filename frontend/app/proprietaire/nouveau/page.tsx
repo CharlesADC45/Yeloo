@@ -18,6 +18,7 @@ import { OwnerSidebar } from "@/components/OwnerSidebar";
 import { TopBar } from "@/components/TopBar";
 import { getApiBaseUrl } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
+import { usePreferencesStore } from "@/stores/preferencesStore";
 
 type Step = {
   title: string;
@@ -49,6 +50,74 @@ const STEPS: Step[] = [
   { title: "Paiement", subtitle: "Paiement mobile" },
 ];
 
+const STEP_COPY = {
+  fr: STEPS,
+  en: [
+    { title: "Owner info", subtitle: "Identity and contact" },
+    { title: "Documents", subtitle: "Files and proof" },
+    { title: "Payment", subtitle: "Mobile payment" },
+  ],
+};
+
+const COPY = {
+  fr: {
+    title: "Onboarding propriétaire",
+    subtitle: "Complétez les informations avant de publier un bien.",
+    draftUnavailable: "Sauvegarde locale indisponible",
+    draftSaved: "Brouillon sauvegardé automatiquement",
+    backDashboard: "Retour au dashboard",
+    fullName: "Nom complet",
+    phone: "Téléphone",
+    email: "Email",
+    city: "Ville principale",
+    identityDoc: "Pièce d'identité",
+    selfie: "Selfie de vérification",
+    propertyProof: "Justificatif de propriété",
+    address: "Adresse du bien principal",
+    mobileMoney: "Mobile money",
+    accountHolder: "Nom du titulaire",
+    previous: "Précédent",
+    step: "Étape",
+    sending: "Envoi...",
+    finish: "Terminer",
+    next: "Suivant",
+    required: "Champ requis",
+    signIn: "Connectez-vous avant de continuer.",
+    requestSent: "Demande envoyée",
+    successMessage:
+      "Bravo, votre dossier propriétaire est parti pour validation. On vous tient au courant dès que le super admin confirme votre vérification.",
+    seeSpace: "Voir mon espace",
+  },
+  en: {
+    title: "Owner onboarding",
+    subtitle: "Complete your information before publishing a property.",
+    draftUnavailable: "Local draft unavailable",
+    draftSaved: "Draft saved automatically",
+    backDashboard: "Back to dashboard",
+    fullName: "Full name",
+    phone: "Phone",
+    email: "Email",
+    city: "Main city",
+    identityDoc: "Identity document",
+    selfie: "Verification selfie",
+    propertyProof: "Proof of ownership",
+    address: "Main property address",
+    mobileMoney: "Mobile money",
+    accountHolder: "Account holder name",
+    previous: "Previous",
+    step: "Step",
+    sending: "Sending...",
+    finish: "Finish",
+    next: "Next",
+    required: "Required field",
+    signIn: "Sign in before continuing.",
+    requestSent: "Request sent",
+    successMessage:
+      "Your owner file has been sent for review. We will notify you once the super admin confirms your verification.",
+    seeSpace: "View my space",
+  },
+};
+
 const EMPTY_FORM_VALUES: OwnerFormState = {
   fullName: "",
   phone: "",
@@ -64,6 +133,37 @@ const EMPTY_FORM_VALUES: OwnerFormState = {
 
 const OWNER_DRAFT_DB_NAME = "yeloo-owner-onboarding";
 const OWNER_DRAFT_STORE = "drafts";
+const SUPPORTED_OWNER_DOCUMENT_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+const SUPPORTED_OWNER_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const SUPPORTED_OWNER_DOCUMENT_EXTENSIONS = /\.(jpe?g|png|webp|pdf)$/i;
+const SUPPORTED_OWNER_IMAGE_EXTENSIONS = /\.(jpe?g|png|webp)$/i;
+
+const describeFile = (file: File) =>
+  `${file.name || "fichier sans nom"}${file.type ? ` (${file.type})` : ""}`;
+
+const isSupportedOwnerDocument = (file: File) =>
+  SUPPORTED_OWNER_DOCUMENT_TYPES.includes(file.type) ||
+  SUPPORTED_OWNER_DOCUMENT_EXTENSIONS.test(file.name);
+
+const isSupportedOwnerImage = (file: File) =>
+  SUPPORTED_OWNER_IMAGE_TYPES.includes(file.type) ||
+  SUPPORTED_OWNER_IMAGE_EXTENSIONS.test(file.name);
+
+const buildUnsupportedOwnerFileMessage = (
+  label: string,
+  file: File,
+  allowedFormats: string
+) =>
+  `${label}: "${describeFile(file)}" n'est pas compatible. Formats acceptés: ${allowedFormats}.`;
+
+const normalizeOwnerOnboardingError = (error: unknown, fallback: string) => {
+  const raw = error instanceof Error ? error.message : fallback;
+  if (!raw) return fallback;
+  if (raw.includes("Failed to fetch") || raw.includes("NetworkError")) {
+    return `Impossible de contacter l'API (${getApiBaseUrl()}). Vérifiez que le backend tourne et que cette adresse est autorisée.`;
+  }
+  return raw;
+};
 
 function openOwnerDraftDb() {
   return new Promise<IDBDatabase>((resolve, reject) => {
@@ -142,6 +242,26 @@ function FileUploadField({
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const language = usePreferencesStore((state) => state.language);
+  const labels = language === "en"
+    ? {
+        addFile: "Add a file",
+        selected: "File selected",
+        hint: "Photo, PDF or document",
+        choose: "Choose",
+        takePhoto: "Take a photo",
+        uploadPhone: "Upload from phone",
+        remove: "Remove file",
+      }
+    : {
+        addFile: "Ajouter un fichier",
+        selected: "Fichier sélectionné",
+        hint: "Photo, PDF ou document",
+        choose: "Choisir",
+        takePhoto: "Prendre une photo",
+        uploadPhone: "Uploader depuis le téléphone",
+        remove: "Retirer le fichier",
+      };
 
   const handleFile = (nextFile: File | null) => {
     onChange(nextFile);
@@ -190,10 +310,10 @@ function FileUploadField({
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[13px] font-semibold text-neutral-900">
-            {file?.name ?? "Ajouter un fichier"}
+            {file?.name ?? labels.addFile}
           </span>
           <span className="mt-0.5 block truncate text-[10px] text-neutral-500">
-            {file ? "Fichier sélectionné" : "Photo, PDF ou document"}
+            {file ? labels.selected : labels.hint}
           </span>
         </span>
         <span
@@ -201,7 +321,7 @@ function FileUploadField({
             file ? "bg-emerald-50 text-emerald-600" : "bg-neutral-950 text-white"
           }`}
         >
-          {file ? "OK" : "Choisir"}
+          {file ? "OK" : labels.choose}
         </span>
       </button>
       {isPickerOpen && (
@@ -219,7 +339,7 @@ function FileUploadField({
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                 <FiCamera />
               </span>
-              Prendre une photo
+              {labels.takePhoto}
             </button>
           )}
           <button
@@ -230,7 +350,7 @@ function FileUploadField({
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-100 text-neutral-600">
               <FiImage />
             </span>
-            Uploader depuis le téléphone
+            {labels.uploadPhone}
           </button>
           {file && (
             <button
@@ -241,7 +361,7 @@ function FileUploadField({
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 text-red-600">
                 <FiX />
               </span>
-              Retirer le fichier
+              {labels.remove}
             </button>
           )}
         </motion.div>
@@ -267,6 +387,9 @@ export default function NouveauBienPage() {
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
+  const language = usePreferencesStore((state) => state.language);
+  const copy = COPY[language];
+  const steps = STEP_COPY[language];
   const router = useRouter();
   const isOwnerRole = user?.role === "proprietaire" || user?.role === "admin";
   const isVerifiedOwner = isOwnerRole && Boolean(user?.is_verified);
@@ -300,7 +423,7 @@ export default function NouveauBienPage() {
 
         if (draft) {
           setFormValues({ ...EMPTY_FORM_VALUES, ...draft.formValues });
-          setStepIndex(Math.min(Math.max(draft.stepIndex, 0), STEPS.length - 1));
+          setStepIndex(Math.min(Math.max(draft.stepIndex, 0), steps.length - 1));
           setDraftStatus("saved");
         } else {
           setFormValues(EMPTY_FORM_VALUES);
@@ -321,7 +444,7 @@ export default function NouveauBienPage() {
     return () => {
       active = false;
     };
-  }, [draftKey]);
+  }, [draftKey, steps.length]);
 
   useEffect(() => {
     if (!user || !isDraftLoaded) return;
@@ -374,9 +497,32 @@ export default function NouveauBienPage() {
       const isEmpty =
         typeof value === "string" ? value.trim().length === 0 : value === null;
       if (isEmpty) {
-        nextErrors[field] = "Champ requis";
+        nextErrors[field] = copy.required;
       }
     });
+    if (index === 1) {
+      if (formValues.identityFile && !isSupportedOwnerDocument(formValues.identityFile)) {
+        nextErrors.identityFile = buildUnsupportedOwnerFileMessage(
+          "Pièce d'identité",
+          formValues.identityFile,
+          "JPG, PNG, WEBP ou PDF"
+        );
+      }
+      if (formValues.selfieFile && !isSupportedOwnerImage(formValues.selfieFile)) {
+        nextErrors.selfieFile = buildUnsupportedOwnerFileMessage(
+          "Selfie de vérification",
+          formValues.selfieFile,
+          "JPG, PNG ou WEBP"
+        );
+      }
+      if (formValues.propertyFile && !isSupportedOwnerDocument(formValues.propertyFile)) {
+        nextErrors.propertyFile = buildUnsupportedOwnerFileMessage(
+          "Justificatif de propriété",
+          formValues.propertyFile,
+          "JPG, PNG, WEBP ou PDF"
+        );
+      }
+    }
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
@@ -390,6 +536,34 @@ export default function NouveauBienPage() {
     setSubmitError(null);
     setShouldRedirect(false);
     try {
+      if (formValues.identityFile && !isSupportedOwnerDocument(formValues.identityFile)) {
+        throw new Error(
+          buildUnsupportedOwnerFileMessage(
+            "Pièce d'identité",
+            formValues.identityFile,
+            "JPG, PNG, WEBP ou PDF"
+          )
+        );
+      }
+      if (formValues.selfieFile && !isSupportedOwnerImage(formValues.selfieFile)) {
+        throw new Error(
+          buildUnsupportedOwnerFileMessage(
+            "Selfie de vérification",
+            formValues.selfieFile,
+            "JPG, PNG ou WEBP"
+          )
+        );
+      }
+      if (formValues.propertyFile && !isSupportedOwnerDocument(formValues.propertyFile)) {
+        throw new Error(
+          buildUnsupportedOwnerFileMessage(
+            "Justificatif de propriété",
+            formValues.propertyFile,
+            "JPG, PNG, WEBP ou PDF"
+          )
+        );
+      }
+
       const formData = new FormData();
       formData.append("full_name", formValues.fullName.trim());
       formData.append("phone", formValues.phone.trim());
@@ -450,9 +624,7 @@ export default function NouveauBienPage() {
       setIsCompleted(true);
       setShouldRedirect(true);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Impossible d'enregistrer.";
-      setSubmitError(message);
+      setSubmitError(normalizeOwnerOnboardingError(err, "Impossible d'enregistrer."));
       setIsCompleted(false);
     } finally {
       setIsSubmitting(false);
@@ -461,8 +633,8 @@ export default function NouveauBienPage() {
 
   const goNext = async () => {
     if (!validateStep(stepIndex)) return;
-    if (stepIndex < STEPS.length - 1) {
-      setStepIndex((prev) => Math.min(prev + 1, STEPS.length - 1));
+    if (stepIndex < steps.length - 1) {
+      setStepIndex((prev) => Math.min(prev + 1, steps.length - 1));
       return;
     }
     await submitOnboarding();
@@ -476,7 +648,7 @@ export default function NouveauBienPage() {
     setStepIndex((prev) => Math.max(prev - 1, 0));
   };
 
-  const isLastStep = stepIndex === STEPS.length - 1;
+  const isLastStep = stepIndex === steps.length - 1;
 
   return (
     <div className="min-h-screen bg-transparent">
@@ -496,10 +668,10 @@ export default function NouveauBienPage() {
           <div className="flex flex-wrap items-center justify-between gap-3 px-1 sm:px-0">
             <div>
               <h1 className="text-lg font-semibold tracking-tight sm:text-xl">
-                Onboarding propriétaire
+                {copy.title}
               </h1>
               <p className="mt-1 text-xs text-neutral-600">
-                Complétez les informations avant de publier un bien.
+                {copy.subtitle}
               </p>
               <p
                 className={`mt-2 inline-flex rounded-full px-3 py-1 text-[11px] font-semibold ${
@@ -509,26 +681,26 @@ export default function NouveauBienPage() {
                 }`}
               >
                 {draftStatus === "unavailable"
-                  ? "Sauvegarde locale indisponible"
-                  : "Brouillon sauvegardé automatiquement"}
+                  ? copy.draftUnavailable
+                  : copy.draftSaved}
               </p>
             </div>
             <Link
               href="/proprietaire"
               className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700"
             >
-              Retour au dashboard
+              {copy.backDashboard}
             </Link>
           </div>
 
           <div className="mt-5 min-w-0 overflow-visible sm:rounded-3xl sm:border sm:border-neutral-200 sm:p-5">
             <div className="relative">
               <div className="flex items-start justify-between gap-1 text-center sm:gap-2">
-                {STEPS.map((step, index) => {
+                {steps.map((step, index) => {
                   const isActive = index === stepIndex;
                   const isDone = index < stepIndex;
                   const isFirst = index === 0;
-                  const isLast = index === STEPS.length - 1;
+                  const isLast = index === steps.length - 1;
                   return (
                     <div
                       key={step.title}
@@ -614,7 +786,7 @@ export default function NouveauBienPage() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="flex flex-col gap-1 text-xs text-neutral-600">
                     <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
-                      Nom complet
+                      {copy.fullName}
                     </span>
                     <input
                       value={formValues.fullName}
@@ -632,7 +804,7 @@ export default function NouveauBienPage() {
                   </label>
                   <label className="flex flex-col gap-1 text-xs text-neutral-600">
                     <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
-                      Téléphone
+                      {copy.phone}
                     </span>
                     <input
                       value={formValues.phone}
@@ -665,7 +837,7 @@ export default function NouveauBienPage() {
                   </label>
                   <label className="flex flex-col gap-1 text-xs text-neutral-600">
                     <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
-                      Ville principale
+                      {copy.city}
                     </span>
                     <input
                       value={formValues.city}
@@ -685,7 +857,7 @@ export default function NouveauBienPage() {
               {stepIndex === 1 && (
                 <div className="grid min-w-0 gap-4 sm:grid-cols-2">
                   <FileUploadField
-                    label="Pièce d'identité"
+                    label={copy.identityDoc}
                     file={formValues.identityFile}
                     error={errors.identityFile}
                     accept="image/*,.pdf"
@@ -693,7 +865,7 @@ export default function NouveauBienPage() {
                     onChange={(file) => updateField("identityFile", file)}
                   />
                   <FileUploadField
-                    label="Selfie de vérification"
+                    label={copy.selfie}
                     file={formValues.selfieFile}
                     error={errors.selfieFile}
                     accept="image/*"
@@ -701,7 +873,7 @@ export default function NouveauBienPage() {
                     onChange={(file) => updateField("selfieFile", file)}
                   />
                   <FileUploadField
-                    label="Justificatif de propriété"
+                    label={copy.propertyProof}
                     file={formValues.propertyFile}
                     error={errors.propertyFile}
                     accept="image/*,.pdf"
@@ -710,7 +882,7 @@ export default function NouveauBienPage() {
                   />
                   <label className="flex flex-col gap-1 text-xs text-neutral-600 sm:col-span-2">
                     <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
-                      Adresse du bien principal
+                      {copy.address}
                     </span>
                     <input
                       value={formValues.address}
@@ -751,7 +923,7 @@ export default function NouveauBienPage() {
                   </label>
                   <label className="flex flex-col gap-1 text-xs text-neutral-600">
                     <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
-                      Nom du titulaire
+                      {copy.accountHolder}
                     </span>
                     <input
                       value={formValues.accountHolder}
@@ -788,11 +960,11 @@ export default function NouveauBienPage() {
                 className="min-h-11 rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-600 disabled:opacity-40"
                 disabled={stepIndex === 0}
               >
-                Précédent
+                {copy.previous}
               </button>
               <div className="flex min-w-0 items-center gap-2">
                 <span className="hidden text-xs text-neutral-500 min-[380px]:inline">
-                  Étape {stepIndex + 1} / {STEPS.length}
+                  {copy.step} {stepIndex + 1} / {steps.length}
                 </span>
                 <button
                   type="button"
@@ -800,7 +972,7 @@ export default function NouveauBienPage() {
                   disabled={isSubmitting}
                   className="min-h-11 rounded-full bg-blue-600 px-5 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  {isLastStep ? (isSubmitting ? "Envoi..." : "Terminer") : "Suivant"}
+                  {isLastStep ? (isSubmitting ? copy.sending : copy.finish) : copy.next}
                 </button>
               </div>
             </div>
@@ -809,9 +981,9 @@ export default function NouveauBienPage() {
       </main>
       <CelebrationModal
         open={isCompleted}
-        title="Demande envoyée"
-        message="Bravo, votre dossier propriétaire est parti pour validation. On vous tient au courant dès que le super admin confirme votre vérification."
-        actionLabel="Voir mon espace"
+        title={copy.requestSent}
+        message={copy.successMessage}
+        actionLabel={copy.seeSpace}
         onClose={handleCelebrationClose}
       />
       <div className="lg:hidden">

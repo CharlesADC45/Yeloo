@@ -82,7 +82,12 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
-        allow_origin_regex=r"https://([a-zA-Z0-9-]+\.)*(vercel\.app|netlify\.app)$",
+        allow_origin_regex=(
+            r"https://([a-zA-Z0-9-]+\.)*(vercel\.app|netlify\.app)$|"
+            r"http://(localhost|127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|"
+            r"192\.168\.\d{1,3}\.\d{1,3}|"
+            r"172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}):\d+$"
+        ),
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

@@ -17,6 +17,29 @@ from app.schemas.property import PropertyCreate, PropertyPublic, PropertyUpdate
 
 router = APIRouter()
 
+SUPPORTED_PHOTO_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+SUPPORTED_PHOTO_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+SUPPORTED_VIDEO_TYPES = {"video/mp4", "video/webm", "video/ogg", "video/quicktime"}
+SUPPORTED_VIDEO_SUFFIXES = {".mp4", ".webm", ".ogg", ".mov"}
+
+
+def _upload_matches(
+    upload: UploadFile,
+    allowed_types: set[str],
+    allowed_suffixes: set[str],
+) -> bool:
+    content_type = (upload.content_type or "").lower()
+    suffix = Path(upload.filename or "").suffix.lower()
+    return content_type in allowed_types or suffix in allowed_suffixes
+
+
+def _reject_upload(label: str, upload: UploadFile, formats: str) -> None:
+    filename = upload.filename or "fichier sans nom"
+    raise HTTPException(
+        status_code=400,
+        detail=f'{label}: "{filename}" n\'est pas compatible. Formats acceptes: {formats}.',
+    )
+
 
 def _serialize_property(prop: Property, include_promo: bool = True) -> PropertyPublic:
     payload = PropertyPublic.model_validate(prop)
@@ -163,6 +186,8 @@ def upload_property_photos(
 
     existing_primary = db.query(PropertyPhoto).filter(PropertyPhoto.property_id == prop.id).first()
     for upload in files:
+        if not _upload_matches(upload, SUPPORTED_PHOTO_TYPES, SUPPORTED_PHOTO_SUFFIXES):
+            _reject_upload("Photo du bien", upload, "JPG, PNG, WEBP ou GIF")
         if use_object_storage:
             object_key = build_object_key(
                 f"properties/{property_id}/photos",
@@ -219,10 +244,8 @@ def upload_property_media(
 
     try:
         if video is not None:
-            if not video.content_type or not video.content_type.startswith("video/"):
-                raise HTTPException(
-                    status_code=400, detail="Le fichier video est invalide."
-                )
+            if not _upload_matches(video, SUPPORTED_VIDEO_TYPES, SUPPORTED_VIDEO_SUFFIXES):
+                _reject_upload("Video de visite", video, "MP4, WEBM, OGG ou MOV")
             filename = build_object_key(
                 f"properties/{property_id}/media/video",
                 video.filename or "video.mp4",
@@ -230,12 +253,14 @@ def upload_property_media(
             prop.video_url = upload_file(video.file, filename, video.content_type)
 
         if tour_360 is not None:
-            valid_types = ("image/", "video/")
-            if not tour_360.content_type or not tour_360.content_type.startswith(
-                valid_types
+            if not (
+                _upload_matches(tour_360, SUPPORTED_PHOTO_TYPES, SUPPORTED_PHOTO_SUFFIXES)
+                or _upload_matches(tour_360, SUPPORTED_VIDEO_TYPES, SUPPORTED_VIDEO_SUFFIXES)
             ):
-                raise HTTPException(
-                    status_code=400, detail="Le fichier 360 est invalide."
+                _reject_upload(
+                    "Visite 360",
+                    tour_360,
+                    "JPG, PNG, WEBP, GIF, MP4, WEBM, OGG ou MOV",
                 )
             filename = build_object_key(
                 f"properties/{property_id}/media/tour-360",

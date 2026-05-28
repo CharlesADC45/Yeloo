@@ -46,10 +46,6 @@ export default function AideSupportPage() {
             </p>
           </div>
 
-          <div className="h-2 w-full overflow-hidden rounded-full bg-blue-100">
-            <div className="h-full w-full rounded-full bg-blue-500" />
-          </div>
-
           <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft">
             <h3 className="text-sm font-semibold text-neutral-900">Contact rapide</h3>
             <div className="mt-4 space-y-3">

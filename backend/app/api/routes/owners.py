@@ -12,6 +12,11 @@ from app.schemas.owner_profile import OwnerProfilePublic, OwnerProfileUpdate
 
 router = APIRouter()
 
+SUPPORTED_DOCUMENT_TYPES = {"image/jpeg", "image/png", "image/webp", "application/pdf"}
+SUPPORTED_DOCUMENT_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp", ".pdf"}
+SUPPORTED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
+SUPPORTED_IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp"}
+
 
 def _require_value(value: str, label: str) -> str:
     cleaned = value.strip()
@@ -29,6 +34,26 @@ def _require_phone(value: str, label: str) -> str:
     if not normalized:
         raise HTTPException(status_code=400, detail=f"{label} requis.")
     return normalized
+
+
+def _upload_matches(
+    upload: UploadFile,
+    allowed_types: set[str],
+    allowed_suffixes: set[str],
+) -> bool:
+    content_type = (upload.content_type or "").lower()
+    suffix = ""
+    if upload.filename and "." in upload.filename:
+        suffix = "." + upload.filename.rsplit(".", 1)[-1].lower()
+    return content_type in allowed_types or suffix in allowed_suffixes
+
+
+def _reject_upload(label: str, upload: UploadFile, formats: str) -> None:
+    filename = upload.filename or "fichier sans nom"
+    raise HTTPException(
+        status_code=400,
+        detail=f'{label}: "{filename}" n\'est pas compatible. Formats acceptes: {formats}.',
+    )
 
 
 @router.get("/me", response_model=OwnerProfilePublic)
@@ -151,10 +176,16 @@ def upsert_owner_onboarding(
         profile.account_holder = _require_value(account_holder, "Nom du titulaire")
 
     if identity_doc is not None:
+        if not _upload_matches(identity_doc, SUPPORTED_DOCUMENT_TYPES, SUPPORTED_DOCUMENT_SUFFIXES):
+            _reject_upload("Piece d'identite", identity_doc, "JPG, PNG, WEBP ou PDF")
         profile.identity_doc_name = identity_doc.filename
     if identity_selfie is not None:
+        if not _upload_matches(identity_selfie, SUPPORTED_IMAGE_TYPES, SUPPORTED_IMAGE_SUFFIXES):
+            _reject_upload("Selfie de verification", identity_selfie, "JPG, PNG ou WEBP")
         profile.identity_selfie_name = identity_selfie.filename
     if property_doc is not None:
+        if not _upload_matches(property_doc, SUPPORTED_DOCUMENT_TYPES, SUPPORTED_DOCUMENT_SUFFIXES):
+            _reject_upload("Justificatif de propriete", property_doc, "JPG, PNG, WEBP ou PDF")
         profile.property_proof_name = property_doc.filename
     if not profile.identity_doc_name or not profile.identity_selfie_name or not profile.property_proof_name:
         raise HTTPException(

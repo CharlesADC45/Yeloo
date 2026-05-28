@@ -37,7 +37,6 @@ export default function ParametresPage() {
     .ownerPostNotifications;
   const [devicePermission, setDevicePermission] =
     useState<ReturnType<typeof getDeviceNotificationPermission>>("unsupported");
-  const [notificationMessage, setNotificationMessage] = useState<string | null>(null);
   const [isTogglingNotifications, setIsTogglingNotifications] = useState(false);
 
   useEffect(() => {
@@ -46,9 +45,6 @@ export default function ParametresPage() {
 
   const toggleNotifications = async () => {
     if (!user?.id || !token || isTogglingNotifications) {
-      if (!user?.id || !token) {
-        setNotificationMessage("Connectez-vous pour gérer les notifications sur ce téléphone.");
-      }
       return;
     }
 
@@ -61,27 +57,19 @@ export default function ParametresPage() {
         setDevicePermission(result.permission);
         if (!result.ok) {
           setOwnerPostNotifications(user.id, false);
-          setNotificationMessage(result.message);
           return;
         }
         setOwnerPostNotifications(user.id, true);
-        setNotificationMessage(result.message);
         return;
       }
 
       setOwnerPostNotifications(user.id, false);
-      setNotificationMessage("Notifications push désactivées pour ce téléphone.");
       await disablePushNotifications(token);
       setDevicePermission(getDeviceNotificationPermission());
-    } catch (error) {
+    } catch {
       if (nextEnabled) {
         setOwnerPostNotifications(user.id, false);
       }
-      setNotificationMessage(
-        error instanceof Error
-          ? error.message
-          : "Impossible de modifier les notifications pour le moment."
-      );
     } finally {
       setIsTogglingNotifications(false);
     }
@@ -112,10 +100,6 @@ export default function ParametresPage() {
             <p className="mt-1 text-sm text-neutral-600">
               {t("appConfiguration")}
             </p>
-          </div>
-
-          <div className="h-2 w-full overflow-hidden rounded-full bg-blue-100">
-            <div className="h-full w-full rounded-full bg-blue-500" />
           </div>
 
           <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft">
@@ -175,11 +159,6 @@ export default function ParametresPage() {
                   </span>
                 </button>
               </div>
-              {notificationMessage ? (
-                <p className="rounded-2xl border border-blue-100 bg-blue-50 px-3 py-2 text-[11px] leading-5 text-blue-700">
-                  {notificationMessage}
-                </p>
-              ) : null}
             </div>
           </div>
         </motion.section>

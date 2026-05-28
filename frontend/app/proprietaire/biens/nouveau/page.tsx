@@ -11,6 +11,7 @@ import { TopBar } from "@/components/TopBar";
 import { getApiBaseUrl } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 import { useNotificationStore } from "@/stores/notificationStore";
+import { usePreferencesStore } from "@/stores/preferencesStore";
 
 type Step = {
   title: string;
@@ -51,6 +52,62 @@ const STEPS: Step[] = [
   { title: "Récapitulatif", subtitle: "Vérifier avant envoi" },
 ];
 
+const PROPERTY_STEP_COPY = {
+  fr: STEPS,
+  en: [
+    { title: "Information", subtitle: "Text and location" },
+    { title: "Media", subtitle: "Photos, video, 360" },
+    { title: "Review", subtitle: "Check before sending" },
+  ],
+};
+
+const PROPERTY_COPY = {
+  fr: {
+    title: "Ajouter un bien",
+    subtitle: "Créez une annonce claire avec photos, localisation et conditions.",
+    draftUnavailable: "Sauvegarde locale indisponible",
+    draftRestored: "Brouillon restauré automatiquement",
+    draftSaved: "Brouillon sauvegardé automatiquement",
+    backDashboard: "Retour au dashboard",
+    previous: "Précédent",
+    step: "Étape",
+    sending: "Envoi...",
+    publish: "Publier",
+    next: "Suivant",
+    submissionFailed: "Soumission échouée",
+    submissionRunning: "Soumission en cours",
+    submissionFailedHint: "Une erreur est survenue. Vérifiez l'étape indiquée.",
+    submissionRunningHint: "Nous finalisons votre annonce.",
+    close: "Fermer",
+    createdTitle: "Annonce créée",
+    createdMessage:
+      "Bravo, votre bien est enregistré. Vous pourrez le publier, le suivre et l'améliorer depuis votre espace propriétaire.",
+    dashboard: "Voir mon dashboard",
+  },
+  en: {
+    title: "Add a property",
+    subtitle: "Create a clear listing with photos, location and rental terms.",
+    draftUnavailable: "Local draft unavailable",
+    draftRestored: "Draft restored automatically",
+    draftSaved: "Draft saved automatically",
+    backDashboard: "Back to dashboard",
+    previous: "Previous",
+    step: "Step",
+    sending: "Sending...",
+    publish: "Publish",
+    next: "Next",
+    submissionFailed: "Submission failed",
+    submissionRunning: "Submission in progress",
+    submissionFailedHint: "Something went wrong. Check the highlighted step.",
+    submissionRunningHint: "We are finalizing your listing.",
+    close: "Close",
+    createdTitle: "Listing created",
+    createdMessage:
+      "Your property has been saved. You can publish it, track it and improve it from your owner space.",
+    dashboard: "View my dashboard",
+  },
+};
+
 const DEFAULT_FORM: FormState = {
   title: "",
   description: "",
@@ -72,6 +129,8 @@ const MAX_VIDEO_BYTES = 150 * 1024 * 1024;
 const MAX_TOUR_BYTES = 50 * 1024 * 1024;
 const SUPPORTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const SUPPORTED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/ogg", "video/quicktime"];
+const SUPPORTED_IMAGE_EXTENSIONS = /\.(jpe?g|png|webp|gif)$/i;
+const SUPPORTED_VIDEO_EXTENSIONS = /\.(mp4|webm|ogg|mov)$/i;
 const SUBMISSION_STEPS: SubmissionStep[] = [
   { id: "validation", label: "Vérification locale", status: "pending" },
   { id: "property", label: "Création annonce", status: "pending" },
@@ -102,19 +161,26 @@ const parseCoordinates = (value: string) => {
 };
 
 const isSupportedImage = (file: File) =>
-  SUPPORTED_IMAGE_TYPES.includes(file.type) || /\.(jpe?g|png|webp|gif)$/i.test(file.name);
+  SUPPORTED_IMAGE_TYPES.includes(file.type) || SUPPORTED_IMAGE_EXTENSIONS.test(file.name);
 
 const isSupportedVideo = (file: File) =>
-  SUPPORTED_VIDEO_TYPES.includes(file.type) || /\.(mp4|webm|ogg|mov)$/i.test(file.name);
+  SUPPORTED_VIDEO_TYPES.includes(file.type) || SUPPORTED_VIDEO_EXTENSIONS.test(file.name);
 
-const unsupportedFileMessage =
-  "Document non supporté. Utilisez JPG, PNG, WEBP, GIF pour les photos, ou MP4, WEBM, MOV pour les vidéos.";
+const describeFile = (file: File) =>
+  `${file.name || "fichier sans nom"}${file.type ? ` (${file.type})` : ""}`;
+
+const buildUnsupportedFileMessage = (
+  label: string,
+  file: File,
+  allowedFormats: string
+) =>
+  `${label}: "${describeFile(file)}" n'est pas compatible. Formats acceptés: ${allowedFormats}.`;
 
 const normalizeFetchError = (error: unknown, fallback: string) => {
   const raw = error instanceof Error ? error.message : fallback;
   if (!raw) return fallback;
   if (raw.includes("Failed to fetch") || raw.includes("NetworkError")) {
-    return "Impossible de contacter l'API. Vérifiez que le backend tourne.";
+    return `Impossible de contacter l'API (${getApiBaseUrl()}). Vérifiez que le backend tourne et que cette adresse est autorisée.`;
   }
   const normalized = raw.replace(/mini0/gi, "MinIO");
   if (/minio non configur(e|é)/i.test(normalized)) {
@@ -182,6 +248,9 @@ export default function NouveauBienPage() {
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
   const pushOwnerPost = useNotificationStore((state) => state.pushOwnerPost);
+  const language = usePreferencesStore((state) => state.language);
+  const copy = PROPERTY_COPY[language];
+  const steps = PROPERTY_STEP_COPY[language];
   const router = useRouter();
   const photoInputRef = useRef<HTMLInputElement | null>(null);
   const cameraPhotoInputRef = useRef<HTMLInputElement | null>(null);
@@ -294,7 +363,10 @@ export default function NouveauBienPage() {
     if (invalid) {
       setPhotoFiles([]);
       event.target.value = "";
-      setErrors((prev) => ({ ...prev, photos: unsupportedFileMessage }));
+      setErrors((prev) => ({
+        ...prev,
+        photos: buildUnsupportedFileMessage("Photos du bien", invalid, "JPG, PNG, WEBP ou GIF"),
+      }));
       return;
     }
     setPhotoFiles(files);
@@ -313,7 +385,10 @@ export default function NouveauBienPage() {
     if (!isSupportedVideo(file)) {
       setVideoFile(null);
       event.target.value = "";
-      setErrors((prev) => ({ ...prev, video: unsupportedFileMessage }));
+      setErrors((prev) => ({
+        ...prev,
+        video: buildUnsupportedFileMessage("Vidéo de visite", file, "MP4, WEBM, OGG ou MOV"),
+      }));
       return;
     }
     if (file.size > MAX_VIDEO_BYTES) {
@@ -335,7 +410,10 @@ export default function NouveauBienPage() {
     if (!isValid) {
       setTourFile(null);
       event.target.value = "";
-      setErrors((prev) => ({ ...prev, tour: unsupportedFileMessage }));
+      setErrors((prev) => ({
+        ...prev,
+        tour: buildUnsupportedFileMessage("Visite 360", file, "JPG, PNG, WEBP ou GIF"),
+      }));
       return;
     }
     if (file.size > MAX_TOUR_BYTES) {
@@ -375,7 +453,11 @@ export default function NouveauBienPage() {
     }
     if (index === 1 && videoFile) {
       if (!isSupportedVideo(videoFile)) {
-        nextErrors.video = "Fichier vidéo invalide.";
+        nextErrors.video = buildUnsupportedFileMessage(
+          "Vidéo de visite",
+          videoFile,
+          "MP4, WEBM, OGG ou MOV"
+        );
       } else if (videoFile.size > MAX_VIDEO_BYTES) {
         nextErrors.video = "Vidéo trop lourde (150MB max).";
       }
@@ -383,7 +465,11 @@ export default function NouveauBienPage() {
     if (index === 1 && tourFile) {
       const isValid = isSupportedImage(tourFile) || isSupportedVideo(tourFile);
       if (!isValid) {
-        nextErrors.tour = "Fichier 360 invalide.";
+        nextErrors.tour = buildUnsupportedFileMessage(
+          "Visite 360",
+          tourFile,
+          "JPG, PNG, WEBP, GIF, MP4, WEBM, OGG ou MOV"
+        );
       } else if (tourFile.size > MAX_TOUR_BYTES) {
         nextErrors.tour = "Fichier 360 trop lourd (50MB max).";
       }
@@ -485,6 +571,26 @@ export default function NouveauBienPage() {
         }
         if (photoFiles.length === 0) {
           throw new Error("Ajoutez au moins une photo avant de soumettre.");
+        }
+        const invalidPhoto = photoFiles.find((file) => !isSupportedImage(file));
+        if (invalidPhoto) {
+          throw new Error(
+            buildUnsupportedFileMessage("Photos du bien", invalidPhoto, "JPG, PNG, WEBP ou GIF")
+          );
+        }
+        if (videoFile && !isSupportedVideo(videoFile)) {
+          throw new Error(
+            buildUnsupportedFileMessage("Vidéo de visite", videoFile, "MP4, WEBM, OGG ou MOV")
+          );
+        }
+        if (tourFile && !isSupportedImage(tourFile) && !isSupportedVideo(tourFile)) {
+          throw new Error(
+            buildUnsupportedFileMessage(
+              "Visite 360",
+              tourFile,
+              "JPG, PNG, WEBP, GIF, MP4, WEBM, OGG ou MOV"
+            )
+          );
         }
         const coords = form.coordinates.trim() ? parseCoordinates(form.coordinates) : null;
         if (form.coordinates.trim() && !coords) {
@@ -649,8 +755,8 @@ export default function NouveauBienPage() {
 
   const goNext = async () => {
     if (!validateStep(stepIndex)) return;
-    if (stepIndex < STEPS.length - 1) {
-      setStepIndex((prev) => Math.min(prev + 1, STEPS.length - 1));
+    if (stepIndex < steps.length - 1) {
+      setStepIndex((prev) => Math.min(prev + 1, steps.length - 1));
       return;
     }
     await submitProperty();
@@ -669,7 +775,7 @@ export default function NouveauBienPage() {
     router.push("/proprietaire");
   };
 
-  const isLastStep = stepIndex === STEPS.length - 1;
+  const isLastStep = stepIndex === steps.length - 1;
   const videoDisplayUrl = uploadedVideoUrl ?? videoPreview;
   const tourDisplayUrl = uploadedTourUrl ?? tourPreview;
   const formattedPrice = form.price
@@ -715,10 +821,10 @@ export default function NouveauBienPage() {
           <div className="flex flex-wrap items-center justify-between gap-3 px-1 sm:px-0">
             <div>
               <h1 className="text-xl font-semibold tracking-tight">
-                Publier un nouveau bien
+                {copy.title}
               </h1>
               <p className="mt-1 text-xs text-neutral-600">
-                Suivez les étapes pour créer votre annonce.
+                {copy.subtitle}
               </p>
               <p
                 className={`mt-2 inline-flex rounded-full px-3 py-1 text-[11px] font-semibold ${
@@ -728,28 +834,28 @@ export default function NouveauBienPage() {
                 }`}
               >
                 {draftStatus === "unavailable"
-                  ? "Sauvegarde locale indisponible"
+                  ? copy.draftUnavailable
                   : draftStatus === "restored"
-                    ? "Brouillon restauré automatiquement"
-                    : "Brouillon sauvegardé automatiquement"}
+                    ? copy.draftRestored
+                    : copy.draftSaved}
               </p>
             </div>
             <Link
               href="/proprietaire"
               className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700"
             >
-              Retour
+              {copy.backDashboard}
             </Link>
           </div>
 
           <div className="mt-5 min-w-0 overflow-visible sm:rounded-3xl sm:border sm:border-neutral-200 sm:p-5">
             <div className="relative">
               <div className="flex items-start justify-between gap-1 text-center sm:gap-2">
-                {STEPS.map((step, index) => {
+                {steps.map((step, index) => {
                   const isActive = index === stepIndex;
                   const isDone = index < stepIndex;
                   const isFirst = index === 0;
-                  const isLast = index === STEPS.length - 1;
+                  const isLast = index === steps.length - 1;
                   return (
                     <div key={step.title} className="relative flex flex-1 flex-col items-center px-0.5 sm:px-2">
                       {!isFirst && (
@@ -1425,11 +1531,11 @@ export default function NouveauBienPage() {
                 className="min-h-11 rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-600 disabled:opacity-40"
                 disabled={stepIndex === 0}
               >
-                Précédent
+                {copy.previous}
               </button>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-neutral-500">
-                  Étape {stepIndex + 1} / {STEPS.length}
+                  {copy.step} {stepIndex + 1} / {steps.length}
                 </span>
                 <button
                   type="button"
@@ -1437,7 +1543,7 @@ export default function NouveauBienPage() {
                   disabled={isSubmitting}
                   className="min-h-11 rounded-full bg-blue-600 px-5 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  {isLastStep ? (isSubmitting ? "Envoi..." : "Publier") : "Suivant"}
+                  {isLastStep ? (isSubmitting ? copy.sending : copy.publish) : copy.next}
                 </button>
               </div>
             </div>
@@ -1470,12 +1576,12 @@ export default function NouveauBienPage() {
               </div>
               <div>
                 <h2 className="text-base font-semibold text-neutral-950">
-                  {submissionStatus === "error" ? "Soumission échouée" : "Soumission en cours"}
+                  {submissionStatus === "error" ? copy.submissionFailed : copy.submissionRunning}
                 </h2>
                 <p className="mt-1 text-sm text-neutral-500">
                   {submissionStatus === "error"
-                    ? "Une erreur est survenue. Vérifiez l'étape indiquée."
-                    : "Nous finalisons votre annonce."}
+                    ? copy.submissionFailedHint
+                    : copy.submissionRunningHint}
                 </p>
               </div>
             </div>
@@ -1515,7 +1621,7 @@ export default function NouveauBienPage() {
                 onClick={closeSubmissionModal}
                 className="mt-5 w-full rounded-full border border-neutral-200 px-4 py-3 text-sm font-semibold text-neutral-700"
               >
-                Fermer
+                {copy.close}
               </button>
             )}
           </motion.div>
@@ -1523,9 +1629,9 @@ export default function NouveauBienPage() {
       )}
       <CelebrationModal
         open={Boolean(success)}
-        title="Annonce créée"
-        message="Bravo, votre bien est enregistré. Vous pourrez le publier, le suivre et l'améliorer depuis votre espace propriétaire."
-        actionLabel="Voir mon dashboard"
+        title={copy.createdTitle}
+        message={copy.createdMessage}
+        actionLabel={copy.dashboard}
         onClose={handleCelebrationClose}
       />
     </div>
