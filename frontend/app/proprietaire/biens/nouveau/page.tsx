@@ -180,7 +180,7 @@ const normalizeFetchError = (error: unknown, fallback: string) => {
   const raw = error instanceof Error ? error.message : fallback;
   if (!raw) return fallback;
   if (raw.includes("Failed to fetch") || raw.includes("NetworkError")) {
-    return `Impossible de contacter l'API (${getApiBaseUrl()}). Vérifiez que le backend tourne et que cette adresse est autorisée.`;
+    return "Impossible de joindre le serveur Yeloo. Vérifiez votre connexion puis réessayez.";
   }
   const normalized = raw.replace(/mini0/gi, "MinIO");
   if (/minio non configur(e|é)/i.test(normalized)) {
@@ -739,15 +739,10 @@ export default function NouveauBienPage() {
       setShouldRedirect(true);
     } catch (err) {
       const message = normalizeFetchError(err, "Publication impossible.");
-      const cleanupSucceeded = await cleanupCreatedProperty();
-      const cleanupMessage = propertyId
-        ? cleanupSucceeded
-          ? " L'annonce temporaire a été supprimée."
-          : " L'annonce temporaire n'a pas pu être supprimée automatiquement."
-        : "";
+      await cleanupCreatedProperty();
       setSubmissionStatus("error");
       updateSubmissionStep(activeStep, "error", message);
-      setSubmitError(`${message}${cleanupMessage}`);
+      setSubmitError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -811,7 +806,7 @@ export default function NouveauBienPage() {
     <div className="min-h-screen bg-transparent">
       <TopBar />
       <OwnerSidebar />
-      <main className="mx-auto max-w-3xl px-3 pb-36 pt-20 sm:px-4 sm:pt-24 lg:ml-72 lg:max-w-5xl lg:px-8">
+      <main className="mx-auto max-w-3xl px-3 pb-24 pt-20 sm:px-4 sm:pt-24 lg:ml-72 lg:max-w-5xl lg:px-8">
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1290,7 +1285,7 @@ export default function NouveauBienPage() {
                   </div>
 
                   <div className="grid gap-4 lg:grid-cols-2">
-                    <div className="flex min-h-[16.5rem] flex-col rounded-[1.35rem] border border-neutral-200 bg-white p-4">
+                    <div className="flex flex-col rounded-[1.35rem] border border-neutral-200 bg-white p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-3">
                           <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-neutral-50 text-neutral-500">
@@ -1370,7 +1365,7 @@ export default function NouveauBienPage() {
                       />
                     </div>
 
-                    <div className="flex min-h-[16.5rem] flex-col rounded-[1.35rem] border border-neutral-200 bg-white p-4">
+                    <div className="flex flex-col rounded-[1.35rem] border border-neutral-200 bg-white p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-3">
                           <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-neutral-50 text-neutral-500">
@@ -1524,7 +1519,7 @@ export default function NouveauBienPage() {
                 {submitError}
               </div>
             )}
-            <div className="sticky bottom-24 -mx-1 mt-6 flex items-center justify-between gap-3 border-t border-neutral-100 bg-white/96 px-1 py-3 backdrop-blur sm:static sm:mx-0 sm:border-t-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-0">
+            <div className="sticky bottom-3 -mx-1 mt-3 flex items-center justify-between gap-3 border-t border-neutral-100 bg-white/96 px-1 py-2 backdrop-blur sm:static sm:mx-0 sm:mt-6 sm:border-t-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-0">
               <button
                 type="button"
                 onClick={goPrev}
@@ -1534,9 +1529,6 @@ export default function NouveauBienPage() {
                 {copy.previous}
               </button>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-neutral-500">
-                  {copy.step} {stepIndex + 1} / {steps.length}
-                </span>
                 <button
                   type="button"
                   onClick={goNext}
