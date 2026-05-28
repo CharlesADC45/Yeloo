@@ -1,20 +1,19 @@
 ﻿"use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   FiArrowLeft,
   FiBell,
   FiChevronRight,
   FiKey,
-  FiMap,
-  FiMoon,
-  FiSmartphone,
 } from "react-icons/fi";
 import { motion } from "framer-motion";
 import { AccountSidebar } from "@/components/AccountSidebar";
+import { PreferenceControls } from "@/components/PreferenceControls";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
+import { useT } from "@/lib/i18n";
 import {
   getDeviceNotificationPermission,
   requestDeviceNotificationPermission,
@@ -26,6 +25,7 @@ import {
 } from "@/stores/notificationStore";
 
 export default function ParametresPage() {
+  const t = useT();
   const bottomNav = <BottomNav />;
   const user = useAuthStore((state) => state.user);
   const prefsByUser = useNotificationStore((state) => state.prefsByUser);
@@ -34,20 +34,8 @@ export default function ParametresPage() {
   );
   const notificationsEnabled = getNotificationPrefs(prefsByUser, user?.id)
     .ownerPostNotifications;
-  const devicePermission = getDeviceNotificationPermission();
+  const [devicePermission, setDevicePermission] = useState(getDeviceNotificationPermission());
   const [notificationMessage, setNotificationMessage] = useState<string | null>(null);
-  const deviceNotificationHint = useMemo(() => {
-    if (devicePermission === "unsupported") {
-      return "Notifications navigateur non supportées sur cet appareil.";
-    }
-    if (devicePermission === "denied") {
-      return "Notifications bloquées par le navigateur. Autorisez-les dans les réglages du navigateur.";
-    }
-    if (devicePermission === "default") {
-      return "Autorisez les notifications navigateur pour recevoir les alertes pendant que l'app est ouverte.";
-    }
-    return "Notifications navigateur autorisées.";
-  }, [devicePermission]);
 
   const toggleNotifications = async () => {
     if (!user?.id) return;
@@ -55,6 +43,7 @@ export default function ParametresPage() {
     const nextEnabled = !notificationsEnabled;
     if (nextEnabled) {
       const permission = await requestDeviceNotificationPermission();
+      setDevicePermission(permission);
       if (permission !== "granted") {
         setOwnerPostNotifications(user.id, false);
         setNotificationMessage(
@@ -66,6 +55,7 @@ export default function ParametresPage() {
       }
     }
     setOwnerPostNotifications(user.id, nextEnabled);
+    setDevicePermission(getDeviceNotificationPermission());
     setNotificationMessage(
       nextEnabled
         ? "Notifications appareil activées pour ce compte."
@@ -91,15 +81,12 @@ export default function ParametresPage() {
             >
               <FiArrowLeft />
             </Link>
-            <div className="rounded-full border border-neutral-200 bg-white px-4 py-1 text-xs font-semibold text-neutral-600 shadow-soft">
-              1 / 1
-            </div>
           </div>
 
           <div>
-            <h1 className="text-2xl font-semibold text-neutral-900">Paramètres</h1>
+            <h1 className="text-2xl font-semibold text-neutral-900">{t("settings")}</h1>
             <p className="mt-1 text-sm text-neutral-600">
-              Configuration de l&apos;application
+              {t("appConfiguration")}
             </p>
           </div>
 
@@ -108,7 +95,7 @@ export default function ParametresPage() {
           </div>
 
           <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft">
-            <h3 className="text-sm font-semibold text-neutral-900">Sécurité</h3>
+            <h3 className="text-sm font-semibold text-neutral-900">{t("security")}</h3>
             <Link
               href="/compte/changer-mot-de-passe"
               className="mt-4 flex items-center justify-between rounded-2xl bg-neutral-50 px-4 py-3 ring-1 ring-black/5"
@@ -119,7 +106,7 @@ export default function ParametresPage() {
                 </span>
                 <span>
                   <p className="text-sm font-semibold text-neutral-900">
-                    Changer le mot de passe
+                    {t("changePassword")}
                   </p>
                 </span>
               </span>
@@ -128,24 +115,23 @@ export default function ParametresPage() {
           </div>
 
           <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft">
-            <h3 className="text-sm font-semibold text-neutral-900">Préférences</h3>
+            <h3 className="text-sm font-semibold text-neutral-900">{t("preferences")}</h3>
             <div className="mt-4 space-y-3">
+              <PreferenceControls />
               <div className="flex items-center justify-between rounded-2xl bg-neutral-50 px-4 py-3 ring-1 ring-black/5">
                 <span className="flex items-center gap-3">
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
                     <FiBell />
                   </span>
                   <span>
-                    <p className="text-sm font-semibold text-neutral-900">Notifications</p>
-                    {/* <p className="text-xs text-neutral-500">
-                      Recevoir les nouvelles annonces publiées par les propriétaires
-                    </p> */}
+                    <p className="text-sm font-semibold text-neutral-900">{t("notifications")}</p>
                   </span>
                 </span>
                 <button
                   type="button"
                   role="switch"
                   aria-checked={notificationsEnabled}
+                  aria-label={`${t("notifications")} ${devicePermission}`}
                   onClick={() => void toggleNotifications()}
                   className={`relative inline-flex h-9 w-16 shrink-0 items-center rounded-full border p-1 transition ${
                     notificationsEnabled
@@ -164,75 +150,13 @@ export default function ParametresPage() {
                   </span>
                 </button>
               </div>
-              {/* <p className="px-1 text-[11px] leading-5 text-neutral-500">
-                Notifications appareil :{" "}
-                <span className="font-semibold text-neutral-700">
-                  {devicePermission === "unsupported"
-                    ? "non supportées"
-                    : devicePermission === "granted"
-                      ? "autorisées"
-                      : devicePermission === "denied"
-                        ? "bloquées par le navigateur"
-                        : "à autoriser"}
-                </span>
-              </p> */}
-              {/* <p className="px-1 text-[11px] leading-5 text-neutral-500">{deviceNotificationHint}</p>
-              <p className="px-1 text-[11px] leading-5 text-neutral-500">
-                État actuel : l'application n'envoie que des notifications navigateur locales. Il n'y a pas encore de push distant serveur quand l'app est fermée.
-              </p> */}
               {notificationMessage ? (
                 <p className="rounded-2xl border border-blue-100 bg-blue-50 px-3 py-2 text-[11px] leading-5 text-blue-700">
                   {notificationMessage}
                 </p>
               ) : null}
-
-              {[
-                {
-                  label: "Mode sombre",
-                  description: "Activer/désactiver le mode sombre",
-                  icon: FiMoon,
-                },
-                {
-                  label: "Appareil",
-                  description: "Informations sur l'appareil",
-                  icon: FiSmartphone,
-                },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="flex items-center justify-between rounded-2xl bg-neutral-50 px-4 py-3 ring-1 ring-black/5"
-                >
-                  <span className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-                      <item.icon />
-                    </span>
-                    <span>
-                      <p className="text-sm font-semibold text-neutral-900">{item.label}</p>
-                    </span>
-                  </span>
-                  <FiChevronRight className="text-neutral-400" />
-                </div>
-              ))}
             </div>
           </div>
-
-          <Link
-            href="/compte/offline"
-            className="block rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft"
-          >
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-                <FiMap />
-              </span>
-              <div>
-                <p className="text-sm font-semibold text-neutral-900">Carte & Offline</p>
-                <p className="text-xs text-neutral-500">Zones téléchargées</p>
-              </div>
-            </div>
-            {/* <p className="mt-3 text-xs text-neutral-500">
-              Tuiles de carte récemment consultées et statut de synchronisation.
-            </p> */}
-          </Link>
         </motion.section>
       </main>
       {bottomNav}

@@ -3,6 +3,7 @@ import { Poppins } from "next/font/google";
 import "./globals.css";
 import { AuthSync } from "@/components/AuthSync";
 import { AppInteractionGuards } from "@/components/AppInteractionGuards";
+import { AppPreferences } from "@/components/AppPreferences";
 import { AppStatusNotifier } from "@/components/AppStatusNotifier";
 import { YelooSplash } from "@/components/YelooSplash";
 
@@ -49,6 +50,23 @@ export default function RootLayout({
   return (
     <html lang="fr" className={poppins.variable}>
       <body className="min-h-screen bg-white text-neutral-900">
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                var raw = window.localStorage.getItem("yeloo-preferences");
+                var parsed = raw ? JSON.parse(raw) : null;
+                var state = parsed && parsed.state ? parsed.state : parsed;
+                var theme = state && state.theme ? state.theme : "light";
+                var language = state && state.language ? state.language : "fr";
+                document.documentElement.dataset.theme = theme;
+                document.documentElement.classList.toggle("dark", theme === "dark");
+                document.documentElement.lang = language;
+              } catch (_) {}
+            `,
+          }}
+        />
+        <AppPreferences />
         <AuthSync />
         <AppInteractionGuards />
         <AppStatusNotifier />

@@ -20,6 +20,7 @@ import { TopBar } from "@/components/TopBar";
 import { AnimatePresence, motion } from "framer-motion";
 import { MapboxMap } from "@/components/MapboxMap";
 import { useProperties } from "@/hooks/useProperties";
+import { useT } from "@/lib/i18n";
 import { applyPropertyFilters, PropertyFilters } from "@/lib/properties";
 import { useFavoritesStore } from "@/stores/favoritesStore";
 
@@ -32,6 +33,7 @@ const DEFAULT_FILTERS: PropertyFilters = {
 };
 
 function CartePageContent() {
+  const t = useT();
   const router = useRouter();
   const bottomNav = <BottomNav />;
   const [filters, setFilters] = useState<PropertyFilters>(DEFAULT_FILTERS);
@@ -92,15 +94,15 @@ function CartePageContent() {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 6);
   }, [visibleProperties]);
-  const resultsLabel = `${visibleProperties.length} logement${
-    visibleProperties.length > 1 ? "s" : ""
+  const resultsLabel = `${visibleProperties.length} ${
+    visibleProperties.length > 1 ? t("homes") : t("home")
   }`;
   const mobileLocationLabel =
     filters.city || filters.neighborhood || selected?.neighborhood || selected?.city || "Abidjan";
-  const mobileSearchTitle = `Logements dans la zone de ${mobileLocationLabel}`;
-  const mobileSearchMeta = `${resultsLabel} disponibles`;
+  const mobileSearchTitle = `${t("homesInArea")} ${mobileLocationLabel}`;
+  const mobileSearchMeta = `${resultsLabel} ${t("availableHomes")}`;
   const mapControls = [
-    { key: "home", icon: FiHome, label: "Accueil" },
+    { key: "home", icon: FiHome, label: t("home") },
     { key: "locate", icon: FiTarget, label: "Position" },
   ];
   const mobileSheetBounds = useMemo(() => {
@@ -179,19 +181,47 @@ function CartePageContent() {
 
   const getPropertyFacts = (property: (typeof paginatedResultProperties)[number]) =>
     [
-      property.rooms ? `${property.rooms} chambre${property.rooms > 1 ? "s" : ""}` : null,
+      property.rooms ? `${property.rooms} ${property.rooms > 1 ? t("rooms") : t("room")}` : null,
       property.bathrooms
-        ? `${property.bathrooms} salle${property.bathrooms > 1 ? "s" : ""} de bain`
+        ? `${property.bathrooms} ${
+            property.bathrooms > 1 ? t("bathrooms") : t("bathroom")
+          }`
         : null,
-      property.surfaceM2 ? `${property.surfaceM2} m2` : null,
+      property.surfaceM2 ? `${property.surfaceM2} ${t("sqm")}` : null,
     ].filter((fact): fact is string => Boolean(fact));
+
+  const formatPricePeriod = (period?: string | null) => {
+    const normalized = (period || "").trim().toLowerCase();
+    if (!normalized || normalized === "mois" || normalized === "month") return t("month");
+    return period || t("month");
+  };
+
+  const translateBadgeLabel = (label?: string | null) => {
+    const normalized = (label || "").trim().toLowerCase();
+    if (!normalized) return "";
+    if (normalized === "disponible" || normalized === "available") return t("available");
+    if (normalized === "réservé" || normalized === "reserve" || normalized === "reserved") {
+      return t("reserved");
+    }
+    if (normalized === "loué" || normalized === "loue" || normalized === "rented") {
+      return t("rented");
+    }
+    if (normalized === "annonce verifiee" || normalized === "annonce vérifiée") {
+      return t("listingVerified");
+    }
+    if (normalized === "annonce suspendue" || normalized === "suspended listing") {
+      return t("listingSuspended");
+    }
+    if (normalized === "brouillon" || normalized === "draft") return t("draft");
+    return label || "";
+  };
 
   const renderExpandedFilters = (gridClassName: string) => (
     <>
       <div className={`mt-3 grid gap-3 ${gridClassName}`}>
         <div>
           <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500">
-            Ville
+            {t("city")}
           </label>
           <input
             className="mt-1 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70"
@@ -202,7 +232,7 @@ function CartePageContent() {
         </div>
         <div>
           <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500">
-            Quartier
+            {t("district")}
           </label>
           <input
             className="mt-1 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70"
@@ -213,7 +243,7 @@ function CartePageContent() {
         </div>
         <div>
           <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500">
-            Min (F)
+            {t("minPrice")}
           </label>
           <input
             type="number"
@@ -224,7 +254,7 @@ function CartePageContent() {
         </div>
         <div>
           <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500">
-            Max (F)
+            {t("maxPrice")}
           </label>
           <input
             type="number"
@@ -235,14 +265,14 @@ function CartePageContent() {
         </div>
         <div>
           <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500">
-            Type de bien
+            {t("propertyType")}
           </label>
           <select
             className="mt-1 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70"
             value={filters.propertyType}
             onChange={handleChange("propertyType")}
           >
-            <option value="">Tous</option>
+            <option value="">{t("all")}</option>
             <option value="studio">Studio</option>
             <option value="appartement">Appartement</option>
             <option value="maison">Maison</option>
@@ -251,13 +281,13 @@ function CartePageContent() {
         </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-neutral-500">
-        <span>{visibleProperties.length} logement(s) affiché(s)</span>
+        <span>{resultsLabel} {t("displayed")}</span>
         <button
           type="button"
           onClick={() => setFilters(DEFAULT_FILTERS)}
           className="rounded-full border border-neutral-200 px-3 py-1 text-xs font-medium text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50"
         >
-          Réinitialiser
+          {t("reset")}
         </button>
       </div>
     </>
@@ -300,12 +330,12 @@ function CartePageContent() {
           {property.ownerIsVerified && (
             <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-neutral-800 shadow-[0_6px_18px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
               <FiCheckCircle className="text-xs text-blue-600" />
-              Vérifié
+              {t("verified")}
             </span>
           )}
           {property.badgeLabel && (
             <span className="rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-neutral-800 shadow-[0_6px_18px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
-              {property.badgeLabel}
+              {translateBadgeLabel(property.badgeLabel)}
             </span>
           )}
         </div>
@@ -348,7 +378,7 @@ function CartePageContent() {
             {property.title}
           </p>
           <span className="shrink-0 rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] font-semibold text-neutral-600">
-            {property.pricePeriod}
+            {formatPricePeriod(property.pricePeriod)}
           </span>
         </div>
         {(property.neighborhood || property.city) && (
@@ -361,7 +391,7 @@ function CartePageContent() {
         )}
         <p className="text-[0.98rem] leading-5 text-neutral-900">
           <span className="font-semibold">{property.price.toLocaleString("fr-FR")} F</span>
-          <span className="text-neutral-500"> / {property.pricePeriod}</span>
+          <span className="text-neutral-500"> / {formatPricePeriod(property.pricePeriod)}</span>
         </p>
         <div className="pt-2">
           <button
@@ -373,7 +403,7 @@ function CartePageContent() {
             }}
             className="w-full rounded-full bg-neutral-950 px-4 py-2.5 text-center text-xs font-semibold text-white"
           >
-            Voir sur map
+            {t("viewOnMap")}
           </button>
         </div>
       </div>
@@ -721,7 +751,7 @@ function CartePageContent() {
                         onChange={handleQuickSearch}
                         placeholder={mobileSearchTitle}
                         className="w-full min-w-0 bg-transparent text-sm font-semibold text-neutral-950 outline-none placeholder:font-semibold placeholder:text-neutral-500"
-                        aria-label="Recherche de logements"
+                        aria-label={t("searchHousingAria")}
                       />
                     </label>
                   </div>
@@ -729,7 +759,7 @@ function CartePageContent() {
                     type="button"
                     onClick={() => setShowFilters((prev) => !prev)}
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/95 text-neutral-800 shadow-[0_10px_24px_rgba(15,23,42,0.14)] ring-1 ring-black/5 backdrop-blur"
-                    aria-label="Filtres"
+                    aria-label={t("filters")}
                   >
                     <FiSliders className="h-4.5 w-4.5" />
                   </button>
@@ -767,8 +797,8 @@ function CartePageContent() {
                   type="button"
                   onClick={() => setFitBoundsSignal((value) => value + 1)}
                   className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-neutral-700 shadow-[0_10px_24px_rgba(15,23,42,0.14)] ring-1 ring-black/5"
-                  aria-label="Accueil"
-                  title="Accueil"
+                  aria-label={t("map")}
+                  title={t("map")}
                 >
                   <FiHome className="h-5 w-5" />
                 </button>
@@ -810,7 +840,7 @@ function CartePageContent() {
                   <p className="text-[1.7rem] font-semibold tracking-tight text-neutral-950">
                     {resultsLabel}
                   </p>
-                  <p className="mt-1 text-sm text-neutral-500">Classement des resultats</p>
+                  <p className="mt-1 text-sm text-neutral-500">{t("resultsRanking")}</p>
                 </div>
               </div>
 
@@ -829,13 +859,13 @@ function CartePageContent() {
                       onClick={() => refetch()}
                       className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50"
                     >
-                      Réessayer
+                      {t("retry")}
                     </button>
                   </div>
                 )}
                 {!isLoading && !error && visibleProperties.length === 0 && (
                   <p className="text-sm text-neutral-600">
-                    Aucun logement ne correspond aux filtres actuels.
+                    {t("noHomesMatch")}
                   </p>
                 )}
 
@@ -851,7 +881,7 @@ function CartePageContent() {
                     className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <p className="text-xs text-neutral-500">
-                      Page {resultsPage} / {totalResultsPages}
+                      {t("page")} {resultsPage} / {totalResultsPages}
                     </p>
                     <div className="flex w-full items-center gap-2 sm:w-auto sm:justify-end">
                       <button
@@ -860,7 +890,7 @@ function CartePageContent() {
                         onClick={() => setResultsPage((page) => Math.max(1, page - 1))}
                         className="min-w-0 flex-1 rounded-full border border-neutral-200 px-3 py-2 text-center text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
                       >
-                        Précédent
+                        {t("previous")}
                       </button>
                       <button
                         type="button"
@@ -870,7 +900,7 @@ function CartePageContent() {
                         }
                         className="min-w-0 flex-1 rounded-full bg-neutral-900 px-3 py-2 text-center text-xs font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300 sm:flex-none"
                       >
-                        Suivant
+                        {t("next")}
                       </button>
                     </div>
                   </div>
@@ -890,7 +920,7 @@ function CartePageContent() {
                   transition={{ duration: 0.18 }}
                   className="absolute bottom-[5.9rem] right-2 z-30 inline-flex items-center gap-2 rounded-full bg-neutral-950 px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(15,23,42,0.22)] sm:right-4"
                 >
-                  <span>Voir la carte</span>
+                  <span>{t("showMap")}</span>
                   <FiMapPin className="h-4 w-4" />
                 </motion.button>
               )}
@@ -975,7 +1005,7 @@ function CartePageContent() {
                           {resultsLabel}
                         </p>
                         <p className="mt-1 text-sm text-neutral-500">
-                          Classement des resultats
+                          {t("resultsRanking")}
                         </p>
                       </div>
                       <button
@@ -1017,7 +1047,7 @@ function CartePageContent() {
                         <input
                           value={filters.city}
                           onChange={handleQuickSearch}
-                          placeholder="Recherche quartier ou ville..."
+                          placeholder={t("searchDistrictOrCity")}
                           className="w-full min-w-0 flex-1 rounded-full border border-neutral-200 bg-white px-3.5 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70"
                         />
                         <button
@@ -1025,7 +1055,7 @@ function CartePageContent() {
                           onClick={() => setShowFilters((prev) => !prev)}
                           className="w-full rounded-full border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 sm:w-auto"
                         >
-                          {showFilters ? "Masquer filtres" : "Afficher filtres"}
+                          {showFilters ? t("hideFilters") : t("showFilters")}
                         </button>
                       </div>
 
@@ -1048,10 +1078,10 @@ function CartePageContent() {
                     <div className="flex flex-col gap-3 border-b border-neutral-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
-                          Recherche sur la carte
+                          {t("mapSearch")}
                         </p>
                         <h2 className="text-xl font-semibold tracking-tight text-neutral-950">
-                          {resultsLabel} a Abidjan
+                          {resultsLabel} {t("inLocation")} Abidjan
                         </h2>
                       </div>
                     </div>
@@ -1085,9 +1115,9 @@ function CartePageContent() {
                         type="button"
                         className="w-full rounded-full border border-neutral-900 bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 sm:w-auto"
                       >
-                        Save Search
+                        {t("saveSearch")}
                       </button>
-                      <p className="text-sm text-neutral-500">{resultsLabel} affiches</p>
+                      <p className="text-sm text-neutral-500">{resultsLabel} {t("displayed")}</p>
                     </div>
                   </div>
                 </div>
@@ -1101,13 +1131,13 @@ function CartePageContent() {
                       onClick={() => refetch()}
                       className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50"
                     >
-                      Réessayer
+                      {t("retry")}
                     </button>
                   </div>
                 )}
                 {!isLoading && !error && visibleProperties.length === 0 && (
                   <p className="text-sm text-neutral-600">
-                    Aucun logement ne correspond aux filtres actuels.
+                    {t("noHomesMatch")}
                   </p>
                 )}
 
@@ -1158,18 +1188,18 @@ function CartePageContent() {
                             )}
                             {selected?.id === property.id && (
                               <span className="rounded-full bg-neutral-950/85 px-3 py-1.5 text-[11px] font-semibold text-white shadow-sm backdrop-blur">
-                                Sur la carte
+                                {t("onMap")}
                               </span>
                             )}
                             {property.ownerIsVerified && (
                               <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-neutral-800 shadow-[0_6px_18px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
                                 <FiCheckCircle className="text-xs text-blue-600" />
-                                Vérifié
+                                {t("verified")}
                               </span>
                             )}
                             {property.badgeLabel && (
                               <span className="rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-neutral-800 shadow-[0_6px_18px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
-                                {property.badgeLabel}
+                                {translateBadgeLabel(property.badgeLabel)}
                               </span>
                             )}
                           </div>
@@ -1213,7 +1243,7 @@ function CartePageContent() {
                             <div className="min-w-0">
                               <p className="text-base font-semibold tracking-tight text-neutral-950">
                                 {property.price.toLocaleString("fr-FR")} F
-                                <span className="font-normal text-neutral-500"> / {property.pricePeriod}</span>
+                                <span className="font-normal text-neutral-500"> / {formatPricePeriod(property.pricePeriod)}</span>
                               </p>
                               <p className="mt-0.5 line-clamp-1 text-sm font-semibold text-neutral-900">
                                 {property.title}
@@ -1242,7 +1272,7 @@ function CartePageContent() {
                               }}
                               className="w-full rounded-full bg-neutral-950 px-4 py-2.5 text-center text-xs font-semibold text-white"
                             >
-                              Voir sur map
+                              {t("viewOnMap")}
                             </button>
                           </div>
                         </div>
@@ -1257,7 +1287,7 @@ function CartePageContent() {
                         className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between"
                       >
                         <p className="text-xs text-neutral-500">
-                          Page {resultsPage} / {totalResultsPages}
+                          {t("page")} {resultsPage} / {totalResultsPages}
                         </p>
                         <div className="flex w-full items-center gap-2 sm:w-auto sm:justify-end">
                           <button
@@ -1266,7 +1296,7 @@ function CartePageContent() {
                             onClick={() => setResultsPage((page) => Math.max(1, page - 1))}
                             className="min-w-0 flex-1 rounded-full border border-neutral-200 px-3 py-2 text-center text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
                           >
-                            Précédent
+                            {t("previous")}
                           </button>
                           <button
                             type="button"
@@ -1278,7 +1308,7 @@ function CartePageContent() {
                             }
                             className="min-w-0 flex-1 rounded-full bg-neutral-900 px-3 py-2 text-center text-xs font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300 sm:flex-none"
                           >
-                            Suivant
+                            {t("next")}
                           </button>
                         </div>
                       </div>

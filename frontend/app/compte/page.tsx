@@ -17,6 +17,7 @@ import { AccountSidebar } from "@/components/AccountSidebar";
 import { BottomNav } from "@/components/BottomNav";
 import { TopBar } from "@/components/TopBar";
 import { getApiBaseUrl } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 import { useAuthStore } from "@/stores/authStore";
 import { useFavoritesStore } from "@/stores/favoritesStore";
 
@@ -28,6 +29,7 @@ const getInitials = (value: string) => {
 };
 
 export default function ComptePage() {
+  const t = useT();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
@@ -146,7 +148,7 @@ export default function ComptePage() {
                   >
                     <FiArrowLeft />
                   </button>
-                  <h1 className="text-2xl font-semibold tracking-tight text-neutral-950">Profil</h1>
+                  <h1 className="text-xl font-semibold tracking-tight text-neutral-950">{t("profile")}</h1>
                 </div>
 
                 <section className="overflow-hidden rounded-[1.8rem] border border-neutral-200 bg-white shadow-soft">
@@ -191,15 +193,15 @@ export default function ComptePage() {
                         />
                       </div>
                       <span className="mt-3 rounded-full bg-emerald-100 px-4 py-1.5 text-xs font-semibold text-emerald-700">
-                        Actif
+                        {t("active")}
                       </span>
                     </div>
 
-                    <h2 className="mt-4 break-words text-2xl font-extrabold uppercase tracking-tight text-neutral-950">
+                    <h2 className="mt-4 break-words text-xl font-extrabold uppercase tracking-tight text-neutral-950">
                       {name}
                     </h2>
-                    <p className="mt-2 text-lg font-semibold text-neutral-500">
-                      Membre Yeloo depuis 2026
+                    <p className="mt-2 text-sm font-semibold text-neutral-500">
+                      {t("profileMemberSince")}
                     </p>
 
                     <div className="hidden">
@@ -208,14 +210,14 @@ export default function ComptePage() {
                         className="flex h-14 items-center justify-center gap-3 rounded-full border border-neutral-200 bg-white px-4 text-sm font-bold text-neutral-950"
                       >
                         <FiUser className="text-xl" />
-                        Coordonnées
+                        {t("contactDetails")}
                       </Link>
                       <Link
                         href="/compte/parametres"
                         className="flex h-14 items-center justify-center gap-3 rounded-full border border-neutral-200 bg-white px-4 text-sm font-bold text-neutral-950"
                       >
                         <FiSettings className="text-xl" />
-                        Paramètres
+                        {t("settings")}
                       </Link>
                     </div>
                   </div>
@@ -224,31 +226,31 @@ export default function ComptePage() {
                 <section className="mt-7 rounded-[1.8rem] bg-white px-6 py-5 shadow-soft ring-1 ring-neutral-100">
                   <Link
                     href="/compte/informations-personnelles"
-                    className="flex items-center gap-5 py-4 text-xl font-bold text-neutral-950"
+                    className="flex items-center gap-5 py-4 text-base font-bold text-neutral-950"
                   >
-                    <FiUser className="text-3xl" />
-                    Coordonnées
+                    <FiUser className="text-2xl" />
+                    {t("contactDetails")}
                   </Link>
                   <Link
                     href="/compte/parametres"
-                    className="flex items-center gap-5 py-4 text-xl font-bold text-neutral-950"
+                    className="flex items-center gap-5 py-4 text-base font-bold text-neutral-950"
                   >
-                    <FiSettings className="text-3xl" />
-                    Paramètres
+                    <FiSettings className="text-2xl" />
+                    {t("settings")}
                   </Link>
                   <Link
                     href="/compte/aide-support"
-                    className="flex items-center gap-5 py-4 text-xl font-bold text-neutral-950"
+                    className="flex items-center gap-5 py-4 text-base font-bold text-neutral-950"
                   >
-                    <FiHelpCircle className="text-3xl" />
-                    Aide
+                    <FiHelpCircle className="text-2xl" />
+                    {t("help")}
                   </Link>
                   <Link
                     href="/messages"
-                    className="flex items-center gap-5 py-4 text-xl font-bold text-neutral-950"
+                    className="flex items-center gap-5 py-4 text-base font-bold text-neutral-950"
                   >
-                    <FiMessageCircle className="text-3xl" />
-                    Messagerie
+                    <FiMessageCircle className="text-2xl" />
+                    {t("messages")}
                   </Link>
                 </section>
 
@@ -258,15 +260,15 @@ export default function ComptePage() {
                     logout();
                     router.push("/connexion?logged_out=1");
                   }}
-                  className="mt-7 flex h-16 w-full items-center justify-center gap-4 rounded-full bg-white text-xl font-bold text-neutral-950 shadow-soft ring-1 ring-neutral-100"
+                  className="mt-7 flex h-14 w-full items-center justify-center gap-4 rounded-full bg-white text-base font-bold text-neutral-950 shadow-soft ring-1 ring-neutral-100"
                 >
-                  <FiLogOut className="text-3xl" />
-                  Se déconnecter
+                  <FiLogOut className="text-2xl" />
+                  {t("signOut")}
                 </button>
 
                 <div className="mt-24 text-center">
-                  <Link href="/compte/aide-support" className="text-xl font-extrabold text-blue-600">
-                    Contrats d'utilisation
+                  <Link href="/compte/aide-support" className="text-base font-extrabold text-blue-600">
+                    {t("termsOfUse")}
                   </Link>
                 </div>
               </div>
@@ -309,7 +311,7 @@ export default function ComptePage() {
                     </div>
 
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-neutral-500">Compte personnel</p>
+                      <p className="text-sm font-medium text-neutral-500">{t("personalAccount")}</p>
                       <h2 className="mt-1 break-words text-3xl font-semibold tracking-tight text-neutral-950">
                         {name}
                       </h2>
@@ -317,16 +319,16 @@ export default function ComptePage() {
                       <p className="mt-1 text-sm text-neutral-500">{phone}</p>
                       <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
                         <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700">
-                          Actif
+                          {t("active")}
                         </span>
                         {isVerified && (
                           <span className="rounded-full bg-blue-100 px-3 py-1 text-blue-700">
-                            Vérifié
+                            {t("verified")}
                           </span>
                         )}
                         {isOwnerPending && (
                           <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-700">
-                            En attente
+                            {t("pending")}
                           </span>
                         )}
                       </div>
@@ -335,19 +337,19 @@ export default function ComptePage() {
 
                   <div className="hidden gap-3 sm:grid-cols-3 xl:min-w-[22rem] lg:grid">
                     <div className="rounded-2xl bg-neutral-50 px-4 py-4 ring-1 ring-black/5">
-                      <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Favoris</p>
+                      <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">{t("favorites")}</p>
                       <p className="mt-3 text-3xl font-semibold tracking-tight text-neutral-950">
                         {favoriteCount}
                       </p>
                     </div>
                     <div className="rounded-2xl bg-neutral-50 px-4 py-4 ring-1 ring-black/5">
-                      <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Statut</p>
+                      <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">{t("status")}</p>
                       <p className="mt-3 text-lg font-semibold text-neutral-950">
-                        {isVerified ? "Vérifié" : "Standard"}
+                        {isVerified ? t("verified") : t("standard")}
                       </p>
                     </div>
                     <div className="rounded-2xl bg-neutral-50 px-4 py-4 ring-1 ring-black/5">
-                      <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">Accès</p>
+                      <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">{t("access")}</p>
                       <p className="mt-3 text-lg font-semibold text-neutral-950">
                         {user?.role === "admin"
                           ? "Admin"
@@ -399,7 +401,7 @@ export default function ComptePage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
-                          Compte personnel
+                          {t("personalAccount")}
                         </p>
                         <h2 className="mt-1 break-words text-[1.45rem] font-semibold leading-tight text-neutral-950">
                           {name}
@@ -408,16 +410,16 @@ export default function ComptePage() {
                         <p className="mt-1 break-all text-xs leading-5 text-neutral-400">{email}</p>
                         <div className="mt-3 flex flex-wrap gap-2 text-xs">
                           <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700">
-                            Actif
+                            {t("active")}
                           </span>
                           {isVerified && (
                             <span className="rounded-full bg-blue-100 px-3 py-1 text-blue-700">
-                              Vérifié
+                              {t("verified")}
                             </span>
                           )}
                           {isOwnerPending && (
                             <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-700">
-                              En attente
+                              {t("pending")}
                             </span>
                           )}
                         </div>
@@ -430,7 +432,7 @@ export default function ComptePage() {
                     <div className="mt-4 grid gap-4 sm:grid-cols-2">
                       {[
                         { label: "Nom", value: name },
-                        { label: "Téléphone", value: phone },
+                        { label: t("phone"), value: phone },
                         { label: "Email", value: email },
                         {
                           label: "Statut propriétaire",
@@ -457,10 +459,10 @@ export default function ComptePage() {
                   </section>
 
                   <section className="hidden rounded-3xl border border-neutral-200 bg-white p-6 shadow-soft lg:block">
-                    <h3 className="text-sm font-semibold text-neutral-900">Favoris enregistrés</h3>
+                      <h3 className="text-sm font-semibold text-neutral-900">{t("favorites")}</h3>
                     <div className="mt-4 rounded-2xl bg-neutral-50 p-5 text-center ring-1 ring-black/5">
                       <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">
-                        Favoris
+                        {t("favorites")}
                       </p>
                       <p className="mt-3 text-3xl font-semibold tracking-tight text-neutral-900">
                         {favoriteCount}

@@ -5,10 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { FiHeart, FiMapPin, FiMessageCircle, FiSearch, FiUser } from "react-icons/fi";
+import { useT } from "@/lib/i18n";
 import { fetchConversations } from "@/lib/messages";
 import { useAuthStore } from "@/stores/authStore";
 
 export function BottomNav() {
+  const t = useT();
   const pathname = usePathname();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const token = useAuthStore((s) => s.token);
@@ -54,20 +56,20 @@ export function BottomNav() {
   const tabs = [
     {
       href: "/",
-      label: "Explorer",
+      label: t("explore"),
       icon: <FiSearch />,
     },
-    { href: "/favoris", label: "Favoris", icon: <FiHeart /> },
-    { href: "/carte", label: "Carte", icon: <FiMapPin /> },
+    { href: "/favoris", label: t("favorites"), icon: <FiHeart /> },
+    { href: "/carte", label: t("map"), icon: <FiMapPin /> },
     {
       href: isAuthenticated ? "/messages" : "/connexion?next=/messages",
-      label: "Messages",
+      label: t("messages"),
       icon: <FiMessageCircle />,
       badge: unreadMessages,
     },
     {
       href: isAuthenticated ? "/compte" : "/connexion",
-      label: isAuthenticated ? "Compte" : "Connexion",
+      label: isAuthenticated ? t("account") : t("login"),
       icon: <FiUser />,
     },
   ];

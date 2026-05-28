@@ -279,7 +279,7 @@ function HomePageContent() {
   return (
     <div
       ref={homeRootRef}
-      className="flex min-h-screen flex-col bg-[linear-gradient(180deg,#f8fafc_0%,#f3f8ff_44%,#f8fafc_100%)]"
+      className="yeloo-home-shell flex min-h-screen flex-col bg-[linear-gradient(180deg,#f8fafc_0%,#f3f8ff_44%,#f8fafc_100%)]"
     >
       <TopBar
         homeTitle="Commence ta recherche."

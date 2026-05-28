@@ -28,6 +28,7 @@ import { AdminSidebar } from "@/components/AdminSidebar";
 import { OwnerSidebar } from "@/components/OwnerSidebar";
 import { TopBar } from "@/components/TopBar";
 import { getApiBaseUrl } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 import {
   fetchConversation,
   fetchConversations,
@@ -78,6 +79,7 @@ function resolveMediaUrl(value?: string | null) {
 }
 
 function MessageConversationPageContent() {
+  const t = useT();
   const token = useAuthStore((s) => s.token);
   const user = useAuthStore((s) => s.user);
   const searchParams = useSearchParams();
@@ -246,12 +248,12 @@ function MessageConversationPageContent() {
   }, [conversationQuery, renderedConversations]);
   const counterpartInitials = getInitials(conversation?.counterpart_name);
   const menuActions = [
-    { label: "Detail info", icon: FiInfo, action: () => setIsDetailsOpen(true) },
-    { label: "Search", icon: FiSearch, action: showComingSoon },
-    { label: "Report", icon: FiAlertTriangle, action: showComingSoon },
-    { label: "Delete chat", icon: FiTrash2, action: showComingSoon, danger: true },
-    { label: "Clear chat", icon: FiRefreshCw, action: showComingSoon },
-    { label: "Close chat", icon: FiXCircle, action: showComingSoon },
+    { label: t("detailsInfo"), icon: FiInfo, action: () => setIsDetailsOpen(true) },
+    { label: t("search"), icon: FiSearch, action: showComingSoon },
+    { label: t("report"), icon: FiAlertTriangle, action: showComingSoon },
+    { label: t("deleteChat"), icon: FiTrash2, action: showComingSoon, danger: true },
+    { label: t("clearChat"), icon: FiRefreshCw, action: showComingSoon },
+    { label: t("closeChat"), icon: FiXCircle, action: showComingSoon },
   ];
   const counterpartAvatarUrl = resolveMediaUrl(conversation?.counterpart_avatar_url);
 
@@ -297,7 +299,7 @@ function MessageConversationPageContent() {
               <aside className="hidden border-r border-neutral-200 bg-white lg:flex lg:min-h-0 lg:flex-col">
                 <div className="border-b border-neutral-100 px-4 py-4">
                   <div className="flex items-center justify-between gap-3">
-                    <h2 className="text-2xl font-semibold text-neutral-950">Chats</h2>
+                    <h2 className="text-2xl font-semibold text-neutral-950">{t("chats")}</h2>
                     <button
                       type="button"
                       onClick={showComingSoon}
@@ -313,7 +315,7 @@ function MessageConversationPageContent() {
                       value={conversationQuery}
                       onChange={(event) => setConversationQuery(event.target.value)}
                       className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-neutral-500"
-                      placeholder="Rechercher ou demarrer un chat"
+                      placeholder={t("searchOrStartChat")}
                     />
                   </label>
                 </div>
@@ -321,7 +323,7 @@ function MessageConversationPageContent() {
                 <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto py-2">
                   {filteredConversations.length === 0 ? (
                     <div className="mx-3 rounded-2xl bg-neutral-50 px-4 py-5 text-sm text-neutral-600">
-                      Aucune conversation trouvee.
+                      {t("noConversationFound")}
                     </div>
                   ) : (
                     filteredConversations.map((item) => {
@@ -331,14 +333,14 @@ function MessageConversationPageContent() {
                       <Link
                         key={item.id}
                         href={`/messages/${item.id}${messageHrefSuffix}`}
-                        className={`flex items-center gap-3 px-4 py-3 transition ${
-                          active ? "bg-neutral-100" : "hover:bg-neutral-50"
+                        className={`yeloo-chat-list-row flex items-center gap-3 px-4 py-3 transition ${
+                          active ? "is-active bg-neutral-100" : "hover:bg-neutral-50"
                         }`}
                       >
                         {avatarUrl ? (
                           <img
                             src={avatarUrl}
-                            alt={item.counterpart_name || "Contact"}
+                            alt={item.counterpart_name || t("contact")}
                             className="h-12 w-12 shrink-0 rounded-full object-cover"
                           />
                         ) : (
@@ -350,7 +352,7 @@ function MessageConversationPageContent() {
                           <span className="flex items-start justify-between gap-3">
                             <span className="min-w-0">
                               <span className="block truncate text-[15px] font-semibold text-neutral-950">
-                                {item.counterpart_name || "Interlocuteur"}
+                                {item.counterpart_name || t("participant")}
                               </span>
                               <span className="mt-0.5 block truncate text-sm text-neutral-500">
                                 {item.last_message_preview || item.property_title}
@@ -388,7 +390,7 @@ function MessageConversationPageContent() {
                     {counterpartAvatarUrl ? (
                       <img
                         src={counterpartAvatarUrl}
-                        alt={conversation.counterpart_name || "Contact"}
+                        alt={conversation.counterpart_name || t("contact")}
                         className="h-11 w-11 shrink-0 rounded-full object-cover"
                       />
                     ) : (
@@ -402,7 +404,7 @@ function MessageConversationPageContent() {
                       className="min-w-0 text-left"
                     >
                       <h1 className="truncate text-base font-semibold text-neutral-950">
-                        {conversation.counterpart_name || "Votre interlocuteur"}
+                        {conversation.counterpart_name || t("yourParticipant")}
                       </h1>
                       <p className="truncate text-xs text-neutral-500">
                         {conversation.property_title} - {conversation.property_city}
@@ -451,7 +453,7 @@ function MessageConversationPageContent() {
                           type="button"
                           onClick={() => {
                             item.action();
-                            if (item.label !== "Close chat") setIsMenuOpen(false);
+                            setIsMenuOpen(false);
                           }}
                           className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition hover:bg-neutral-50 ${
                             "danger" in item && item.danger ? "text-red-600" : "text-neutral-800"
@@ -475,11 +477,11 @@ function MessageConversationPageContent() {
                   }}
                 >
                   <div className="mx-auto mb-4 w-fit rounded-lg bg-white/80 px-3 py-1 text-xs font-medium text-neutral-500 shadow-sm">
-                    Aujourd'hui
+                    {t("today")}
                   </div>
                   {conversation.messages.length === 0 ? (
                     <div className="mx-auto max-w-md rounded-xl bg-white/90 px-4 py-4 text-center text-sm text-neutral-600 shadow-sm">
-                      Aucun message pour le moment. Lancez la conversation.
+                      {t("noMessageYet")}
                     </div>
                   ) : (
                     conversation.messages.map((message) => {
@@ -642,7 +644,7 @@ function MessageConversationPageContent() {
                             void handleSend();
                           }
                         }}
-                        placeholder="Tapez un message"
+                        placeholder={t("typeMessage")}
                         className="max-h-32 min-h-8 flex-1 resize-none bg-transparent py-1.5 text-[15px] text-neutral-900 outline-none placeholder:text-neutral-500"
                       />
                     </div>
@@ -672,7 +674,7 @@ function MessageConversationPageContent() {
             </div>
           ) : (
             <div className="m-5 rounded-[1.4rem] bg-white px-4 py-6 text-sm text-neutral-600">
-              Conversation introuvable.
+              {t("conversationNotFound")}
             </div>
           )}
 
@@ -736,7 +738,7 @@ function MessageConversationPageContent() {
                     {counterpartAvatarUrl ? (
                       <img
                         src={counterpartAvatarUrl}
-                        alt={conversation.counterpart_name || "Contact"}
+                        alt={conversation.counterpart_name || t("contact")}
                         className="h-16 w-16 rounded-full object-cover"
                       />
                     ) : (
@@ -746,7 +748,7 @@ function MessageConversationPageContent() {
                     )}
                     <div className="min-w-0">
                       <p className="truncate text-lg font-semibold text-neutral-950">
-                        {conversation.counterpart_name || "Interlocuteur"}
+                        {conversation.counterpart_name || t("participant")}
                       </p>
                       <p className="text-sm capitalize text-neutral-500">
                         {conversation.counterpart_role || "contact"}
@@ -776,7 +778,7 @@ function MessageConversationPageContent() {
                     className="block rounded-2xl bg-neutral-50 px-4 py-3"
                   >
                     <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-                      Logement
+                      {t("housing")}
                     </p>
                     <p className="mt-1 truncate text-sm font-semibold text-neutral-950">
                       {conversation.property_title}
@@ -786,7 +788,7 @@ function MessageConversationPageContent() {
                   {conversation.counterpart_phone ? (
                     <div className="rounded-2xl bg-neutral-50 px-4 py-3">
                       <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
-                        Telephone
+                        {t("phone")}
                       </p>
                       <p className="mt-1 text-sm font-semibold text-neutral-950">
                         {conversation.counterpart_phone}
@@ -804,7 +806,7 @@ function MessageConversationPageContent() {
                     </div>
                   ) : null}
                   <p className="rounded-2xl bg-blue-50 px-4 py-3 text-xs text-blue-700">
-                    Derniere activite : {formatConversationTime(conversation.updated_at)}
+                    {t("lastActivity")} : {formatConversationTime(conversation.updated_at)}
                   </p>
                 </div>
               </div>

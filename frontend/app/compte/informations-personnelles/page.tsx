@@ -17,6 +17,7 @@ import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
 import { updateMyAccount } from "@/lib/account";
 import { getApiBaseUrl } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 import { useAuthStore } from "@/stores/authStore";
 
 const getInitials = (value: string) => {
@@ -27,6 +28,7 @@ const getInitials = (value: string) => {
 };
 
 export default function InformationsPersonnellesPage() {
+  const t = useT();
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
   const setUser = useAuthStore((s) => s.setUser);
@@ -86,7 +88,7 @@ export default function InformationsPersonnellesPage() {
         owner_verification_status: updated.owner_verification_status,
       });
       setIsEditing(false);
-      setMessage("Informations personnelles mises à jour.");
+      setMessage(`${t("personalInfo")} ${t("save").toLowerCase()}.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Modification impossible.");
     } finally {
@@ -118,10 +120,10 @@ export default function InformationsPersonnellesPage() {
   }
 
   const details = [
-    { icon: FiUser, label: "Nom complet", value: name },
-    { icon: FiPhone, label: "Téléphone", value: phone },
+    { icon: FiUser, label: t("fullName"), value: name },
+    { icon: FiPhone, label: t("phone"), value: phone },
     { icon: FiMail, label: "Email", value: email },
-    { icon: FiCalendar, label: "Compte créé le", value: "26 février 2026" },
+    { icon: FiCalendar, label: t("createdAt"), value: "26 février 2026" },
   ];
 
   return (
@@ -142,18 +144,15 @@ export default function InformationsPersonnellesPage() {
             >
               <FiArrowLeft />
             </Link>
-            <div className="rounded-full border border-neutral-200 bg-white px-4 py-1 text-xs font-semibold text-neutral-600 shadow-soft">
-              1 / 1
-            </div>
           </div>
 
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 lg:text-[2rem]">
-                Informations personnelles
+                {t("personalInfo")}
               </h1>
               <p className="mt-1 text-sm text-neutral-600">
-                Gérez vos données de profil avec une vue plus claire.
+                {t("personalInfoSubtitle")}
               </p>
             </div>
             <button
@@ -166,12 +165,12 @@ export default function InformationsPersonnellesPage() {
               className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-xs font-semibold text-neutral-700 shadow-soft"
             >
               <FiEdit3 />
-              {isEditing ? "Fermer" : "Modifier"}
+              {isEditing ? t("close") : t("edit")}
             </button>
           </div>
 
           <div className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr]">
-            <aside className="space-y-5">
+            <aside className="hidden space-y-5 xl:block">
               <section className="hidden rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-soft xl:block">
                 <div className="flex flex-col items-center text-center">
                   <div className="relative">
@@ -198,39 +197,19 @@ export default function InformationsPersonnellesPage() {
                   <p className="mt-1 text-sm text-neutral-400">{phone}</p>
                   <div className="mt-4 flex flex-wrap justify-center gap-2 text-xs">
                     <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700">
-                      Actif
+                      {t("active")}
                     </span>
                     {isVerified && (
                       <span className="rounded-full bg-blue-100 px-3 py-1 text-blue-700">
-                        Verifie
+                        {t("verified")}
                       </span>
                     )}
                     {isOwnerPending && (
                       <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-700">
-                        En attente
+                        {t("pending")}
                       </span>
                     )}
                   </div>
-                </div>
-              </section>
-
-              <section className="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-soft">
-                <h3 className="text-base font-semibold text-neutral-900">Aperçu rapide</h3>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                  {details.map((item) => (
-                    <div
-                      key={item.label}
-                      className="flex items-center gap-3 rounded-2xl bg-neutral-50 px-4 py-3 ring-1 ring-black/5"
-                    >
-                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-blue-600 ring-1 ring-black/5">
-                        <item.icon />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-xs text-neutral-500">{item.label}</p>
-                        <p className="truncate font-semibold text-neutral-900">{item.value}</p>
-                      </div>
-                    </div>
-                  ))}
                 </div>
               </section>
             </aside>
@@ -238,9 +217,9 @@ export default function InformationsPersonnellesPage() {
             <section className="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-soft lg:p-7">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-lg font-semibold text-neutral-900">Détails du compte</h3>
+                  <h3 className="text-lg font-semibold text-neutral-900">{t("accountDetails")}</h3>
                   <p className="mt-1 text-sm text-neutral-500">
-                    Modifiez ici vos informations de contact.
+                    {t("accountDetailsSubtitle")}
                   </p>
                 </div>
                 <div className="hidden h-2 w-40 overflow-hidden rounded-full bg-blue-100 lg:block">
@@ -251,8 +230,8 @@ export default function InformationsPersonnellesPage() {
               {isEditing ? (
                 <div className="mt-6 grid gap-4 md:grid-cols-2">
                   {[
-                    { key: "fullName", label: "Nom complet", icon: FiUser, value: form.fullName, type: "text" },
-                    { key: "phone", label: "Téléphone", icon: FiPhone, value: form.phone, type: "tel" },
+                    { key: "fullName", label: t("fullName"), icon: FiUser, value: form.fullName, type: "text" },
+                    { key: "phone", label: t("phone"), icon: FiPhone, value: form.phone, type: "tel" },
                     { key: "email", label: "Email", icon: FiMail, value: form.email, type: "email" },
                   ].map((item) => (
                     <label
@@ -282,7 +261,7 @@ export default function InformationsPersonnellesPage() {
                       disabled={isSaving}
                       className="w-full rounded-full bg-blue-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-60 md:w-auto md:min-w-[12rem]"
                     >
-                      {isSaving ? "Sauvegarde..." : "Enregistrer"}
+                      {isSaving ? t("saving") : t("save")}
                     </button>
                   </div>
                 </div>

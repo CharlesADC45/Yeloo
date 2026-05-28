@@ -30,6 +30,8 @@ import {
   getUnreadNotifications,
   useNotificationStore,
 } from "@/stores/notificationStore";
+import { PreferenceControls } from "@/components/PreferenceControls";
+import { useT } from "@/lib/i18n";
 
 const RECENT_DESTINATIONS_STORAGE_KEY = "yeloo-recent-destinations";
 
@@ -80,15 +82,15 @@ function YelooBrand() {
         <span className="absolute inset-x-[7px] top-[11px] h-[11px] rounded-full bg-white/12" />
         <span className="flex items-center gap-1.5">
           <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-white shadow-[0_2px_8px_rgba(255,255,255,0.28)]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#0F172A]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-[#2F57FF]" />
           </span>
           <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-white shadow-[0_2px_8px_rgba(255,255,255,0.28)]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#0F172A]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-[#2F57FF]" />
           </span>
         </span>
         <span className="absolute bottom-[8px] h-[8px] w-[18px] rounded-b-full border-b-2 border-white/90" />
       </span>
-      <span className="flex items-end text-[1.65rem] font-extrabold tracking-[-0.045em] leading-none text-[#111827]">
+      <span className="yeloo-brand-wordmark flex items-end text-[1.65rem] font-extrabold tracking-[-0.045em] leading-none text-[#111827]">
         <span>Yeloo</span>
         <span className="ml-0.5 text-[1.95rem] font-black leading-none">+</span>
       </span>
@@ -133,6 +135,7 @@ function TopBarContent({
     isOwnerRole && (Boolean(ownerShell) || Boolean(pathname?.startsWith("/proprietaire")));
   const isAdminRoute =
     isAdminRole && (Boolean(adminShell) || Boolean(pathname?.startsWith("/admin")));
+  const t = useT();
   const isHomeRoute = pathname === "/";
   const showHomeSearch = isHomeRoute && Boolean(homeSearch);
   const [viewportWidth, setViewportWidth] = useState<number | null>(null);
@@ -146,7 +149,7 @@ function TopBarContent({
     : isOwnerRole
       ? "/proprietaire"
       : "/proprietaire/nouveau";
-  const actionLabel = isAdminRole ? "Super admin" : isOwnerRole ? "Mon espace" : "Devenir bailleur";
+  const actionLabel = isAdminRole ? "Super admin" : isOwnerRole ? t("ownerSpace") : t("becomeOwner");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [locationLabel, setLocationLabel] = useState("Localisation");
@@ -157,22 +160,24 @@ function TopBarContent({
   const notificationsEnabled = notificationPrefs.ownerPostNotifications;
   const isDesktopViewport = (viewportWidth ?? 0) >= 1024;
   const publicMenuItems = [
-    { href: "/", label: "Explorer", icon: FiSearch },
-    { href: "/favoris", label: "Favoris", icon: FiHeart },
-    { href: "/carte", label: "Carte", icon: FiMapPin },
+    { href: "/", label: t("explore"), matchLabel: "Explorer", icon: FiSearch },
+    { href: "/favoris", label: t("favorites"), matchLabel: "Favoris", icon: FiHeart },
+    { href: "/carte", label: t("map"), matchLabel: "Carte", icon: FiMapPin },
     {
       href: isAuthenticated ? "/messages" : "/connexion?next=/messages",
-      label: "Messages",
+      label: t("messages"),
+      matchLabel: "Messages",
       icon: FiMessageCircle,
     },
     {
       href: isAuthenticated ? "/compte" : "/connexion",
-      label: "Profil",
+      label: t("profile"),
+      matchLabel: "Profil",
       icon: FiUser,
     },
   ].filter((item) => {
     if (isAuthenticated) return true;
-    return item.label === "Explorer" || item.label === "Carte";
+    return item.matchLabel === "Explorer" || item.matchLabel === "Carte";
   });
 
   const visibleNotifications = useMemo(() => {
@@ -672,7 +677,7 @@ function TopBarContent({
                       >
                       <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-3">
                         <div>
-                          <p className="text-sm font-semibold text-neutral-900">Notifications</p>
+                          <p className="text-sm font-semibold text-neutral-900">{t("notifications")}</p>
                           <p className="text-xs text-neutral-500">
                             {notificationPanelState}
                           </p>
@@ -762,10 +767,10 @@ function TopBarContent({
                 ref={menuButtonRef}
                 type="button"
                 onClick={() => setIsMenuOpen(true)}
-                className="flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white/90 shadow-soft"
+                className="yeloo-menu-button flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white/90 shadow-soft"
                 aria-label="Menu"
               >
-                <img src="/icons/menu.png" alt="" className="h-6 w-6 object-contain" />
+                <img src="/icons/menu.png" alt="" className="yeloo-menu-icon h-6 w-6 object-contain" />
               </button>
             </div>
           </div>
@@ -823,7 +828,7 @@ function TopBarContent({
                   type="button"
                   onClick={() => setIsMenuOpen(false)}
                   className="absolute inset-0 bg-black/30 backdrop-blur-sm"
-                  aria-label="Fermer le menu"
+                  aria-label={t("closeMenu")}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
@@ -836,7 +841,7 @@ function TopBarContent({
                   transition={{ type: "spring", stiffness: 260, damping: 26 }}
                 >
               <div className="flex items-center justify-between border-b border-neutral-200 px-5 py-4">
-                <span className="text-lg font-semibold text-neutral-900">Menu</span>
+                <span className="text-lg font-semibold text-neutral-900">{t("menu")}</span>
                 <button
                   type="button"
                   onClick={() => setIsMenuOpen(false)}
@@ -872,6 +877,9 @@ function TopBarContent({
                         );
                       })}
                     </nav>
+                    <div className="mt-3 rounded-2xl border border-neutral-200 bg-white p-3">
+                      <PreferenceControls compact />
+                    </div>
                     <button
                       type="button"
                       onClick={() => {
@@ -882,14 +890,14 @@ function TopBarContent({
                       className="mt-3 flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-neutral-600 hover:bg-neutral-50"
                     >
                       <FiLogOut />
-                      Logout
+                      {t("logout")}
                     </button>
                   </div>
                 ) : isOwnerRoute ? (
                   <div className="flex flex-1 flex-col gap-2">
                     <div className="rounded-2xl bg-blue-600 px-4 py-4 text-white shadow-soft">
-                      <p className="text-sm font-semibold">Mon espace</p>
-                      <p className="mt-1 text-xs text-white/80">Navigation du dashboard</p>
+                      <p className="text-sm font-semibold">{t("ownerSpace")}</p>
+                      <p className="mt-1 text-xs text-white/80">{t("dashboardNavigation")}</p>
                     </div>
                     <nav className="mt-2 flex flex-col gap-2">
                       {ownerNavItems.map(({ href, label, Icon, isActive }) => {
@@ -911,6 +919,9 @@ function TopBarContent({
                         );
                       })}
                     </nav>
+                    <div className="mt-3 rounded-2xl border border-neutral-200 bg-white p-3">
+                      <PreferenceControls compact />
+                    </div>
                     <button
                       type="button"
                       onClick={() => {
@@ -921,7 +932,7 @@ function TopBarContent({
                       className="mt-3 flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-neutral-600 hover:bg-neutral-50"
                     >
                       <FiLogOut />
-                      Logout
+                      {t("logout")}
                     </button>
                   </div>
                 ) : (
@@ -947,7 +958,7 @@ function TopBarContent({
                         onClick={() => setIsMenuOpen(false)}
                         className="flex items-center justify-between gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-800 transition hover:bg-white"
                       >
-                        <span>Se connecter ou s'inscrire</span>
+                        <span>{t("loginOrRegister")}</span>
                         <FiChevronRight />
                       </Link>
                     ) : null}
@@ -965,9 +976,13 @@ function TopBarContent({
                     </Link>
                     {!isAuthenticated ? (
                       <p className="px-1 text-xs leading-5 text-neutral-500">
-                        Publiez vos logements et gérez vos demandes depuis votre espace bailleur.
+                        {t("publishHomes")}
                       </p>
                     ) : null}
+                    <div className="my-2 h-px bg-neutral-200" />
+                    <div className="rounded-2xl border border-neutral-200 bg-white p-3">
+                      <PreferenceControls compact />
+                    </div>
                     {isAuthenticated ? (
                       <>
                         <div className="my-2 h-px bg-neutral-200" />
@@ -981,7 +996,7 @@ function TopBarContent({
                           className="flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-neutral-600 hover:bg-neutral-50"
                         >
                           <FiLogOut />
-                          Déconnexion
+                          {t("logout")}
                         </button>
                       </>
                     ) : null}
@@ -1020,7 +1035,7 @@ function TopBarContent({
                     onClick={() => setIsMenuOpen(false)}
                     className="mt-3 flex items-center justify-between gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-800 transition hover:bg-white"
                   >
-                    <span>Se connecter ou s'inscrire</span>
+                    <span>{t("loginOrRegister")}</span>
                     <FiChevronRight />
                   </Link>
                 ) : null}
@@ -1033,13 +1048,16 @@ function TopBarContent({
                   <div>
                     <p className="text-sm font-semibold">{actionLabel}</p>
                     <p className="mt-1 text-xs text-white/80">
-                      Créez votre espace bailleur et publiez vos logements.
+                      {t("createOwnerSpace")}
                     </p>
                   </div>
                   <span className="mt-1 flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
                     <FiCompass />
                   </span>
                 </Link>
+                <div className="mt-3 rounded-[1.4rem] border border-neutral-200 bg-neutral-50 p-3">
+                  <PreferenceControls compact />
+                </div>
                 {isAuthenticated ? (
                   <div className="mt-3 flex items-center justify-between">
                     <Link
@@ -1048,7 +1066,7 @@ function TopBarContent({
                       className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50"
                     >
                       <FiSettings />
-                      Paramètres
+                      {t("settings")}
                     </Link>
                     <button
                       type="button"
@@ -1060,7 +1078,7 @@ function TopBarContent({
                       className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50"
                     >
                       <FiLogOut />
-                      Déconnexion
+                      {t("logout")}
                     </button>
                   </div>
                 ) : null}

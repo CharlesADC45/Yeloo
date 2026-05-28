@@ -8,8 +8,9 @@ import type {
   Marker as LeafletMarker,
   TileLayer,
 } from "leaflet";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FiLayers } from "react-icons/fi";
+import { useT } from "@/lib/i18n";
 import type { Property } from "@/lib/properties";
 
 type Props = {
@@ -48,7 +49,14 @@ function buildUserLocationIcon() {
   `;
 }
 
-function buildMarkerPreview(property: Property) {
+type MarkerPreviewLabels = {
+  verified: string;
+  beds: string;
+  baths: string;
+  sqm: string;
+};
+
+function buildMarkerPreview(property: Property, labels: MarkerPreviewLabels) {
   const title = escapeHtml(property.title || "Villa contemporaine");
   const price = `${property.price.toLocaleString("en-US")} F`;
   const rooms = typeof property.rooms === "number" ? property.rooms : "—";
@@ -56,7 +64,7 @@ function buildMarkerPreview(property: Property) {
   const surface = typeof property.surfaceM2 === "number" ? property.surfaceM2 : "—";
   const location = escapeHtml(property.neighborhood || property.city || "Abidjan");
   const verifiedBadge = property.ownerIsVerified || property.isVerified
-    ? `<div class="imc-hover-card__verified"><span class="imc-hover-card__verified-icon"></span><span>Vérifié</span></div>`
+    ? `<div class="imc-hover-card__verified"><span class="imc-hover-card__verified-icon"></span><span>${escapeHtml(labels.verified)}</span></div>`
     : "";
 
   return `
@@ -72,9 +80,9 @@ function buildMarkerPreview(property: Property) {
         <div class="imc-hover-card__side">
           <p class="imc-hover-card__price">${price}</p>
           <div class="imc-hover-card__meta">
-            <span><span class="imc-hover-card__meta-icon imc-hover-card__meta-icon--bed"></span><strong>${rooms}</strong><small>Beds</small></span>
-            <span><span class="imc-hover-card__meta-icon imc-hover-card__meta-icon--bath"></span><strong>${bathrooms}</strong><small>Baths</small></span>
-            <span><span class="imc-hover-card__meta-icon imc-hover-card__meta-icon--area"></span><strong>${surface}</strong><small>Sqm.</small></span>
+            <span><span class="imc-hover-card__meta-icon imc-hover-card__meta-icon--bed"></span><strong>${rooms}</strong><small>${escapeHtml(labels.beds)}</small></span>
+            <span><span class="imc-hover-card__meta-icon imc-hover-card__meta-icon--bath"></span><strong>${bathrooms}</strong><small>${escapeHtml(labels.baths)}</small></span>
+            <span><span class="imc-hover-card__meta-icon imc-hover-card__meta-icon--area"></span><strong>${surface}</strong><small>${escapeHtml(labels.sqm)}</small></span>
           </div>
         </div>
       </div>
@@ -93,6 +101,7 @@ export function MapboxMap({
   className,
   showLayerToggle = true,
 }: Props) {
+  const t = useT();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const markersRef = useRef<LeafletMarker[]>([]);
@@ -105,6 +114,15 @@ export function MapboxMap({
   const renderMarkersRef = useRef<(() => void) | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [isSatellite, setIsSatellite] = useState(false);
+  const previewLabels = useMemo<MarkerPreviewLabels>(
+    () => ({
+      verified: t("verified"),
+      beds: t("beds"),
+      baths: t("baths"),
+      sqm: t("sqm"),
+    }),
+    [t]
+  );
 
   const openMarkerPopup = (marker: LeafletMarker) => {
     const map = mapRef.current;
@@ -293,7 +311,7 @@ export function MapboxMap({
             onSelect?.(p);
           });
 
-          marker.bindPopup(buildMarkerPreview(p), {
+          marker.bindPopup(buildMarkerPreview(p, previewLabels), {
             offset: leaflet.point(0, -16),
             className: "imc-hover-tooltip imc-map-popup",
             closeButton: false,
@@ -379,7 +397,7 @@ export function MapboxMap({
               onSelect?.(first);
             });
 
-            marker.bindPopup(buildMarkerPreview(first), {
+            marker.bindPopup(buildMarkerPreview(first, previewLabels), {
               offset: leaflet.point(0, -16),
               className: "imc-hover-tooltip imc-map-popup",
               closeButton: false,
@@ -417,7 +435,7 @@ export function MapboxMap({
     return () => {
       renderMarkersRef.current = null;
     };
-  }, [properties, selectedId, onSelect, userLocation]);
+  }, [properties, selectedId, onSelect, userLocation, previewLabels]);
 
   useEffect(() => {
     const map = mapRef.current;

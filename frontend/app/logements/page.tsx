@@ -102,6 +102,7 @@ function LogementsPageContent() {
             error={error}
             onRetry={refetch}
             showHeader={false}
+            borderlessCards
           />
         </div>
 

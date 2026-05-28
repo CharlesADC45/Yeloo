@@ -10,6 +10,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { OwnerSidebar } from "@/components/OwnerSidebar";
 import { TopBar } from "@/components/TopBar";
 import { getApiBaseUrl } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 import { fetchConversations, type ConversationSummary } from "@/lib/messages";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -36,6 +37,7 @@ function resolveMediaUrl(value?: string | null) {
 }
 
 function MessagesPageContent() {
+  const t = useT();
   const token = useAuthStore((s) => s.token);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const user = useAuthStore((s) => s.user);
@@ -109,15 +111,15 @@ function MessagesPageContent() {
         <TopBar />
         <main className="mx-auto max-w-xl px-4 pb-28 pt-24">
           <section className="rounded-[2rem] border border-neutral-200 bg-white p-6">
-            <h1 className="text-xl font-semibold">Messagerie</h1>
+            <h1 className="text-xl font-semibold">{t("messages")}</h1>
             <p className="mt-2 text-sm text-neutral-600">
-              Connectez-vous pour retrouver vos conversations avec les proprietaires.
+              {t("signInForMessages")}
             </p>
             <Link
               href="/connexion?next=/messages"
               className="mt-4 inline-flex rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
             >
-              Se connecter
+              {t("login")}
             </Link>
           </section>
         </main>
@@ -148,7 +150,7 @@ function MessagesPageContent() {
         >
           <div className="shrink-0 border-b border-neutral-100 bg-white px-4 py-5 sm:px-6">
             <div className="flex items-center justify-between gap-3">
-              <h1 className="text-2xl font-semibold tracking-tight text-neutral-950">Chats</h1>
+              <h1 className="text-2xl font-semibold tracking-tight text-neutral-950">{t("chats")}</h1>
               <button
                 type="button"
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full text-neutral-700 hover:bg-neutral-100"
@@ -164,7 +166,7 @@ function MessagesPageContent() {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-neutral-500"
-                placeholder="Rechercher ou demarrer un chat"
+                placeholder={t("searchOrStartChat")}
               />
             </label>
           </div>
@@ -177,7 +179,7 @@ function MessagesPageContent() {
             </div>
           ) : filteredItems.length === 0 ? (
             <div className="m-4 rounded-[1.4rem] bg-neutral-50 px-4 py-6 text-sm text-neutral-600">
-              Aucune conversation pour le moment.
+              {t("noConversation")}
             </div>
           ) : (
             <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto pb-24">
@@ -188,12 +190,12 @@ function MessagesPageContent() {
                     <Link
                       key={item.id}
                       href={`/messages/${item.id}${messageHrefSuffix}`}
-                      className="flex items-center gap-4 px-4 py-4 transition hover:bg-neutral-50 sm:px-6"
+                      className="yeloo-chat-list-row flex items-center gap-4 px-4 py-4 transition hover:bg-neutral-50 sm:px-6"
                     >
                       {avatarUrl ? (
                         <img
                           src={avatarUrl}
-                          alt={item.counterpart_name || "Contact"}
+                          alt={item.counterpart_name || t("contact")}
                           className="h-12 w-12 shrink-0 rounded-full object-cover"
                         />
                       ) : (
@@ -205,7 +207,7 @@ function MessagesPageContent() {
                         <span className="flex items-start justify-between gap-3">
                           <span className="min-w-0">
                             <span className="block truncate text-[15px] font-semibold uppercase text-neutral-950">
-                              {item.counterpart_name || "Interlocuteur"}
+                              {item.counterpart_name || t("participant")}
                             </span>
                             <span className="mt-1 block truncate text-sm text-neutral-500">
                               {item.last_message_preview || item.property_title}

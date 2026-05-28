@@ -5,12 +5,14 @@ import { PropertyGrid } from "@/components/PropertyGrid";
 import { PropertyGridSkeleton, SectionHeaderSkeleton } from "@/components/Skeleton";
 import { TopBar } from "@/components/TopBar";
 import { useProperties } from "@/hooks/useProperties";
+import { useT } from "@/lib/i18n";
 import { useFavoritesStore } from "@/stores/favoritesStore";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { FiHeart } from "react-icons/fi";
 
 export default function FavorisPage() {
+  const t = useT();
   const favoriteIds = useFavoritesStore((s) => s.favoriteIds);
   const { properties, isLoading, error } = useProperties();
   const favorites = properties.filter((property) => favoriteIds.includes(property.id));
@@ -31,10 +33,10 @@ export default function FavorisPage() {
             className="flex flex-wrap items-baseline justify-between gap-4"
           >
             <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              Favoris
+              {t("favorites")}
             </h1>
             <p className="text-sm text-neutral-500">
-              {`${favorites.length} logement(s)`}
+              {`${favorites.length} ${t("homesCount")}`}
             </p>
           </motion.div>
         )}
@@ -65,16 +67,16 @@ export default function FavorisPage() {
               <FiHeart />
             </div>
             <h2 className="mt-4 text-sm font-semibold">
-              Aucun logement dans vos favoris
+              {t("noFavoriteHomes")}
             </h2>
             <p className="mt-1 text-xs text-neutral-600">
-              Ajoutez des logements en cliquant sur le cœur.
+              {t("addFavoritesHint")}
             </p>
             <Link
               href="/"
               className="mt-4 inline-flex rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
             >
-              Explorer
+              {t("explore")}
             </Link>
           </motion.section>
         ) : null}

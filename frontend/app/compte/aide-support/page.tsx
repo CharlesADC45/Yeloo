@@ -37,9 +37,6 @@ export default function AideSupportPage() {
             >
               <FiArrowLeft />
             </Link>
-            <div className="rounded-full border border-neutral-200 bg-white px-4 py-1 text-xs font-semibold text-neutral-600 shadow-soft">
-              1 / 1
-            </div>
           </div>
 
           <div>

@@ -15,6 +15,7 @@ type Props = {
   showHeader?: boolean;
   title?: string;
   subtitle?: string;
+  borderlessCards?: boolean;
 };
 
 export function PropertyGrid({
@@ -26,6 +27,7 @@ export function PropertyGrid({
   showHeader = true,
   title = "Logements populaires à Abidjan",
   subtitle = "Résultats filtrés selon vos critères.",
+  borderlessCards = false,
 }: Props) {
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
   const favoriteIds = useFavoritesStore((s) => s.favoriteIds);
@@ -73,7 +75,9 @@ export function PropertyGrid({
             <Link
               key={p.id}
               href={`/logements/${p.id}`}
-              className="group flex h-full flex-col overflow-hidden rounded-[1.7rem] border border-white/80 bg-white/90 backdrop-blur-sm transition"
+              className={`group flex h-full flex-col overflow-hidden rounded-[1.7rem] bg-white/90 backdrop-blur-sm transition ${
+                borderlessCards ? "border-0" : "border border-white/80"
+              }`}
             >
               <div className="relative h-56 w-full overflow-hidden rounded-[1.7rem] sm:h-60 lg:h-64">
                 <img
