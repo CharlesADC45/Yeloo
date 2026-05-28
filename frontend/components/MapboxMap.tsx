@@ -50,21 +50,11 @@ function buildUserLocationIcon() {
 
 function buildMarkerPreview(property: Property) {
   const title = escapeHtml(property.title || "Villa contemporaine");
-  const price = `${property.price.toLocaleString("fr-FR")} F`;
+  const price = `${property.price.toLocaleString("en-US")} F`;
   const rooms = typeof property.rooms === "number" ? property.rooms : "—";
   const bathrooms = typeof property.bathrooms === "number" ? property.bathrooms : "—";
   const surface = typeof property.surfaceM2 === "number" ? property.surfaceM2 : "—";
   const location = escapeHtml(property.neighborhood || property.city || "Abidjan");
-  const ownerName = property.ownerName || "Proprietaire";
-  const ownerInitials = ownerName
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-  const ownerAvatar = property.ownerProfileImageUrl
-    ? `<img src="${property.ownerProfileImageUrl}" alt="${escapeHtml(ownerName)}" class="imc-hover-card__avatar" />`
-    : `<span class="imc-hover-card__avatar imc-hover-card__avatar--fallback">${escapeHtml(ownerInitials)}</span>`;
   const verifiedBadge = property.ownerIsVerified || property.isVerified
     ? `<div class="imc-hover-card__verified"><span class="imc-hover-card__verified-icon"></span><span>Vérifié</span></div>`
     : "";
@@ -73,30 +63,22 @@ function buildMarkerPreview(property: Property) {
     <div class="imc-hover-card">
       <div class="imc-hover-card__media">
         <img src="${property.imageUrl}" alt="${title}" class="imc-hover-card__image" />
-        <span class="imc-hover-card__price">${price}</span>
-        <div class="imc-hover-card__actions">
-          <span class="imc-hover-card__action imc-hover-card__action--share" aria-hidden="true"></span>
-          <span class="imc-hover-card__action imc-hover-card__action--heart" aria-hidden="true"></span>
-        </div>
       </div>
       <div class="imc-hover-card__body">
         <div class="imc-hover-card__heading">
           <h3 class="imc-hover-card__title">${title}</h3>
-          <p class="imc-hover-card__location"><span class="imc-hover-card__pin"></span>${location}</p>
+          <p class="imc-hover-card__location"><svg class="imc-hover-card__pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>${location}</p>
         </div>
-        <div class="imc-hover-card__meta">
-          <span><span class="imc-hover-card__meta-icon imc-hover-card__meta-icon--bed"></span><strong>${rooms} Beds</strong></span>
-          <span><span class="imc-hover-card__meta-icon imc-hover-card__meta-icon--bath"></span><strong>${bathrooms} Baths</strong></span>
-          <span><span class="imc-hover-card__meta-icon imc-hover-card__meta-icon--area"></span><strong>${surface} Sqm.</strong></span>
-        </div>
-        <div class="imc-hover-card__footer">
-          <div class="imc-hover-card__agent">
-            ${ownerAvatar}
-            <span class="imc-hover-card__contact"><span class="imc-hover-card__phone"></span>Contacter</span>
+        <div class="imc-hover-card__side">
+          <p class="imc-hover-card__price">${price}</p>
+          <div class="imc-hover-card__meta">
+            <span><span class="imc-hover-card__meta-icon imc-hover-card__meta-icon--bed"></span><strong>${rooms}</strong><small>Beds</small></span>
+            <span><span class="imc-hover-card__meta-icon imc-hover-card__meta-icon--bath"></span><strong>${bathrooms}</strong><small>Baths</small></span>
+            <span><span class="imc-hover-card__meta-icon imc-hover-card__meta-icon--area"></span><strong>${surface}</strong><small>Sqm.</small></span>
           </div>
-          ${verifiedBadge}
         </div>
       </div>
+      ${verifiedBadge ? `<div class="imc-hover-card__footer">${verifiedBadge}</div>` : ""}
     </div>
   `;
 }
@@ -497,7 +479,7 @@ export function MapboxMap({
         <button
           type="button"
           onClick={() => setIsSatellite((value) => !value)}
-          className="absolute right-4 top-4 z-20 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-neutral-800 shadow-[0_14px_34px_rgba(15,23,42,0.18)] transition hover:scale-105"
+          className="absolute right-4 top-4 z-20 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-neutral-700 shadow-[0_10px_24px_rgba(15,23,42,0.14)] ring-1 ring-black/5 transition hover:scale-105"
           aria-label={isSatellite ? "Afficher le plan" : "Afficher en mode satellite"}
           title={isSatellite ? "Plan" : "Satellite"}
         >
@@ -507,4 +489,3 @@ export function MapboxMap({
     </div>
   );
 }
-

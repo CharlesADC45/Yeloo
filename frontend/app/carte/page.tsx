@@ -298,13 +298,13 @@ function CartePageContent() {
             </span>
           )}
           {property.ownerIsVerified && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/92 px-3 py-1.5 text-[11px] font-semibold text-neutral-800 shadow-sm backdrop-blur">
+            <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-neutral-800 shadow-[0_6px_18px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
               <FiCheckCircle className="text-xs text-blue-600" />
               Vérifié
             </span>
           )}
           {property.badgeLabel && (
-            <span className="rounded-full bg-white/92 px-3 py-1.5 text-[11px] font-semibold text-neutral-800 shadow-sm backdrop-blur">
+            <span className="rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-neutral-800 shadow-[0_6px_18px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
               {property.badgeLabel}
             </span>
           )}
@@ -936,7 +936,7 @@ function CartePageContent() {
                       key={control.key}
                       type="button"
                       onClick={onClick}
-                      className="flex h-11 w-11 items-center justify-center rounded-full bg-white/96 text-neutral-700 shadow-lg ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:text-neutral-950"
+                      className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-neutral-700 shadow-[0_10px_24px_rgba(15,23,42,0.14)] ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:text-neutral-950"
                       aria-label={control.label}
                       title={control.label}
                     >
@@ -1162,13 +1162,13 @@ function CartePageContent() {
                               </span>
                             )}
                             {property.ownerIsVerified && (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-white/92 px-3 py-1.5 text-[11px] font-semibold text-neutral-800 shadow-sm backdrop-blur">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-neutral-800 shadow-[0_6px_18px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
                                 <FiCheckCircle className="text-xs text-blue-600" />
                                 Vérifié
                               </span>
                             )}
                             {property.badgeLabel && (
-                              <span className="rounded-full bg-white/92 px-3 py-1.5 text-[11px] font-semibold text-neutral-800 shadow-sm backdrop-blur">
+                              <span className="rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-neutral-800 shadow-[0_6px_18px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
                                 {property.badgeLabel}
                               </span>
                             )}
