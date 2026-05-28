@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.routes import admin, auth, lease_requests, messages, owners, properties, public, users, visit_requests
+from app.api.routes import admin, auth, lease_requests, messages, owners, properties, public, push, users, visit_requests
 
 api_router = APIRouter()
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
@@ -10,6 +10,7 @@ api_router.include_router(public.router, prefix="/public", tags=["public"])
 api_router.include_router(owners.router, prefix="/owners", tags=["owners"])
 api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
 api_router.include_router(messages.router, prefix="/messages", tags=["messages"])
+api_router.include_router(push.router, prefix="/push", tags=["push"])
 api_router.include_router(
     lease_requests.router,
     prefix="/lease-requests",

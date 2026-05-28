@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     minio_secure: bool = False
     minio_public_url: str | None = None
     minio_public_url_is_bucket_root: bool = False
+    vapid_public_key: str | None = None
+    vapid_private_key: str | None = None
+    vapid_subject: str = "mailto:admin@yeloo.ci"
 
     @field_validator("frontend_origins", mode="before")
     @classmethod

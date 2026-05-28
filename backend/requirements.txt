@@ -12,4 +12,5 @@ passlib[bcrypt]
 bcrypt<4
 minio
 casbin
+pywebpush
 

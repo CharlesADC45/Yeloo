@@ -24,6 +24,7 @@ from app.schemas.chat import (
     MessageCreate,
     MessagePublic,
 )
+from app.services.web_push import send_web_push_to_user
 
 router = APIRouter()
 
@@ -102,6 +103,26 @@ def _get_accessible_conversation(db: Session, conversation_id: uuid.UUID, curren
     if current_user.id not in {conversation.owner_id, conversation.tenant_id}:
         raise HTTPException(status_code=403, detail="Acces interdit a cette conversation.")
     return conversation
+
+
+def _notify_message_recipient(db: Session, conversation: Conversation, message: Message, sender: User) -> None:
+    recipient = conversation.tenant if sender.id == conversation.owner_id else conversation.owner
+    if not recipient:
+        return
+
+    preview = _last_message_preview(message) or "Nouveau message"
+    url = f"/messages/{conversation.id}"
+    if recipient.role == "proprietaire":
+        url = f"{url}?mode=owner"
+
+    send_web_push_to_user(
+        db,
+        recipient.id,
+        title=sender.full_name or "Nouveau message Yeloo",
+        body=preview,
+        url=url,
+        tag=f"message:{conversation.id}",
+    )
 
 
 def _store_attachment(upload: UploadFile, conversation_id: uuid.UUID) -> tuple[str, str | None]:
@@ -225,6 +246,7 @@ def send_message(
     db.add(conversation)
     db.commit()
     db.refresh(message)
+    _notify_message_recipient(db, conversation, message, current_user)
     return MessagePublic.model_validate(message)
 
 
@@ -252,4 +274,5 @@ def send_attachment(
     db.add(conversation)
     db.commit()
     db.refresh(message)
+    _notify_message_recipient(db, conversation, message, current_user)
     return MessagePublic.model_validate(message)

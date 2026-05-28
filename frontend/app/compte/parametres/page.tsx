@@ -14,9 +14,9 @@ import { PreferenceControls } from "@/components/PreferenceControls";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
 import { useT } from "@/lib/i18n";
+import { disablePushNotifications, enablePushNotifications } from "@/lib/pushNotifications";
 import {
   getDeviceNotificationPermission,
-  requestDeviceNotificationPermission,
 } from "@/lib/deviceNotifications";
 import { useAuthStore } from "@/stores/authStore";
 import {
@@ -28,6 +28,7 @@ export default function ParametresPage() {
   const t = useT();
   const bottomNav = <BottomNav />;
   const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
   const prefsByUser = useNotificationStore((state) => state.prefsByUser);
   const setOwnerPostNotifications = useNotificationStore(
     (state) => state.setOwnerPostNotifications
@@ -38,29 +39,26 @@ export default function ParametresPage() {
   const [notificationMessage, setNotificationMessage] = useState<string | null>(null);
 
   const toggleNotifications = async () => {
-    if (!user?.id) return;
+    if (!user?.id || !token) return;
 
     const nextEnabled = !notificationsEnabled;
     if (nextEnabled) {
-      const permission = await requestDeviceNotificationPermission();
-      setDevicePermission(permission);
-      if (permission !== "granted") {
+      const result = await enablePushNotifications(token);
+      setDevicePermission(result.permission);
+      if (!result.ok) {
         setOwnerPostNotifications(user.id, false);
-        setNotificationMessage(
-          permission === "denied"
-            ? "Les notifications appareil sont bloquées. Autorisez-les dans le navigateur du téléphone."
-            : "Les notifications appareil ne sont pas encore autorisées."
-        );
+        setNotificationMessage(result.message);
         return;
       }
+      setNotificationMessage(result.message);
+    } else if (token) {
+      await disablePushNotifications(token);
     }
     setOwnerPostNotifications(user.id, nextEnabled);
     setDevicePermission(getDeviceNotificationPermission());
-    setNotificationMessage(
-      nextEnabled
-        ? "Notifications appareil activées pour ce compte."
-        : "Notifications appareil désactivées pour ce compte."
-    );
+    if (!nextEnabled) {
+      setNotificationMessage("Notifications push désactivées pour ce téléphone.");
+    }
   };
 
   return (

@@ -48,7 +48,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr" className={poppins.variable}>
+    <html lang="fr" className={poppins.variable} suppressHydrationWarning>
       <body className="min-h-screen bg-white text-neutral-900">
         <script
           dangerouslySetInnerHTML={{
