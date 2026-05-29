@@ -92,6 +92,7 @@ export function BottomNav() {
             <Link
               key={tab.href}
               href={tab.href}
+              replace
               className={`flex min-w-0 flex-col items-center gap-1 text-center text-sm ${
                 index >= 3 ? "px-1" : ""
               }`}

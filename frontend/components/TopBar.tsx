@@ -77,7 +77,7 @@ type ReverseGeocodeResponse = {
 
 function YelooBrand() {
   return (
-    <Link href="/" className="flex items-center gap-1.5" aria-label="Yeloo+ accueil">
+    <Link href="/" replace className="flex items-center gap-1.5" aria-label="Yeloo+ accueil">
       <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[1.15rem] bg-[#2F57FF] shadow-soft sm:h-11 sm:w-11">
         <span className="absolute inset-x-[7px] top-[11px] h-[11px] rounded-full bg-white/12" />
         <span className="flex items-center gap-1.5">
@@ -633,6 +633,7 @@ function TopBarContent({
               <YelooBrand />
               <Link
                 href="/carte"
+                replace
                 className="ml-1 inline-flex items-center rounded-full px-1.5 py-1.5 text-xs font-bold text-neutral-800 transition hover:bg-neutral-50 sm:pr-2.5"
               >
                 <span className="mr-1 flex shrink-0 items-center justify-center rounded-full text-blue-600">
@@ -864,6 +865,7 @@ function TopBarContent({
                           <Link
                             key={label}
                             href={href}
+                            replace
                             onClick={() => setIsMenuOpen(false)}
                             className={`flex items-center gap-3 rounded-2xl px-4 py-3 transition ${
                               active
@@ -885,7 +887,7 @@ function TopBarContent({
                       onClick={() => {
                         setIsMenuOpen(false);
                         logout();
-                        router.push("/connexion?logged_out=1");
+                        router.replace("/connexion?logged_out=1");
                       }}
                       className="mt-3 flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-neutral-600 hover:bg-neutral-50"
                     >
@@ -906,6 +908,7 @@ function TopBarContent({
                           <Link
                             key={label}
                             href={href}
+                            replace
                             onClick={() => setIsMenuOpen(false)}
                             className={`flex items-center gap-3 rounded-2xl px-4 py-3 transition ${
                               active
@@ -927,7 +930,7 @@ function TopBarContent({
                       onClick={() => {
                         setIsMenuOpen(false);
                         logout();
-                        router.push("/connexion?logged_out=1");
+                        router.replace("/connexion?logged_out=1");
                       }}
                       className="mt-3 flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-neutral-600 hover:bg-neutral-50"
                     >
@@ -943,6 +946,7 @@ function TopBarContent({
                           <Link
                             key={label}
                             href={href}
+                            replace
                             onClick={() => setIsMenuOpen(false)}
                             className="flex items-center gap-3 rounded-2xl px-4 py-3 text-neutral-700 transition hover:bg-neutral-50"
                           >
@@ -955,6 +959,7 @@ function TopBarContent({
                     {!isAuthenticated ? (
                       <Link
                         href="/connexion"
+                        replace
                         onClick={() => setIsMenuOpen(false)}
                         className="flex items-center justify-between gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-800 transition hover:bg-white"
                       >
@@ -965,6 +970,7 @@ function TopBarContent({
                     <div className="my-2 h-px bg-neutral-200" />
                     <Link
                       href={actionHref}
+                      replace
                       className="flex items-center justify-between gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white"
                       onClick={() => setIsMenuOpen(false)}
                     >
@@ -991,7 +997,7 @@ function TopBarContent({
                           onClick={() => {
                             setIsMenuOpen(false);
                             logout();
-                            router.push("/connexion?logged_out=1");
+                            router.replace("/connexion?logged_out=1");
                           }}
                           className="flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-neutral-600 hover:bg-neutral-50"
                         >
@@ -1019,6 +1025,7 @@ function TopBarContent({
                     <Link
                       key={label}
                       href={href}
+                      replace
                       onClick={() => setIsMenuOpen(false)}
                       className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-700 transition hover:bg-white"
                     >
@@ -1032,6 +1039,7 @@ function TopBarContent({
                 {!isAuthenticated ? (
                   <Link
                     href="/connexion"
+                    replace
                     onClick={() => setIsMenuOpen(false)}
                     className="mt-3 flex items-center justify-between gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-800 transition hover:bg-white"
                   >
@@ -1042,6 +1050,7 @@ function TopBarContent({
                 <div className="my-3 h-px bg-neutral-200" />
                 <Link
                   href={actionHref}
+                  replace
                   onClick={() => setIsMenuOpen(false)}
                   className="flex items-start justify-between gap-3 rounded-[1.4rem] bg-blue-600 px-4 py-4 text-white"
                 >
@@ -1062,6 +1071,7 @@ function TopBarContent({
                   <div className="mt-3 flex items-center justify-between">
                     <Link
                       href="/compte/parametres"
+                      replace
                       onClick={() => setIsMenuOpen(false)}
                       className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50"
                     >
@@ -1073,7 +1083,7 @@ function TopBarContent({
                       onClick={() => {
                         setIsMenuOpen(false);
                         logout();
-                        router.push("/connexion?logged_out=1");
+                        router.replace("/connexion?logged_out=1");
                       }}
                       className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50"
                     >

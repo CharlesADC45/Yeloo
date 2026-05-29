@@ -24,6 +24,7 @@ export function OwnerSidebar() {
             <Link
               key={label}
               href={href}
+              replace
               className={`flex items-center gap-3 rounded-full px-4 py-3 transition ${
                 active ? "bg-blue-700 text-white" : "text-neutral-600 hover:text-blue-700"
               }`}
@@ -39,7 +40,7 @@ export function OwnerSidebar() {
           type="button"
           onClick={() => {
             logout();
-            router.push("/");
+            router.replace("/");
           }}
           className="flex w-full items-center gap-3 rounded-full px-4 py-3 text-sm text-neutral-600 transition hover:text-blue-700"
         >

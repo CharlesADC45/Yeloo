@@ -4,7 +4,6 @@ import {
   FiHelpCircle,
   FiSettings,
   FiUser,
-  FiWifiOff,
 } from "react-icons/fi";
 
 export type AccountNavItem = {
@@ -20,12 +19,6 @@ export const accountNavItems: AccountNavItem[] = [
     label: "À propos",
     Icon: FiUser,
     isActive: (pathname) => pathname === "/compte",
-  },
-  {
-    href: "/compte/offline",
-    label: "Statut de synchro offline",
-    Icon: FiWifiOff,
-    isActive: (pathname) => pathname.startsWith("/compte/offline"),
   },
   {
     href: "/compte/informations-personnelles",

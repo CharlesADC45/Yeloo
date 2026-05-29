@@ -86,6 +86,8 @@ export default withPWA({
   importScripts: ['/notification-worker.js'],
   register: true,
   skipWaiting: true,
+  clientsClaim: true,
+  cleanupOutdatedCaches: true,
   runtimeCaching: [
     {
       urlPattern: /^https:\/\/[abc]\.tile\.openstreetmap\.org\/.*$/i,

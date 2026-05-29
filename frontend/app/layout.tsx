@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthSync } from "@/components/AuthSync";
 import { AppInteractionGuards } from "@/components/AppInteractionGuards";
 import { AppPreferences } from "@/components/AppPreferences";
+import { AppServiceWorkerUpdater } from "@/components/AppServiceWorkerUpdater";
 import { AppStatusNotifier } from "@/components/AppStatusNotifier";
 import { YelooSplash } from "@/components/YelooSplash";
 
@@ -67,6 +68,7 @@ export default function RootLayout({
           }}
         />
         <AppPreferences />
+        <AppServiceWorkerUpdater />
         <AuthSync />
         <AppInteractionGuards />
         <AppStatusNotifier />
