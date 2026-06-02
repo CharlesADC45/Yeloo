@@ -1,9 +1,9 @@
 ﻿"use client";
 
-import { Suspense, useMemo } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { FiChevronRight, FiMapPin, FiTag } from "react-icons/fi";
+import { FiArrowLeft, FiArrowUp, FiChevronRight, FiMapPin } from "react-icons/fi";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
 import { PropertyGrid } from "@/components/PropertyGrid";
@@ -22,6 +22,8 @@ const DEFAULT_FILTERS: PropertyFilters = {
 function LogementsPageContent() {
   const searchParams = useSearchParams();
   const { properties, isLoading, error, refetch } = useProperties();
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const scrollTopTimerRef = useRef<number | null>(null);
 
   const filters = useMemo<PropertyFilters>(
     () => ({
@@ -75,22 +77,52 @@ function LogementsPageContent() {
       }));
   }, [properties]);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      const shouldShow = window.scrollY > 260;
+      setShowScrollTop(shouldShow);
+      if (scrollTopTimerRef.current) {
+        window.clearTimeout(scrollTopTimerRef.current);
+      }
+      if (shouldShow) {
+        scrollTopTimerRef.current = window.setTimeout(() => {
+          setShowScrollTop(false);
+        }, 2800);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (scrollTopTimerRef.current) {
+        window.clearTimeout(scrollTopTimerRef.current);
+      }
+    };
+  }, []);
+
   return (
     <div className="flex min-h-screen flex-col bg-transparent">
       <TopBar />
       <main className="flex-1 px-6 pb-32 pt-32 sm:px-10 lg:px-16">
         <section className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              {locationLabel} : {totalCount === null ? "..." : `Plus de ${totalCount} logements`}
-            </h1>
-            <p className="mt-2 text-sm text-neutral-600 sm:text-base">
-              Classement des résultats
-            </p>
-          </div>
-          <div className="flex items-center gap-2 text-sm font-semibold text-neutral-700">
-                <FiTag className="text-blue-600" />
-            Les prix comprennent tous les frais
+          <div className="flex min-w-0 items-start gap-3">
+            <Link
+              href="/"
+              replace
+              className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-800 shadow-sm transition hover:bg-neutral-50"
+              aria-label="Retour"
+            >
+              <FiArrowLeft className="h-5 w-5" />
+            </Link>
+            <div className="min-w-0">
+              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                {locationLabel} : {totalCount === null ? "..." : `Plus de ${totalCount} logements`}
+              </h1>
+              <p className="mt-2 text-sm text-neutral-600 sm:text-base">
+                Classement des résultats
+              </p>
+            </div>
           </div>
         </section>
 
@@ -111,7 +143,7 @@ function LogementsPageContent() {
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl font-semibold tracking-tight text-neutral-900 sm:text-2xl">
-                  Popular locations
+                  Localisation Populaires
                 </h2>
                 <p className="mt-1 text-sm text-neutral-500">
                   Quelques zones populaires à explorer sans rallonger visuellement la grille.
@@ -167,6 +199,17 @@ function LogementsPageContent() {
       </main>
 
       <BottomNav />
+      {showScrollTop && (
+        <button
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="fixed bottom-24 right-5 z-[80] flex h-12 w-12 items-center justify-center rounded-full bg-neutral-950 text-white shadow-[0_18px_36px_rgba(15,23,42,0.24)] transition hover:bg-neutral-800"
+          aria-label="Remonter"
+          title="Remonter"
+        >
+          <FiArrowUp className="h-5 w-5" />
+        </button>
+      )}
     </div>
   );
 }

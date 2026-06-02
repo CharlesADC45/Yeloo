@@ -1,5 +1,7 @@
 ﻿import { motion, AnimatePresence } from "framer-motion";
 
+import { FiGrid, FiHome, FiLayers } from "react-icons/fi";
+
 type Filters = {
   city: string;
   neighborhood: string;
@@ -17,6 +19,14 @@ type Props = {
 };
 
 export function HeroSearch({ filters, onChange, isOpen, onClose, onSearch }: Props) {
+  const propertyTypeOptions = [
+    { value: "", label: "Tous", icon: FiGrid },
+    { value: "studio", label: "Studio", icon: FiHome },
+    { value: "appartement", label: "Appartement", icon: FiLayers },
+    { value: "maison", label: "Maison", icon: FiHome },
+    { value: "villa", label: "Villa", icon: FiHome },
+  ];
+
   const handleChange =
     (field: keyof Filters) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -110,17 +120,27 @@ export function HeroSearch({ filters, onChange, isOpen, onClose, onSearch }: Pro
                     <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500">
                       Type de bien
                     </label>
-                    <select
-                      className="mt-1 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:ring-blue-200/70 focus:border-blue-400 focus:ring-2"
-                      value={filters.propertyType}
-                      onChange={handleChange("propertyType")}
-                    >
-                      <option value="">Tous</option>
-                      <option value="studio">Studio</option>
-                      <option value="appartement">Appartement</option>
-                      <option value="maison">Maison</option>
-                      <option value="villa">Villa</option>
-                    </select>
+                    <div className="mt-1 grid rounded-2xl bg-white p-1 shadow-inner ring-1 ring-neutral-200 sm:grid-cols-2">
+                      {propertyTypeOptions.map((option) => {
+                        const Icon = option.icon;
+                        const isActive = filters.propertyType === option.value;
+                        return (
+                          <button
+                            key={option.value || "all"}
+                            type="button"
+                            onClick={() => onChange({ ...filters, propertyType: option.value })}
+                            className={`flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                              isActive
+                                ? "bg-neutral-950 text-white shadow-[0_10px_24px_rgba(15,23,42,0.16)]"
+                                : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900"
+                            }`}
+                          >
+                            <Icon className="h-4 w-4" />
+                            <span className="truncate">{option.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                   <button
                     type="button"

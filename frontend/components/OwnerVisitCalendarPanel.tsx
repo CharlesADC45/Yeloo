@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FiCalendar, FiCheckCircle, FiChevronRight, FiClock, FiXCircle } from "react-icons/fi";
+import { FiCalendar, FiCheckCircle, FiChevronRight, FiClock } from "react-icons/fi";
 import type { VisitRequest } from "@/lib/visitRequests";
 
 type OwnerVisitCalendarPanelProps = {
@@ -12,7 +12,7 @@ type OwnerVisitCalendarPanelProps = {
   setRescheduleDates: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   onVisitAction: (
     visitRequest: VisitRequest,
-    status: "accepted" | "declined" | "rescheduled"
+    status: "accepted" | "rescheduled"
   ) => Promise<void> | void;
   limit?: number;
   showCalendarLink?: boolean;
@@ -79,7 +79,7 @@ export function OwnerVisitCalendarPanel({
         <div>
           <h2 className="text-base font-semibold text-neutral-950 sm:text-lg">Calendrier des visites</h2>
           <p className="mt-1 text-sm text-neutral-500">
-            Acceptez une visite, refusez-la ou proposez un autre créneau.
+            Acceptez une visite ou proposez un autre créneau.
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs">
@@ -180,7 +180,7 @@ export function OwnerVisitCalendarPanel({
                           />
                         </div>
 
-                        <div className="grid gap-2 sm:grid-cols-3">
+                        <div className="grid gap-2 sm:grid-cols-2">
                           <button
                             type="button"
                             onClick={() => void onVisitAction(item, "accepted")}
@@ -189,15 +189,6 @@ export function OwnerVisitCalendarPanel({
                           >
                             <FiCheckCircle />
                             Accepter
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void onVisitAction(item, "declined")}
-                            disabled={visitActionId === `${item.id}:declined`}
-                            className="inline-flex items-center justify-center gap-2 rounded-full border border-red-200 px-4 py-3 text-sm font-semibold text-red-700 disabled:opacity-60"
-                          >
-                            <FiXCircle />
-                            Refuser
                           </button>
                           <button
                             type="button"

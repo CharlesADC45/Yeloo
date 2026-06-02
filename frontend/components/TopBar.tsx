@@ -51,6 +51,7 @@ type HomeSearchConfig = {
   onBlur: () => void;
   onOpenFilters: () => void;
   onSubmit: () => void;
+  onClear?: () => void;
   onSuggestionSelect?: (value: string) => void;
 };
 
@@ -480,6 +481,18 @@ function TopBarContent({
               </motion.div>
             </div>
 
+            {homeSearch.value.trim() && (
+              <button
+                type="button"
+                onClick={homeSearch.onClear}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-800"
+                aria-label="Effacer la recherche"
+                title="Effacer"
+              >
+                <FiX className="h-4.5 w-4.5" />
+              </button>
+            )}
+
             <AnimatePresence initial={false}>
               {homeSearch.showFilterButton && (
                 <motion.button
@@ -504,11 +517,13 @@ function TopBarContent({
 
             <button
               type="submit"
-              className={`shrink-0 inline-flex items-center rounded-full bg-blue-600 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 ${
-                compactHomeSearch ? "px-4 py-2" : "px-5 py-2.5 sm:px-6"
+              className={`shrink-0 inline-flex items-center justify-center rounded-full bg-blue-600 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 ${
+                compactHomeSearch ? "h-10 w-10" : "h-12 w-12"
               }`}
+              aria-label="Rechercher"
+              title="Rechercher"
             >
-              <span>Go</span>
+              <FiSearch className="h-5 w-5" />
             </button>
           </form>
           </div>
@@ -791,7 +806,7 @@ function TopBarContent({
               >
                 <div className="mx-auto w-full max-w-3xl">
                   <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                    {homeTitle || "Commence ta recherche."}
+                    {homeTitle || "Commence ta recherche"}
                   </h1>
                   {/* <p className="mt-2 text-sm text-neutral-600 sm:text-base">
                     {homeSubtitle || "Explore les logements populaires à Abidjan et dans toute la Côte d'Ivoire."}

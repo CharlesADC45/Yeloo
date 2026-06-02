@@ -24,6 +24,8 @@ type Props = {
 
 type ViewerInstance = {
   destroy: () => void;
+  addEventListener: (type: string, listener: (event: unknown) => void) => void;
+  removeEventListener: (type: string, listener: (event: unknown) => void) => void;
   getPlugin: (plugin: unknown) => {
     gotoMarker: (markerId: string, speed?: string | number) => Promise<void>;
   } | null;
@@ -56,7 +58,35 @@ const DEFAULT_POINTS: TourPoint[] = [
   },
 ];
 
-export function PannellumViewer({
+function isSameOriginAsset(url: string) {
+  if (url.startsWith("/") || url.startsWith("blob:") || url.startsWith("data:")) {
+    return true;
+  }
+
+  try {
+    return new URL(url).origin === window.location.origin;
+  } catch {
+    return false;
+  }
+}
+
+async function canLoadPanorama(url: string) {
+  if (isSameOriginAsset(url)) {
+    return true;
+  }
+
+  try {
+    const response = await fetch(url, {
+      cache: "force-cache",
+      mode: "cors",
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+export function PhotoSphereViewer({
   imageUrl,
   fallbackImageUrl,
   className,
@@ -69,18 +99,34 @@ export function PannellumViewer({
   const viewerRef = useRef<ViewerInstance | null>(null);
   const [useFallback, setUseFallback] = useState(false);
   const [activePointId, setActivePointId] = useState<string | null>(null);
-  const tourPoints = useMemo(() => points?.length ? points : DEFAULT_POINTS, [points]);
+  const pointsKey = JSON.stringify(points?.length ? points : DEFAULT_POINTS);
+  const tourPoints = useMemo<TourPoint[]>(
+    () => (points?.length ? points : DEFAULT_POINTS),
+    // The parent often provides points inline; keying by content prevents viewer re-creation on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pointsKey]
+  );
   const activePoint = tourPoints.find((point) => point.id === activePointId) ?? tourPoints[0] ?? null;
 
   useEffect(() => {
     if (!containerRef.current) return;
     let isMounted = true;
     let viewer: ViewerInstance | null = null;
+    let removePanoramaErrorListener: (() => void) | null = null;
     setUseFallback(false);
+    containerRef.current.replaceChildren();
 
     const init = async () => {
       try {
-        const [{ Viewer }, { MarkersPlugin }] = await Promise.all([
+        const canLoad = await canLoadPanorama(imageUrl);
+        if (!isMounted) return;
+
+        if (!canLoad) {
+          setUseFallback(true);
+          return;
+        }
+
+        const [{ Viewer, events }, { MarkersPlugin }] = await Promise.all([
           import("@photo-sphere-viewer/core"),
           import("@photo-sphere-viewer/markers-plugin"),
         ]);
@@ -121,6 +167,18 @@ export function PannellumViewer({
           setActivePointId(tourPoints[0]?.id ?? null);
         }
 
+        const handlePanoramaError = () => {
+          if (!isMounted) return;
+          setUseFallback(true);
+          viewer?.destroy();
+          viewerRef.current = null;
+        };
+
+        viewer.addEventListener(events.PanoramaErrorEvent.type, handlePanoramaError);
+        removePanoramaErrorListener = () => {
+          viewer?.removeEventListener(events.PanoramaErrorEvent.type, handlePanoramaError);
+        };
+
         viewerRef.current = viewer;
       } catch {
         if (isMounted) setUseFallback(true);
@@ -131,6 +189,7 @@ export function PannellumViewer({
 
     return () => {
       isMounted = false;
+      removePanoramaErrorListener?.();
       viewer?.destroy();
       viewerRef.current = null;
     };

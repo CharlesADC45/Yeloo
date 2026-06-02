@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FiArrowRight, FiCheckCircle, FiHeart } from "react-icons/fi";
+import { FiArrowRight, FiArrowUp, FiCheckCircle, FiHeart } from "react-icons/fi";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
 import { HeroSearch } from "@/components/HeroSearch";
@@ -30,6 +30,7 @@ function HomePageContent() {
   const [isCompactSearch, setIsCompactSearch] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const [isSearchEngaged, setIsSearchEngaged] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const { properties, isLoading, error, refetch } = useProperties();
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
   const favoriteIds = useFavoritesStore((s) => s.favoriteIds);
@@ -37,6 +38,7 @@ function HomePageContent() {
   const popularSectionRef = useRef<HTMLElement | null>(null);
   const locationsSectionRef = useRef<HTMLElement | null>(null);
   const homeRootRef = useRef<HTMLDivElement | null>(null);
+  const scrollTopTimerRef = useRef<number | null>(null);
 
   const visibleProperties = useMemo(
     () => applyPropertyFilters(properties, filters),
@@ -121,6 +123,16 @@ function HomePageContent() {
 
     const handleScroll = () => {
       setIsCompactSearch(window.scrollY > 36);
+      const shouldShowScrollTop = window.scrollY > 260;
+      setShowScrollTop(shouldShowScrollTop);
+      if (scrollTopTimerRef.current) {
+        window.clearTimeout(scrollTopTimerRef.current);
+      }
+      if (shouldShowScrollTop) {
+        scrollTopTimerRef.current = window.setTimeout(() => {
+          setShowScrollTop(false);
+        }, 2800);
+      }
     };
 
     handleResize();
@@ -132,6 +144,9 @@ function HomePageContent() {
     return () => {
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("scroll", handleScroll);
+      if (scrollTopTimerRef.current) {
+        window.clearTimeout(scrollTopTimerRef.current);
+      }
     };
   }, []);
 
@@ -282,7 +297,7 @@ function HomePageContent() {
       className="yeloo-home-shell flex min-h-screen flex-col bg-[linear-gradient(180deg,#f8fafc_0%,#f3f8ff_44%,#f8fafc_100%)]"
     >
       <TopBar
-        homeTitle="Commence ta recherche."
+        homeTitle="Commence ta recherche"
         homeSubtitle="Explore les logements populaires à Abidjan et dans toute la Côte d'Ivoire."
         homeSearch={{
           compact: compactInHeader,
@@ -301,6 +316,10 @@ function HomePageContent() {
           onOpenFilters: () => {
             setIsSearchEngaged(true);
             setIsSearchOpen(true);
+          },
+          onClear: () => {
+            setFilters((prev) => ({ ...prev, city: "" }));
+            setIsSearchEngaged(false);
           },
           onSuggestionSelect: handleSuggestionSelect,
         }}
@@ -374,7 +393,7 @@ function HomePageContent() {
         {!isLoading && !error && popularLocations.length > 0 && (
           <section ref={locationsSectionRef} className="mt-12">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="min-w-0 text-lg font-semibold sm:text-xl">Popular locations</h2>
+              <h2 className="min-w-0 text-lg font-semibold sm:text-xl">Localisation Populaires</h2>
               <Link
                 href={buildLogementsHref(filters.city)}
                 className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-neutral-700 shadow-soft ring-1 ring-neutral-200 hover:text-neutral-950"
@@ -432,6 +451,17 @@ function HomePageContent() {
       />
 
       <BottomNav />
+      {showScrollTop && (
+        <button
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="fixed bottom-24 right-5 z-[80] flex h-12 w-12 items-center justify-center rounded-full bg-neutral-950 text-white shadow-[0_18px_36px_rgba(15,23,42,0.24)] transition hover:bg-neutral-800"
+          aria-label="Remonter"
+          title="Remonter"
+        >
+          <FiArrowUp className="h-5 w-5" />
+        </button>
+      )}
     </div>
   );
 }

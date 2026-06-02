@@ -4,7 +4,7 @@ import "leaflet/dist/leaflet.css";
 import type {
   DivIcon,
   LatLngBounds,
-  Map as LeafletMap,
+  Map as LeafletMapInstance,
   Marker as LeafletMarker,
   TileLayer,
 } from "leaflet";
@@ -19,6 +19,8 @@ type Props = {
   onSelect?: (property: Property) => void;
   locateSignal?: number;
   fitBoundsSignal?: number;
+  zoomSignal?: number;
+  zoomDelta?: 1 | -1;
   onFitBounds?: () => void;
   className?: string;
   showLayerToggle?: boolean;
@@ -58,6 +60,7 @@ type MarkerPreviewLabels = {
 
 function buildMarkerPreview(property: Property, labels: MarkerPreviewLabels) {
   const title = escapeHtml(property.title || "Villa contemporaine");
+  const detailsUrl = escapeHtml(`/logements/${encodeURIComponent(property.id)}`);
   const price = `${property.price.toLocaleString("en-US")} F`;
   const rooms = typeof property.rooms === "number" ? property.rooms : "—";
   const bathrooms = typeof property.bathrooms === "number" ? property.bathrooms : "—";
@@ -68,7 +71,7 @@ function buildMarkerPreview(property: Property, labels: MarkerPreviewLabels) {
     : "";
 
   return `
-    <div class="imc-hover-card">
+    <a class="imc-hover-card" href="${detailsUrl}" aria-label="${title}">
       <div class="imc-hover-card__media">
         <img src="${property.imageUrl}" alt="${title}" class="imc-hover-card__image" />
       </div>
@@ -87,23 +90,25 @@ function buildMarkerPreview(property: Property, labels: MarkerPreviewLabels) {
         </div>
       </div>
       ${verifiedBadge ? `<div class="imc-hover-card__footer">${verifiedBadge}</div>` : ""}
-    </div>
+    </a>
   `;
 }
 
-export function MapboxMap({
+export function LeafletMap({
   properties,
   selectedId,
   onSelect,
   locateSignal,
   fitBoundsSignal,
+  zoomSignal = 0,
+  zoomDelta = 1,
   onFitBounds,
   className,
   showLayerToggle = true,
 }: Props) {
   const t = useT();
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<LeafletMap | null>(null);
+  const mapRef = useRef<LeafletMapInstance | null>(null);
   const markersRef = useRef<LeafletMarker[]>([]);
   const markerByPropertyIdRef = useRef<Map<string, LeafletMarker>>(new Map());
   const userMarkerRef = useRef<LeafletMarker | null>(null);
@@ -127,7 +132,7 @@ export function MapboxMap({
   const openMarkerPopup = (marker: LeafletMarker) => {
     const map = mapRef.current;
     if (!map || !marker.getPopup()) return;
-    if (!(marker as LeafletMarker & { _map?: LeafletMap | null })._map) return;
+    if (!(marker as LeafletMarker & { _map?: LeafletMapInstance | null })._map) return;
 
     const safeOpen = () => {
       try {
@@ -150,7 +155,7 @@ export function MapboxMap({
       if (!isMounted) return;
       leafletRef.current = leaflet;
 
-      const map = leaflet.map(containerRef.current).setView(DEFAULT_CENTER, 12);
+      const map = leaflet.map(containerRef.current, { zoomControl: false }).setView(DEFAULT_CENTER, 12);
       mapRef.current = map;
 
       streetLayerRef.current = leaflet
@@ -245,7 +250,7 @@ export function MapboxMap({
     if (!map || !leaflet || !userLocation) return;
 
     const [lat, lng] = userLocation;
-    map.setView([lat, lng], 12);
+    map.setView([lat, lng], Math.min(map.getZoom(), 12));
 
     if (userMarkerRef.current) {
       userMarkerRef.current.remove();
@@ -453,7 +458,7 @@ export function MapboxMap({
       if (mapRef.current !== map) return;
       if (markerByPropertyIdRef.current.get(selectedId) !== marker) return;
       if (!marker.getPopup()) return;
-      if (!(marker as LeafletMarker & { _map?: LeafletMap | null })._map) return;
+      if (!(marker as LeafletMarker & { _map?: LeafletMapInstance | null })._map) return;
 
       openMarkerPopup(marker);
     };
@@ -484,6 +489,18 @@ export function MapboxMap({
     map.fitBounds(bounds.pad(0.2));
     onFitBounds?.();
   }, [fitBoundsSignal, onFitBounds]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !zoomSignal) return;
+
+    if (zoomDelta > 0) {
+      map.zoomIn(1);
+      return;
+    }
+
+    map.zoomOut(1);
+  }, [zoomDelta, zoomSignal]);
 
   return (
     <div

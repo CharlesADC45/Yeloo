@@ -16,15 +16,15 @@ import {
   FiHome,
   FiLayers,
   FiMapPin,
-  FiMessageCircle,
   FiPhone,
   FiPlay,
   FiShare2,
   FiShield,
+  FiTarget,
   FiTool,
 } from "react-icons/fi";
 import { BottomNav } from "@/components/BottomNav";
-import { PannellumViewer } from "@/components/PannellumViewer";
+import { PhotoSphereViewer } from "@/components/PhotoSphereViewer";
 import { DetailPageSkeleton } from "@/components/Skeleton";
 import { TopBar } from "@/components/TopBar";
 import { fetchPublicModules } from "@/lib/modules";
@@ -46,6 +46,7 @@ type MapProps = {
   latitude?: number;
   longitude?: number;
   title: string;
+  imageUrl?: string;
   isApproximate?: boolean;
 };
 
@@ -118,9 +119,18 @@ function getListingCommentDraftKey(propertyId: string, userId?: string | null) {
   return `yeloo:listing-comment:${propertyId}:${userId || "guest"}`;
 }
 
-function buildDetailLocationIcon() {
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function buildDetailLocationIcon(imageUrl?: string) {
   return `
-    <div class="imc-user-location">
+    <div class="imc-user-location imc-user-location--detail">
       <span class="imc-user-location__halo"></span>
       <span class="imc-user-location__pin">
         <span class="imc-user-location__dot"></span>
@@ -130,7 +140,7 @@ function buildDetailLocationIcon() {
   `;
 }
 
-function PropertyMap({ latitude, longitude, title, isApproximate = false }: MapProps) {
+function PropertyMap({ latitude, longitude, title, imageUrl, isApproximate = false }: MapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<import("leaflet").Map | null>(null);
   const markerRef = useRef<import("leaflet").Marker | null>(null);
@@ -187,7 +197,7 @@ function PropertyMap({ latitude, longitude, title, isApproximate = false }: MapP
         .marker([latitude, longitude], {
           icon: leaflet.divIcon({
             className: "imc-marker",
-            html: buildDetailLocationIcon(),
+            html: buildDetailLocationIcon(imageUrl),
             iconSize: [44, 56],
             iconAnchor: [22, 46],
           }),
@@ -197,7 +207,7 @@ function PropertyMap({ latitude, longitude, title, isApproximate = false }: MapP
       markerRef.current.bindTooltip(
         `<div class="imc-hover-card imc-hover-card--compact">
           <div class="imc-hover-card__header">
-            <p class="imc-hover-card__title">${title}${isApproximate ? " · zone approximative" : ""}</p>
+            <p class="imc-hover-card__title">${escapeHtml(title)}${isApproximate ? " · zone approximative" : ""}</p>
             <span class="imc-hover-card__close">&times;</span>
           </div>
         </div>`,
@@ -231,7 +241,7 @@ function PropertyMap({ latitude, longitude, title, isApproximate = false }: MapP
       isMounted = false;
       cleanup?.();
     };
-  }, [latitude, longitude, title, isApproximate]);
+  }, [latitude, longitude, title, imageUrl, isApproximate]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -264,6 +274,15 @@ function PropertyMap({ latitude, longitude, title, isApproximate = false }: MapP
       >
         <FiLayers className="text-lg" />
       </button>
+      <button
+        type="button"
+        onClick={() => mapRef.current?.setView([latitude as number, longitude as number], 15)}
+        className="absolute right-4 top-[4.6rem] z-[500] inline-flex h-12 w-12 items-center justify-center rounded-full bg-white text-neutral-800 shadow-[0_14px_34px_rgba(15,23,42,0.18)]"
+        aria-label="Recentrer sur la position"
+        title="Position"
+      >
+        <FiTarget className="text-lg" />
+      </button>
     </div>
   );
   }
@@ -295,6 +314,7 @@ export function LogementClient({ id }: Props) {
   const [isSendingVisit, setIsSendingVisit] = useState(false);
   const [commentDraft, setCommentDraft] = useState("");
   const [commentSaved, setCommentSaved] = useState(false);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
   const gallery = useMemo(() => {
     if (!property) return [];
@@ -331,11 +351,20 @@ export function LogementClient({ id }: Props) {
   const selectedVisitDay = visitDate.slice(0, 10);
   const selectedVisitTime = visitDate.slice(11, 16);
   const selectedVisitLabel = visitDate ? formatVisitDate(visitDate) : "Choisissez un jour et une heure";
-  const ownerLabel = property?.ownerIsVerified ? "Propriétaire vérifié" : "Propriétaire Yeloo";
-  const ownerInitial = ownerLabel.charAt(0).toUpperCase();
   const ownerName = property?.ownerName || "Hôte Yeloo";
+  const ownerLabel = property?.ownerIsVerified ? "Propriétaire vérifié" : "Propriétaire Yeloo";
+  const ownerInitials = ownerName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase() || "Y";
   const ownerProfileImageUrl = property?.ownerProfileImageUrl;
   const pricePeriodLabel = property?.pricePeriod || "mois";
+  const descriptionText =
+    property?.description ||
+    "Cette annonce n'a pas encore de description détaillée. Utilisez le flow de demande pour échanger avec le propriétaire et confirmer les derniers détails.";
   const detailStats = property
     ? [
         { label: "Pièces", value: property.rooms ? `${property.rooms}` : "Non renseigné" },
@@ -534,6 +563,7 @@ export function LogementClient({ id }: Props) {
   useEffect(() => {
     setActiveSlide(0);
     sliderRef.current?.scrollTo({ left: 0, behavior: "smooth" });
+    setIsDescriptionExpanded(false);
   }, [property?.id]);
 
   useEffect(() => {
@@ -583,6 +613,45 @@ export function LogementClient({ id }: Props) {
     };
   }, [isLoading, property]);
 
+  const renderOwnerActions = () => (
+    <div className="mt-5 space-y-3">
+      {!isOwnerViewer && isChatEnabled && (
+        <button
+          type="button"
+          onClick={() => void handleOpenChat()}
+          disabled={isOpeningChat || property?.availabilityStatus === "rented"}
+          className="inline-flex w-full items-center justify-center rounded-full bg-teal-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:opacity-70"
+        >
+          {property?.availabilityStatus === "rented"
+            ? "Logement déjà loué"
+            : isOpeningChat
+              ? "Ouverture..."
+              : "Contacter le propriétaire"}
+        </button>
+      )}
+      {!isAuthenticated && property && (
+        <Link
+          href={`/connexion?next=/logements/${property.id}`}
+          className="inline-flex w-full items-center justify-center rounded-full border border-neutral-200 px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50"
+        >
+          Se connecter pour continuer
+        </Link>
+      )}
+      <button
+        type="button"
+        className="inline-flex w-full items-center justify-center rounded-full border border-neutral-200 px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50"
+      >
+        <FiPhone className="mr-2" />
+        Assistance Yeloo+
+      </button>
+      {chatError && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
+          {chatError}
+        </div>
+      )}
+    </div>
+  );
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-transparent">
@@ -624,7 +693,10 @@ export function LogementClient({ id }: Props) {
           transition={{ duration: 0.25 }}
           className="space-y-8"
         >
-          <div data-detail-reveal="true" className="flex flex-wrap items-start justify-between gap-4">
+          <div
+            data-detail-reveal="true"
+            className="sticky top-[5rem] z-30 -mx-4 flex flex-wrap items-start justify-between gap-4 border-b border-neutral-100 bg-white/95 px-4 py-3 backdrop-blur sm:-mx-8 sm:px-8 lg:-mx-12 lg:px-12"
+          >
             <div className="space-y-3">
               <button
                 type="button"
@@ -747,10 +819,25 @@ export function LogementClient({ id }: Props) {
                   <FiFileText className="text-blue-600" />
                   <h2 className="text-xl font-semibold text-neutral-900">Description</h2>
                 </div>
-                <p className="mt-4 max-w-3xl text-[15px] leading-8 text-neutral-700">
-                  {property.description ||
-                    "Cette annonce n'a pas encore de description détaillée. Utilisez le flow de demande pour échanger avec le propriétaire et confirmer les derniers détails."}
+                <p
+                  className={`mt-4 max-w-3xl text-[15px] leading-8 text-neutral-700 ${
+                    isDescriptionExpanded
+                      ? ""
+                      : "overflow-hidden [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]"
+                  }`}
+                >
+                  {descriptionText}
                 </p>
+                {!isDescriptionExpanded && descriptionText.length > 180 && (
+                  <button
+                    type="button"
+                    onClick={() => setIsDescriptionExpanded(true)}
+                    className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-blue-700"
+                  >
+                    Lire la suite
+                    <FiChevronRight className="text-base" />
+                  </button>
+                )}
               </section>
 
                <section
@@ -783,11 +870,8 @@ export function LogementClient({ id }: Props) {
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">
                   Propriétaire
                 </p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-neutral-900">
-                  Faites connaissance avec la personne qui a publié ce logement
-                </h2>
-                <div className="mt-6 grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-                    <div className="border-y border-neutral-200 py-5">
+                <div className="mt-5 grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+                    <div className="py-3">
                       <div className="flex items-center gap-4">
                         <div className="relative shrink-0">
                           {ownerProfileImageUrl ? (
@@ -798,7 +882,7 @@ export function LogementClient({ id }: Props) {
                             />
                           ) : (
                             <div className="flex h-16 w-16 items-center justify-center bg-neutral-950 text-2xl font-semibold text-white">
-                              {ownerInitial}
+                              {ownerInitials}
                             </div>
                           )}
                           {property.ownerIsVerified && (
@@ -816,7 +900,7 @@ export function LogementClient({ id }: Props) {
                         </p>
                       </div>
                     </div>
-                    <div className="mt-5 grid grid-cols-3 divide-x divide-neutral-200 border-t border-neutral-200 pt-4 text-center">
+                    <div className="mt-5 grid grid-cols-2 divide-x divide-neutral-200 border-t border-neutral-200 pt-4 text-center">
                       <div>
                         <p className="text-lg font-semibold text-neutral-950">
                           {property.ownerIsVerified ? "Oui" : "En cours"}
@@ -831,12 +915,6 @@ export function LogementClient({ id }: Props) {
                           Annonce
                         </p>
                       </div>
-                      <div>
-                        <p className="text-lg font-semibold text-neutral-950">Direct</p>
-                        <p className="mt-1 text-[11px] uppercase tracking-wide text-neutral-500">
-                          Contact
-                        </p>
-                      </div>
                     </div>
                   </div>
 
@@ -844,50 +922,7 @@ export function LogementClient({ id }: Props) {
                     <h3 className="text-base font-semibold text-neutral-950">
                       Informations sur le propriétaire
                     </h3>
-                    <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-600">
-                      Ce propriétaire publie son logement sur Yeloo pour garder un échange clair,
-                      centralisé et vérifiable avant toute décision.
-                    </p>
-                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                      <div className="flex gap-3 border border-neutral-200 p-4">
-                        <FiCheckCircle className="mt-0.5 text-blue-600" />
-                        <div>
-                          <p className="text-sm font-semibold text-neutral-900">
-                            Statut du profil
-                          </p>
-                          <p className="mt-1 text-sm text-neutral-500">
-                            {property.ownerIsVerified
-                              ? "Propriétaire vérifié par la plateforme"
-                              : "Profil propriétaire en cours de vérification"}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex gap-3 border border-neutral-200 p-4">
-                        <FiMessageCircle className="mt-0.5 text-blue-600" />
-                        <div>
-                          <p className="text-sm font-semibold text-neutral-900">
-                            Échange locataire
-                          </p>
-                          <p className="mt-1 text-sm text-neutral-500">
-                            Message direct depuis l’annonce pour poser vos questions.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    {!isOwnerViewer && isChatEnabled && (
-                      <button
-                        type="button"
-                        onClick={() => void handleOpenChat()}
-                        disabled={isOpeningChat || property.availabilityStatus === "rented"}
-                        className="mt-5 inline-flex items-center justify-center bg-neutral-950 px-5 py-3 text-sm font-semibold text-white disabled:opacity-70"
-                      >
-                        {property.availabilityStatus === "rented"
-                          ? "Logement déjà loué"
-                          : isOpeningChat
-                            ? "Ouverture..."
-                            : "Envoyer un message au propriétaire"}
-                      </button>
-                    )}
+                    {renderOwnerActions()}
                   </div>
                 </div>
               </section>
@@ -907,6 +942,7 @@ export function LogementClient({ id }: Props) {
                     latitude={mapLatitude}
                     longitude={mapLongitude}
                     title={property.title}
+                    imageUrl={gallery[0]}
                     isApproximate={!hasExactLocation}
                   />
                   {!hasExactLocation && (
@@ -920,14 +956,11 @@ export function LogementClient({ id }: Props) {
                <section data-detail-reveal="true" className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_0.95fr]">
                 <div className="border-t border-neutral-200 bg-white py-5">
                   <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <h2 className="text-base font-semibold text-neutral-900 sm:text-lg">Visite 360</h2>
-                    </div>
-                    <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-blue-700 sm:text-[11px]">360</span>
+                    <h2 className="text-base font-semibold text-neutral-900 sm:text-lg">Visite 360</h2>
                   </div>
                   <div className="relative mt-4 h-[28rem] overflow-hidden rounded-[1.75rem] bg-neutral-100 sm:h-[34rem]">
                     {tourUrl && isTourImage ? (
-                      <PannellumViewer
+                      <PhotoSphereViewer
                         imageUrl={tourUrl}
                         fallbackImageUrl="/property-fallback.svg"
                         title={property.title}
@@ -1019,80 +1052,6 @@ export function LogementClient({ id }: Props) {
             </div>
 
             <aside className="space-y-5 xl:sticky xl:top-28 xl:self-start">
-                <div
-                  data-detail-reveal="true"
-                  className="rounded-[1.8rem] border border-neutral-200 bg-white p-6"
-               >
-                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-neutral-500">
-                  Contact & décision
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold text-neutral-900">
-                  Intéressé par ce logement ?
-                </h2>
-                <p className="mt-3 text-sm text-neutral-600">
-                  Posez vos questions au propriétaire et gardez l’annonce en favori pendant votre prise de décision.
-                </p>
-
-                <div className="mt-5 space-y-3 text-sm text-neutral-700">
-                  {[
-                    "Discutez directement avec le propriétaire depuis cette annonce",
-                    "Vérifiez les médias, la localisation, la caution et les garanties du bien",
-                    "Gardez vos échanges au même endroit pour reprendre plus tard",
-                  ].map((step, index) => (
-                    <div key={step} className="flex gap-3">
-                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-xs font-semibold text-blue-700">
-                        {index + 1}
-                      </span>
-                      <p>{step}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-6 space-y-3">
-                  {!isOwnerViewer && isChatEnabled && (
-                    <button
-                      type="button"
-                      onClick={() => void handleOpenChat()}
-                      disabled={isOpeningChat || property.availabilityStatus === "rented"}
-                      className="inline-flex w-full items-center justify-center rounded-full bg-teal-600 px-5 py-3 text-sm font-semibold text-white disabled:opacity-70"
-                    >
-                      {property.availabilityStatus === "rented"
-                        ? "Logement déjà loué"
-                        : isOpeningChat
-                          ? "Ouverture..."
-                          : "Contacter le propriétaire"}
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => resolvedId && toggleFavorite(resolvedId)}
-                    className="inline-flex w-full items-center justify-center rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white"
-                  >
-                    {isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
-                  </button>
-                  {!isAuthenticated && (
-                    <Link
-                      href={`/connexion?next=/logements/${property.id}`}
-                      className="inline-flex w-full items-center justify-center rounded-full border border-neutral-200 px-5 py-3 text-sm font-semibold text-neutral-700"
-                    >
-                      Se connecter pour continuer
-                    </Link>
-                  )}
-                  <button
-                    type="button"
-                    className="inline-flex w-full items-center justify-center rounded-full border border-neutral-200 px-5 py-3 text-sm font-semibold text-neutral-700"
-                  >
-                    <FiPhone className="mr-2" />
-                    Assistance Yeloo
-                  </button>
-                  {chatError && (
-                    <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
-                      {chatError}
-                    </div>
-                  )}
-                </div>
-              </div>
-
               {!isOwnerViewer && isVisitEnabled && property.availabilityStatus !== "rented" && (
                 <div
                   data-detail-reveal="true"
@@ -1279,9 +1238,6 @@ export function LogementClient({ id }: Props) {
                 <h2 className="text-xl font-semibold tracking-[-0.02em] text-neutral-950">
                   Laisser un commentaire
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-neutral-500">
-                  Notez vos questions ou remarques avant de contacter le propriétaire.
-                </p>
                 <textarea
                   rows={4}
                   value={commentDraft}

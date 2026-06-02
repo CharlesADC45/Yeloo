@@ -5,20 +5,26 @@ import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import {
   FiArrowLeft,
+  FiArrowUp,
   FiCheckCircle,
   FiChevronDown,
+  FiCompass,
+  FiGrid,
   FiHeart,
   FiHome,
-  FiTarget,
+  FiLayers,
   FiMapPin,
+  FiMinus,
+  FiPlus,
   FiSearch,
   FiSliders,
+  FiTarget,
 } from "react-icons/fi";
 import { BottomNav } from "@/components/BottomNav";
 import { MapResultsSkeleton, Skeleton } from "@/components/Skeleton";
 import { TopBar } from "@/components/TopBar";
 import { AnimatePresence, motion } from "framer-motion";
-import { MapboxMap } from "@/components/MapboxMap";
+import { LeafletMap } from "@/components/LeafletMap";
 import { useProperties } from "@/hooks/useProperties";
 import { useT } from "@/lib/i18n";
 import { applyPropertyFilters, PropertyFilters } from "@/lib/properties";
@@ -31,6 +37,24 @@ const DEFAULT_FILTERS: PropertyFilters = {
   maxPrice: "",
   propertyType: "",
 };
+const ABIDJAN_CENTER = { latitude: 5.3599517, longitude: -4.0082563 };
+const NEARBY_RADIUS_OPTIONS = [1, 5, 15, 30];
+
+function getDistanceKm(
+  a: { latitude: number; longitude: number },
+  b: { latitude: number; longitude: number }
+) {
+  const toRad = (value: number) => (value * Math.PI) / 180;
+  const earthRadiusKm = 6371;
+  const dLat = toRad(b.latitude - a.latitude);
+  const dLng = toRad(b.longitude - a.longitude);
+  const lat1 = toRad(a.latitude);
+  const lat2 = toRad(b.latitude);
+  const h =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return 2 * earthRadiusKm * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+}
 
 function CartePageContent() {
   const t = useT();
@@ -42,6 +66,17 @@ function CartePageContent() {
   const [showFilters, setShowFilters] = useState(false);
   const [locateSignal, setLocateSignal] = useState(0);
   const [fitBoundsSignal, setFitBoundsSignal] = useState(0);
+  const [zoomSignal, setZoomSignal] = useState(0);
+  const [zoomDelta, setZoomDelta] = useState<1 | -1>(1);
+  const [isNearbyOpen, setIsNearbyOpen] = useState(false);
+  const [nearbySearching, setNearbySearching] = useState(false);
+  const [nearbyRadiusKm, setNearbyRadiusKm] = useState<number | null>(null);
+  const [nearbyFilter, setNearbyFilter] = useState<{
+    latitude: number;
+    longitude: number;
+    radiusKm: number;
+  } | null>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const resultsPanelRef = useRef<HTMLDivElement | null>(null);
   const secondaryGridRef = useRef<HTMLDivElement | null>(null);
   const paginationRef = useRef<HTMLDivElement | null>(null);
@@ -53,6 +88,8 @@ function CartePageContent() {
   const hasInitializedMobileSheetRef = useRef(false);
   const mobileSheetContentRef = useRef<HTMLDivElement | null>(null);
   const mobileSheetTopRef = useRef(0);
+  const scrollTopTimerRef = useRef<number | null>(null);
+  const nearbyZoomTimersRef = useRef<number[]>([]);
   const { properties, isLoading, error, refetch } = useProperties();
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
   const favoriteIds = useFavoritesStore((s) => s.favoriteIds);
@@ -61,10 +98,24 @@ function CartePageContent() {
   const [isDraggingMobileSheet, setIsDraggingMobileSheet] = useState(false);
   const [favoritePulseId, setFavoritePulseId] = useState<string | null>(null);
 
-  const filtered = useMemo(
+  const baseFiltered = useMemo(
     () => applyPropertyFilters(properties, filters),
     [properties, filters]
   );
+  const filtered = useMemo(() => {
+    if (!nearbyFilter) return baseFiltered;
+    return baseFiltered.filter((property) => {
+      if (typeof property.latitude !== "number" || typeof property.longitude !== "number") {
+        return false;
+      }
+      return (
+        getDistanceKm(nearbyFilter, {
+          latitude: property.latitude,
+          longitude: property.longitude,
+        }) <= nearbyFilter.radiusKm
+      );
+    });
+  }, [baseFiltered, nearbyFilter]);
   const visibleProperties = useMemo(() => filtered, [filtered]);
   const selected = useMemo(() => {
     if (!selectedId) return null;
@@ -101,10 +152,6 @@ function CartePageContent() {
     filters.city || filters.neighborhood || selected?.neighborhood || selected?.city || "Abidjan";
   const mobileSearchTitle = `${t("homesInArea")} ${mobileLocationLabel}`;
   const mobileSearchMeta = `${resultsLabel} ${t("availableHomes")}`;
-  const mapControls = [
-    { key: "home", icon: FiHome, label: t("home") },
-    { key: "locate", icon: FiTarget, label: "Position" },
-  ];
   const mobileSheetBounds = useMemo(() => {
     if (!viewportHeight) return null;
 
@@ -170,6 +217,153 @@ function CartePageContent() {
     if (!mobileSheetBounds) return;
     setMobileSheetTop(mobileSheetBounds.collapsed);
   };
+
+  const handleZoom = (delta: 1 | -1) => {
+    setZoomDelta(delta);
+    setZoomSignal((value) => value + 1);
+  };
+
+  const animateNearbyZoomOut = (radiusKm: number) => {
+    nearbyZoomTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+    nearbyZoomTimersRef.current = [];
+    const steps = radiusKm >= 30 ? 4 : radiusKm >= 15 ? 3 : radiusKm >= 5 ? 2 : 1;
+
+    nearbyZoomTimersRef.current = Array.from({ length: steps }, (_, index) =>
+      window.setTimeout(() => {
+        setZoomDelta(-1);
+        setZoomSignal((value) => value + 1);
+      }, index * 760)
+    );
+  };
+
+  const scrollResultsToTop = () => {
+    mobileSheetContentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    resultsPanelRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    if (mobileSheetBounds) {
+      setMobileSheetTop(mobileSheetBounds.full);
+    }
+  };
+
+  const revealScrollTopButton = (scrollTop: number) => {
+    const shouldShow = scrollTop > 180;
+    setShowScrollTop(shouldShow);
+    if (scrollTopTimerRef.current) {
+      window.clearTimeout(scrollTopTimerRef.current);
+    }
+    if (shouldShow) {
+      scrollTopTimerRef.current = window.setTimeout(() => {
+        setShowScrollTop(false);
+      }, 2800);
+    }
+  };
+
+  const handleNearbyRadiusSelect = (radiusKm: number) => {
+    setIsNearbyOpen(false);
+    setNearbyRadiusKm(radiusKm);
+    setNearbySearching(true);
+    handleShowMap();
+    animateNearbyZoomOut(radiusKm);
+    setLocateSignal((value) => value + 1);
+
+    const finishSearch = (center: { latitude: number; longitude: number }) => {
+      window.setTimeout(() => {
+        setNearbyFilter({ ...center, radiusKm });
+        setNearbySearching(false);
+        setResultsPage(1);
+        if (mobileSheetBounds) {
+          setMobileSheetTop(mobileSheetBounds.full);
+        }
+        resultsPanelRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+        mobileSheetContentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+      }, 4300);
+    };
+
+    if (!navigator.geolocation) {
+      finishSearch(ABIDJAN_CENTER);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        finishSearch({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+      },
+      () => finishSearch(ABIDJAN_CENTER),
+      { enableHighAccuracy: true, maximumAge: 1000 * 60 * 10, timeout: 7000 }
+    );
+  };
+
+  const clearNearbyFilter = () => {
+    setNearbyFilter(null);
+    setNearbyRadiusKm(null);
+    setResultsPage(1);
+  };
+
+  const showPropertyOnMap = (propertyId: string) => {
+    setSelectedId(null);
+    handleShowMap();
+    window.setTimeout(() => {
+      setSelectedId(propertyId);
+    }, 220);
+  };
+
+  const renderNearbyControl = () => (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setIsNearbyOpen((value) => !value)}
+        className={`flex h-11 w-11 items-center justify-center rounded-full bg-white text-neutral-700 shadow-[0_10px_24px_rgba(15,23,42,0.14)] ring-1 ring-black/5 transition hover:text-neutral-950 ${
+          nearbyFilter ? "text-blue-700" : ""
+        }`}
+        aria-label="À proximité"
+        title="À proximité"
+      >
+        <FiCompass className="h-5 w-5" />
+      </button>
+      <AnimatePresence>
+        {isNearbyOpen && (
+          <motion.div
+            initial={{ opacity: 0, x: 8, scale: 0.96 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 8, scale: 0.96 }}
+            transition={{ duration: 0.18 }}
+            className="absolute right-[3.25rem] top-0 z-30 w-52 rounded-[1.3rem] bg-white p-3 text-sm shadow-[0_22px_54px_rgba(15,23,42,0.2)] ring-1 ring-black/5"
+          >
+            <p className="px-1 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
+              À proximité
+            </p>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {NEARBY_RADIUS_OPTIONS.map((radius) => (
+                <button
+                  key={radius}
+                  type="button"
+                  onClick={() => handleNearbyRadiusSelect(radius)}
+                  className={`rounded-full px-3 py-2 text-xs font-semibold transition ${
+                    nearbyRadiusKm === radius
+                      ? "bg-blue-600 text-white"
+                      : "bg-neutral-50 text-neutral-700 hover:bg-blue-50 hover:text-blue-700"
+                  }`}
+                >
+                  {radius} km
+                </button>
+              ))}
+            </div>
+            {nearbyFilter && (
+              <button
+                type="button"
+                onClick={clearNearbyFilter}
+                className="mt-2 w-full rounded-full border border-neutral-200 px-3 py-2 text-xs font-semibold text-neutral-600"
+              >
+                Réinitialiser
+              </button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 
   const handleToggleFavorite = (propertyId: string) => {
     setFavoritePulseId(propertyId);
@@ -267,17 +461,33 @@ function CartePageContent() {
           <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500">
             {t("propertyType")}
           </label>
-          <select
-            className="mt-1 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200/70"
-            value={filters.propertyType}
-            onChange={handleChange("propertyType")}
-          >
-            <option value="">{t("all")}</option>
-            <option value="studio">Studio</option>
-            <option value="appartement">Appartement</option>
-            <option value="maison">Maison</option>
-            <option value="villa">Villa</option>
-          </select>
+          <div className="mt-1 grid rounded-2xl bg-neutral-100 p-1 min-[360px]:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+            {[
+              { value: "", label: t("all"), icon: FiGrid },
+              { value: "studio", label: "Studio", icon: FiHome },
+              { value: "appartement", label: "Appartement", icon: FiLayers },
+              { value: "maison", label: "Maison", icon: FiHome },
+              { value: "villa", label: "Villa", icon: FiHome },
+            ].map((option) => {
+              const Icon = option.icon;
+              const isActive = filters.propertyType === option.value;
+              return (
+                <button
+                  key={option.value || "all"}
+                  type="button"
+                  onClick={() => setFilters((current) => ({ ...current, propertyType: option.value }))}
+                  className={`flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                    isActive
+                      ? "bg-white text-neutral-950 shadow-[0_10px_24px_rgba(15,23,42,0.08)]"
+                      : "text-neutral-500 hover:text-neutral-900"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="truncate">{option.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-neutral-500">
@@ -398,8 +608,7 @@ function CartePageContent() {
             type="button"
             onClick={(event) => {
               event.stopPropagation();
-              setSelectedId(property.id);
-              handleShowMap();
+              showPropertyOnMap(property.id);
             }}
             className="w-full rounded-full bg-neutral-950 px-4 py-2.5 text-center text-xs font-semibold text-white"
           >
@@ -531,6 +740,35 @@ function CartePageContent() {
     updateViewportHeight();
     window.addEventListener("resize", updateViewportHeight);
     return () => window.removeEventListener("resize", updateViewportHeight);
+  }, []);
+
+  useEffect(() => {
+    const mobileContent = mobileSheetContentRef.current;
+    const desktopPanel = resultsPanelRef.current;
+
+    const handleMobileScroll = () => {
+      if (mobileContent) revealScrollTopButton(mobileContent.scrollTop);
+    };
+    const handleDesktopScroll = () => {
+      if (desktopPanel) revealScrollTopButton(desktopPanel.scrollTop);
+    };
+
+    mobileContent?.addEventListener("scroll", handleMobileScroll, { passive: true });
+    desktopPanel?.addEventListener("scroll", handleDesktopScroll, { passive: true });
+    return () => {
+      mobileContent?.removeEventListener("scroll", handleMobileScroll);
+      desktopPanel?.removeEventListener("scroll", handleDesktopScroll);
+      if (scrollTopTimerRef.current) {
+        window.clearTimeout(scrollTopTimerRef.current);
+      }
+    };
+  }, [mobileSheetTop]);
+
+  useEffect(() => {
+    return () => {
+      nearbyZoomTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+      nearbyZoomTimersRef.current = [];
+    };
   }, []);
 
   useEffect(() => {
@@ -722,22 +960,22 @@ function CartePageContent() {
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-white xl:h-[100svh] xl:overflow-hidden">
-      <div className="hidden xl:block">
+    <div className="min-h-screen overflow-x-hidden bg-white lg:h-[100svh] lg:overflow-hidden">
+      <div className="hidden lg:block">
         <TopBar />
       </div>
       
       <main
-        className="mx-auto h-[100svh] w-full max-w-full overflow-hidden px-0 pb-0 pt-0 sm:px-6 lg:px-12 xl:fixed xl:inset-x-0 xl:bottom-0 xl:top-[5.5rem] xl:h-auto xl:overflow-hidden xl:pb-6 xl:pt-6"
+        className="mx-auto h-[100svh] w-full max-w-full overflow-hidden px-0 pb-0 pt-0 sm:px-6 lg:fixed lg:inset-x-0 lg:bottom-0 lg:top-[5.5rem] lg:h-auto lg:overflow-hidden lg:px-12 lg:pb-6 lg:pt-6"
       >
 
-        <section className="h-full xl:hidden">
+        <section className="h-full lg:hidden">
           <div className="relative h-full overflow-hidden bg-white">
             <div className="relative h-full w-full overflow-hidden bg-white">
                 <div className="absolute inset-x-3 top-3 z-50 flex items-center gap-2.5">
                   <button
                     type="button"
-                    onClick={() => router.back()}
+                    onClick={() => router.replace("/")}
                     className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/95 text-neutral-800 shadow-[0_10px_24px_rgba(15,23,42,0.14)] ring-1 ring-black/5 backdrop-blur"
                     aria-label="Retour"
                   >
@@ -782,17 +1020,20 @@ function CartePageContent() {
               {isLoading ? (
                 <Skeleton className="h-full w-full" />
               ) : (
-                <MapboxMap
+                <LeafletMap
                   properties={visibleProperties}
                   selectedId={selectedId}
                   locateSignal={locateSignal}
                   fitBoundsSignal={fitBoundsSignal}
+                  zoomSignal={zoomSignal}
+                  zoomDelta={zoomDelta}
+                  onSelect={(property) => setSelectedId(property.id)}
                   showLayerToggle={false}
                   className="h-full min-h-[100svh]"
                 />
               )}
 
-              <div className="absolute right-4 top-[5.5rem] z-10">
+              <div className="absolute right-4 top-[5.5rem] z-10 flex flex-col gap-3">
                 <button
                   type="button"
                   onClick={() => setFitBoundsSignal((value) => value + 1)}
@@ -802,9 +1043,6 @@ function CartePageContent() {
                 >
                   <FiHome className="h-5 w-5" />
                 </button>
-              </div>
-
-              <div className="absolute right-4 top-[9rem] z-10">
                 <button
                   type="button"
                   onClick={() => setLocateSignal((value) => value + 1)}
@@ -814,7 +1052,57 @@ function CartePageContent() {
                 >
                   <FiTarget className="h-5 w-5" />
                 </button>
+                <div className="overflow-hidden rounded-full bg-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] ring-1 ring-black/5">
+                  <button
+                    type="button"
+                    onClick={() => handleZoom(1)}
+                    className="flex h-11 w-11 items-center justify-center bg-white text-neutral-800 transition hover:bg-neutral-50"
+                    aria-label="Zoom avant"
+                    title="Zoom avant"
+                  >
+                    <FiPlus className="h-5 w-5" />
+                  </button>
+                  <div className="mx-auto h-px w-6 bg-neutral-200" />
+                  <button
+                    type="button"
+                    onClick={() => handleZoom(-1)}
+                    className="flex h-11 w-11 items-center justify-center bg-white text-neutral-800 transition hover:bg-neutral-50"
+                    aria-label="Zoom arrière"
+                    title="Zoom arrière"
+                  >
+                    <FiMinus className="h-5 w-5" />
+                  </button>
+                </div>
+                {renderNearbyControl()}
               </div>
+              <AnimatePresence>
+                {nearbySearching && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.92 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.96 }}
+                    className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
+                  >
+                    <div className="relative flex h-56 w-56 items-center justify-center rounded-full bg-blue-600/10">
+                      <motion.span
+                        className="absolute h-full w-full rounded-full border border-blue-600/35"
+                        animate={{ scale: [0.28, 1.65, 2.65], opacity: [0.9, 0.32, 0] }}
+                        transition={{ duration: 2.45, repeat: Infinity, ease: "easeOut" }}
+                      />
+                      <motion.span
+                        className="absolute h-36 w-36 rounded-full border border-blue-600/25"
+                        animate={{ scale: [0.35, 1.75, 2.9], opacity: [0.82, 0.26, 0] }}
+                        transition={{ duration: 2.45, repeat: Infinity, delay: 0.58, ease: "easeOut" }}
+                      />
+                      <motion.span
+                        className="absolute h-24 w-24 rounded-full bg-blue-600/15"
+                        animate={{ scale: [0.45, 2.05, 3.25], opacity: [0.58, 0.2, 0] }}
+                        transition={{ duration: 2.45, repeat: Infinity, delay: 1.16, ease: "easeOut" }}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <motion.div
@@ -841,6 +1129,15 @@ function CartePageContent() {
                     {resultsLabel}
                   </p>
                   <p className="mt-1 text-sm text-neutral-500">{t("resultsRanking")}</p>
+                  {nearbyFilter && (
+                    <button
+                      type="button"
+                      onClick={clearNearbyFilter}
+                      className="mt-2 inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700"
+                    >
+                      À proximité · {nearbyFilter.radiusKm} km
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -870,7 +1167,7 @@ function CartePageContent() {
                 )}
 
                 {!isLoading && !error && paginatedResultProperties.length > 0 && (
-                  <div className="space-y-6">
+                  <div className="grid grid-cols-1 gap-6 min-[720px]:grid-cols-2">
                     {paginatedResultProperties.map((property) => renderMobilePropertyCard(property))}
                   </div>
                 )}
@@ -907,6 +1204,17 @@ function CartePageContent() {
                 )}
                 </div>
               </div>
+              {showScrollTop && (
+                <button
+                  type="button"
+                  onClick={scrollResultsToTop}
+                  className="absolute bottom-5 right-4 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-neutral-950 text-white shadow-[0_16px_34px_rgba(15,23,42,0.24)] transition hover:bg-neutral-800"
+                  aria-label="Remonter"
+                  title="Remonter"
+                >
+                  <FiArrowUp className="h-5 w-5" />
+                </button>
+              )}
             </motion.div>
 
             <AnimatePresence initial={false}>
@@ -928,55 +1236,103 @@ function CartePageContent() {
           </div>
         </section>
 
-        <section className="hidden h-full max-w-full overflow-hidden px-0 xl:block">
-          <div className="grid h-full w-full max-w-full gap-0 overflow-hidden xl:grid-cols-2 xl:items-stretch xl:gap-6">
+        <section className="hidden h-full max-w-full overflow-hidden px-0 lg:block">
+          <div className="grid h-full w-full max-w-full gap-0 overflow-hidden lg:grid-cols-2 lg:items-stretch lg:gap-6">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25 }}
-              className="relative order-1 flex h-full min-h-[62vh] w-full min-w-0 max-w-full flex-col overflow-hidden bg-transparent xl:max-w-[calc(100vw-1rem)] xl:rounded-[1.6rem] xl:border xl:border-neutral-200 xl:bg-white xl:shadow-[0_14px_40px_rgba(15,23,42,0.08)] xl:min-h-0"
+              className="relative order-1 flex h-full min-h-[62vh] w-full min-w-0 max-w-full flex-col overflow-hidden bg-transparent lg:min-h-0 lg:max-w-[calc(100vw-1rem)] lg:rounded-[1.6rem] lg:border lg:border-neutral-200 lg:bg-white lg:shadow-[0_14px_40px_rgba(15,23,42,0.08)]"
             >
               {isLoading ? (
-                <Skeleton className="min-h-[62vh] flex-1 xl:min-h-0" />
+                <Skeleton className="min-h-[62vh] flex-1 lg:min-h-0" />
               ) : (
-                <MapboxMap
+                <LeafletMap
                   properties={visibleProperties}
                   selectedId={selectedId}
                   locateSignal={locateSignal}
                   fitBoundsSignal={fitBoundsSignal}
-                  className="min-h-[62vh] flex-1 xl:h-full xl:min-h-0"
+                  zoomSignal={zoomSignal}
+                  zoomDelta={zoomDelta}
+                  onSelect={(property) => setSelectedId(property.id)}
+                  className="min-h-[62vh] flex-1 lg:h-full lg:min-h-0"
                 />
               )}
               <div
                 ref={mapControlsRef}
-                className="absolute right-4 top-4 z-10 hidden flex-col gap-3 xl:flex"
+                className="absolute right-4 top-4 z-10 hidden flex-col gap-3 lg:flex"
               >
-                {mapControls.map((control) => {
-                  const Icon = control.icon;
-                  const onClick = () => {
-                    if (control.key === "locate") {
-                      setLocateSignal((value) => value + 1);
-                    }
-                    if (control.key === "home") {
-                      setFitBoundsSignal((value) => value + 1);
-                    }
-                  };
-                  return (
-                    <button
-                      key={control.key}
-                      type="button"
-                      onClick={onClick}
-                      className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-neutral-700 shadow-[0_10px_24px_rgba(15,23,42,0.14)] ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:text-neutral-950"
-                      aria-label={control.label}
-                      title={control.label}
-                    >
-                      <Icon className="h-5 w-5" />
-                    </button>
-                  );
-                })}
+                <button
+                  type="button"
+                  onClick={() => setFitBoundsSignal((value) => value + 1)}
+                  className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-neutral-700 shadow-[0_10px_24px_rgba(15,23,42,0.14)] ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:text-neutral-950"
+                  aria-label={t("map")}
+                  title={t("map")}
+                >
+                  <FiHome className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLocateSignal((value) => value + 1)}
+                  className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-neutral-700 shadow-[0_10px_24px_rgba(15,23,42,0.14)] ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:text-neutral-950"
+                  aria-label="Position"
+                  title="Position"
+                >
+                  <FiTarget className="h-5 w-5" />
+                </button>
+                <div className="overflow-hidden rounded-full bg-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] ring-1 ring-black/5">
+                  <button
+                    type="button"
+                    onClick={() => handleZoom(1)}
+                    className="flex h-11 w-11 items-center justify-center bg-white text-neutral-800 transition hover:bg-neutral-50"
+                    aria-label="Zoom avant"
+                    title="Zoom avant"
+                  >
+                    <FiPlus className="h-5 w-5" />
+                  </button>
+                  <div className="mx-auto h-px w-6 bg-neutral-200" />
+                  <button
+                    type="button"
+                    onClick={() => handleZoom(-1)}
+                    className="flex h-11 w-11 items-center justify-center bg-white text-neutral-800 transition hover:bg-neutral-50"
+                    aria-label="Zoom arrière"
+                    title="Zoom arrière"
+                  >
+                    <FiMinus className="h-5 w-5" />
+                  </button>
+                </div>
+                {renderNearbyControl()}
               </div>
+              <AnimatePresence>
+                {nearbySearching && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.92 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.96 }}
+                    className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
+                  >
+                    <div className="relative flex h-64 w-64 items-center justify-center rounded-full bg-blue-600/10">
+                      <motion.span
+                        className="absolute h-full w-full rounded-full border border-blue-600/35"
+                        animate={{ scale: [0.28, 1.65, 2.7], opacity: [0.9, 0.32, 0] }}
+                        transition={{ duration: 2.55, repeat: Infinity, ease: "easeOut" }}
+                      />
+                      <motion.span
+                        className="absolute h-40 w-40 rounded-full border border-blue-600/25"
+                        animate={{ scale: [0.35, 1.75, 2.95], opacity: [0.82, 0.26, 0] }}
+                        transition={{ duration: 2.55, repeat: Infinity, delay: 0.6, ease: "easeOut" }}
+                      />
+                      <motion.span
+                        className="absolute h-28 w-28 rounded-full bg-blue-600/15"
+                        animate={{ scale: [0.45, 2.05, 3.3], opacity: [0.58, 0.2, 0] }}
+                        transition={{ duration: 2.55, repeat: Infinity, delay: 1.18, ease: "easeOut" }}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               {!isLoading && selected && (
-                <div className="pointer-events-none absolute inset-x-4 bottom-28 z-10 xl:bottom-4">
+                <div className="pointer-events-none absolute inset-x-4 bottom-28 z-10 lg:bottom-4">
                   <div className="inline-flex max-w-full items-center gap-2 rounded-full bg-white/96 px-4 py-2 text-sm text-neutral-700 shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-black/5 backdrop-blur">
                     <FiMapPin className="shrink-0 text-neutral-500" />
                     <span className="truncate font-medium">
@@ -990,14 +1346,14 @@ function CartePageContent() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25, delay: 0.05 }}
-              className="relative order-2 z-20 -mt-12 mb-24 w-full min-w-0 max-w-full overflow-x-hidden rounded-t-[2rem] bg-white px-4 pb-4 pt-4 shadow-[0_-18px_40px_rgba(15,23,42,0.14)] sm:mx-2 sm:max-w-[calc(100%-1rem)] sm:rounded-[2rem] xl:z-auto xl:mt-0 xl:mb-0 xl:h-full xl:max-w-[calc(100vw-1rem)] xl:min-h-0 xl:overflow-hidden xl:rounded-[1.6rem] xl:border xl:border-neutral-200 xl:bg-white xl:px-0 xl:pb-0 xl:pt-0 xl:shadow-[0_14px_40px_rgba(15,23,42,0.08)]"
+              className="relative order-2 z-20 -mt-12 mb-24 w-full min-w-0 max-w-full overflow-x-hidden rounded-t-[2rem] bg-white px-4 pb-4 pt-4 shadow-[0_-18px_40px_rgba(15,23,42,0.14)] sm:mx-2 sm:max-w-[calc(100%-1rem)] sm:rounded-[2rem] lg:z-auto lg:mt-0 lg:mb-0 lg:h-full lg:min-h-0 lg:max-w-[calc(100vw-1rem)] lg:overflow-hidden lg:rounded-[1.6rem] lg:border lg:border-neutral-200 lg:bg-white lg:px-0 lg:pb-0 lg:pt-0 lg:shadow-[0_14px_40px_rgba(15,23,42,0.08)]"
             >
               <div
                 ref={resultsPanelRef}
-                className="hide-scrollbar xl:h-full xl:overflow-y-auto xl:px-5 xl:pb-5"
+                className="hide-scrollbar lg:h-full lg:overflow-y-auto lg:px-5 lg:pb-5"
               >
                 <div className="space-y-5">
-                  <div className="space-y-4 xl:hidden">
+                  <div className="space-y-4 lg:hidden">
                     <div className="mx-auto h-1.5 w-14 rounded-full bg-neutral-300" />
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -1040,7 +1396,7 @@ function CartePageContent() {
                     )}
                   </div>
 
-                <div className="hidden xl:sticky xl:top-0 xl:z-30 xl:-mx-5 xl:block xl:bg-white xl:px-5 xl:pb-5 xl:pt-5">
+                <div className="hidden lg:sticky lg:top-0 lg:z-30 lg:-mx-5 lg:block lg:bg-white lg:px-5 lg:pb-5 lg:pt-5">
                   <div className="space-y-5">
                     <div className="rounded-[1.5rem] border border-neutral-200 bg-white p-3 shadow-[0_8px_24px_rgba(15,23,42,0.035)]">
                       <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center">
@@ -1069,7 +1425,7 @@ function CartePageContent() {
                             transition={{ duration: 0.24, ease: "easeInOut" }}
                             className="overflow-hidden"
                           >
-                            {renderExpandedFilters("sm:grid-cols-2 xl:grid-cols-5")}
+                            {renderExpandedFilters("sm:grid-cols-2 lg:grid-cols-5")}
                           </motion.div>
                         )}
                       </AnimatePresence>
@@ -1268,7 +1624,7 @@ function CartePageContent() {
                               type="button"
                               onClick={(event) => {
                                 event.stopPropagation();
-                                setSelectedId(property.id);
+                                showPropertyOnMap(property.id);
                               }}
                               className="w-full rounded-full bg-neutral-950 px-4 py-2.5 text-center text-xs font-semibold text-white"
                             >
