@@ -61,7 +61,7 @@ type MarkerPreviewLabels = {
 function buildMarkerPreview(property: Property, labels: MarkerPreviewLabels) {
   const title = escapeHtml(property.title || "Villa contemporaine");
   const detailsUrl = escapeHtml(`/logements/${encodeURIComponent(property.id)}`);
-  const price = `${property.price.toLocaleString("en-US")} F`;
+  const price = `${property.price.toLocaleString("en-US")} FCFA`;
   const rooms = typeof property.rooms === "number" ? property.rooms : "—";
   const bathrooms = typeof property.bathrooms === "number" ? property.bathrooms : "—";
   const surface = typeof property.surfaceM2 === "number" ? property.surfaceM2 : "—";
@@ -305,7 +305,7 @@ export function LeafletMap({
               html: `<div class="imc-price-marker ${
                 isSelected ? "is-selected" : ""
               }">
-              <span class="imc-price-value">${p.price.toLocaleString("fr-FR")}</span>
+              <span class="imc-price-value">${p.price.toLocaleString("en-US")}</span>
               <span class="imc-price-suffix">F</span>
             </div>`,
             }),
@@ -377,7 +377,7 @@ export function LeafletMap({
               html: `<div class="imc-price-marker ${
                 isSelected ? "is-selected" : ""
               }">
-              <span class="imc-price-value">${first.price.toLocaleString("fr-FR")}</span>
+              <span class="imc-price-value">${first.price.toLocaleString("en-US")}</span>
               <span class="imc-price-suffix">F</span>
             </div>`,
             });

@@ -130,8 +130,10 @@ export default function AdminModulesPage() {
                   {items.map((module) => (
                     <div
                       key={module.key}
-                      className={`rounded-[1.5rem] px-5 py-4 text-left transition ${
-                        module.is_enabled ? "bg-blue-50 text-neutral-950" : "bg-neutral-50 text-neutral-700"
+                      className={`rounded-[1.5rem] border px-5 py-4 text-left text-neutral-800 transition ${
+                        module.is_enabled
+                          ? "border-blue-200 bg-neutral-50"
+                          : "border-neutral-200 bg-neutral-50"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-4">
@@ -143,7 +145,9 @@ export default function AdminModulesPage() {
                           type="button"
                           onClick={() => void handleToggle(module)}
                           disabled={pendingModule === module.key}
-                          className="text-2xl text-blue-600 disabled:opacity-60"
+                          className={`text-2xl disabled:opacity-60 ${
+                            module.is_enabled ? "text-blue-600" : "text-neutral-500"
+                          }`}
                           aria-label={module.is_enabled ? "Désactiver le module" : "Activer le module"}
                         >
                           {module.is_enabled ? <FiToggleRight /> : <FiToggleLeft />}

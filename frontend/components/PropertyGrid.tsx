@@ -1,4 +1,5 @@
 ﻿import Link from "next/link";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FiCheckCircle, FiHeart } from "react-icons/fi";
 import { useFavoritesStore } from "@/stores/favoritesStore";
@@ -16,6 +17,7 @@ type Props = {
   title?: string;
   subtitle?: string;
   borderlessCards?: boolean;
+  initialVisibleCount?: number;
 };
 
 export function PropertyGrid({
@@ -28,12 +30,22 @@ export function PropertyGrid({
   title = "Logements populaires à Abidjan",
   subtitle = "Résultats filtrés selon vos critères.",
   borderlessCards = false,
+  initialVisibleCount,
 }: Props) {
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
   const favoriteIds = useFavoritesStore((s) => s.favoriteIds);
 
   const filtered = applyPropertyFilters(properties, filters);
   const showEmpty = !isLoading && !error && filtered.length === 0;
+  const formatPrice = (value: number) => value.toLocaleString("en-US");
+  const [visibleCount, setVisibleCount] = useState(initialVisibleCount ?? Number.POSITIVE_INFINITY);
+  const limitedGrid = typeof initialVisibleCount === "number";
+  const visibleProperties = limitedGrid ? filtered.slice(0, visibleCount) : filtered;
+  const canShowMore = limitedGrid && visibleCount < filtered.length;
+
+  useEffect(() => {
+    setVisibleCount(initialVisibleCount ?? Number.POSITIVE_INFINITY);
+  }, [filters.city, filters.maxPrice, filters.minPrice, filters.neighborhood, filters.propertyType, initialVisibleCount]);
 
   return (
     <div>
@@ -71,12 +83,14 @@ export function PropertyGrid({
 
       {!isLoading && !error && filtered.length > 0 && (
         <div className="mt-4 grid items-stretch gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-          {filtered.map((p) => (
+          {visibleProperties.map((p) => (
             <Link
               key={p.id}
               href={`/logements/${p.id}`}
-              className={`group flex h-full flex-col overflow-hidden rounded-[1.7rem] bg-white/90 backdrop-blur-sm transition ${
-                borderlessCards ? "border-0" : "border border-white/80"
+              className={`group flex h-full flex-col bg-white/90 backdrop-blur-sm transition ${
+                borderlessCards
+                  ? "overflow-visible border-0"
+                  : "overflow-hidden rounded-[1.7rem] border border-white/80"
               }`}
             >
               <div className="relative h-56 w-full overflow-hidden rounded-[1.7rem] sm:h-60 lg:h-64">
@@ -135,16 +149,13 @@ export function PropertyGrid({
                   </div>
                 )}
               </div>
-              <div className="flex flex-1 flex-col px-1 pt-3">
-                <div className="flex min-h-[3.5rem] items-start justify-between gap-2">
-                  <h3 className="line-clamp-2 min-h-[3.5rem] text-base font-semibold leading-tight text-neutral-900">
+              <div className="flex flex-1 flex-col px-1 pt-2">
+                <div className="flex items-start gap-2">
+                  <h3 className="line-clamp-2 text-base font-semibold leading-tight text-neutral-900">
                     {p.title}
                   </h3>
-                  <span className="shrink-0 text-sm font-semibold text-neutral-800">
-                    ★ 5,0
-                  </span>
                 </div>
-                <p className="line-clamp-1 min-h-[1.25rem] text-sm text-neutral-600">
+                <p className="mt-1 line-clamp-1 text-sm leading-5 text-neutral-600">
                   {p.propertyType ? `${p.propertyType} · ` : ""}
                   {p.city}
                 </p>
@@ -157,7 +168,7 @@ export function PropertyGrid({
                 </p>
                 <div className="flex items-center justify-between pt-0.5">
                   <p className="text-base font-semibold">
-                    {p.price.toLocaleString("fr-FR")} FCFA
+                    {formatPrice(p.price)} FCFA
                     <span className="text-sm font-normal text-neutral-500">
                       {" "}
                       / {p.pricePeriod}
@@ -185,6 +196,17 @@ export function PropertyGrid({
               </div>
             </Link>
           ))}
+          {canShowMore && (
+            <div className="col-span-full flex justify-center pt-2">
+              <button
+                type="button"
+                onClick={() => setVisibleCount((count) => count + (initialVisibleCount ?? 10))}
+                className="rounded-full bg-neutral-950 px-6 py-3 text-sm font-semibold text-white shadow-[0_16px_34px_rgba(15,23,42,0.18)] transition hover:bg-neutral-800"
+              >
+                Voir plus
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

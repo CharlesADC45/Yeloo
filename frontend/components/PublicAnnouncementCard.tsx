@@ -181,7 +181,7 @@ export function PublicAnnouncementCard({
   }
 
   return (
-    <div className="overflow-hidden rounded-[1.75rem] border border-blue-100 bg-[#f0f2ff] shadow-soft">
+    <div className="yeloo-public-announcement overflow-hidden rounded-[1.75rem] border border-blue-100 bg-[#f0f2ff] shadow-soft">
       <div className="flex min-h-[11rem] items-center gap-4 px-4 py-4 sm:min-h-[14rem] sm:px-6">
         <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-2xl text-blue-700 shadow-sm">
           <Icon />

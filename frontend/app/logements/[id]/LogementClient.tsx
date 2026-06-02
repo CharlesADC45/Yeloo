@@ -11,6 +11,7 @@ import {
   FiChevronLeft,
   FiChevronRight,
   FiClock,
+  FiCreditCard,
   FiFileText,
   FiHeart,
   FiHome,
@@ -352,7 +353,7 @@ export function LogementClient({ id }: Props) {
   const selectedVisitTime = visitDate.slice(11, 16);
   const selectedVisitLabel = visitDate ? formatVisitDate(visitDate) : "Choisissez un jour et une heure";
   const ownerName = property?.ownerName || "Hôte Yeloo";
-  const ownerLabel = property?.ownerIsVerified ? "Propriétaire vérifié" : "Propriétaire Yeloo";
+  const ownerLabel = "Propriétaire Yeloo";
   const ownerInitials = ownerName
     .split(/\s+/)
     .filter(Boolean)
@@ -362,17 +363,12 @@ export function LogementClient({ id }: Props) {
     .toUpperCase() || "Y";
   const ownerProfileImageUrl = property?.ownerProfileImageUrl;
   const pricePeriodLabel = property?.pricePeriod || "mois";
+  const formatPrice = (value: number) => value.toLocaleString("en-US");
   const descriptionText =
     property?.description ||
     "Cette annonce n'a pas encore de description détaillée. Utilisez le flow de demande pour échanger avec le propriétaire et confirmer les derniers détails.";
-  const detailStats = property
+  const paymentStats = property
     ? [
-        { label: "Pièces", value: property.rooms ? `${property.rooms}` : "Non renseigné" },
-        { label: "Bains", value: property.bathrooms ? `${property.bathrooms}` : "Non renseigné" },
-        {
-          label: "Surface",
-          value: property.surfaceM2 ? `${property.surfaceM2} m²` : "Non renseignée",
-        },
         {
           label: "Caution",
           value: property.depositMonths ? `${property.depositMonths} mois` : "Non renseignée",
@@ -380,6 +376,17 @@ export function LogementClient({ id }: Props) {
         {
           label: "Avance",
           value: property.advanceMonths ? `${property.advanceMonths} mois` : "Non renseignée",
+        },
+        { label: "Paiement", value: `par ${property.pricePeriod || "mois"}` },
+      ]
+    : [];
+  const spaceStats = property
+    ? [
+        { label: "Pièces", value: property.rooms ? `${property.rooms}` : "Non renseigné" },
+        { label: "Bains", value: property.bathrooms ? `${property.bathrooms}` : "Non renseigné" },
+        {
+          label: "Surface",
+          value: property.surfaceM2 ? `${property.surfaceM2} m²` : "Non renseignée",
         },
       ]
     : [];
@@ -684,9 +691,9 @@ export function LogementClient({ id }: Props) {
   }
 
   return (
-    <div ref={detailRootRef} className="min-h-screen bg-transparent">
+    <div ref={detailRootRef} className="min-h-screen overflow-x-hidden bg-transparent">
       <TopBar />
-      <main className="mx-auto w-full max-w-[1450px] px-4 pb-32 pt-28 sm:px-8 lg:px-12">
+      <main className="mx-auto w-full max-w-[1450px] overflow-x-hidden px-4 pb-32 pt-28 sm:px-8 lg:px-12">
         <motion.section
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
@@ -697,7 +704,7 @@ export function LogementClient({ id }: Props) {
             data-detail-reveal="true"
             className="sticky top-[5rem] z-30 -mx-4 flex flex-wrap items-start justify-between gap-4 border-b border-neutral-100 bg-white/95 px-4 py-3 backdrop-blur sm:-mx-8 sm:px-8 lg:-mx-12 lg:px-12"
           >
-            <div className="space-y-3">
+            <div className="min-w-0 flex-1 space-y-3">
               <button
                 type="button"
                 onClick={() => router.back()}
@@ -707,7 +714,7 @@ export function LogementClient({ id }: Props) {
                 Retour
               </button>
               <div>
-                <h1 className="text-3xl font-semibold tracking-tight text-neutral-900 sm:text-[2.2rem]">
+                <h1 className="max-w-full break-words text-2xl font-semibold tracking-tight text-neutral-900 sm:text-[2.2rem]">
                   {property.title}
                 </h1>
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-neutral-500">
@@ -726,16 +733,10 @@ export function LogementClient({ id }: Props) {
                       Annonce vérifiée
                     </span>
                   )}
-                  {property.ownerIsVerified && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-blue-700">
-                      <FiCheckCircle className="text-sm" />
-                      Propriétaire vérifié
-                    </span>
-                  )}
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               <button
                 type="button"
                 className="flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-soft"
@@ -791,22 +792,52 @@ export function LogementClient({ id }: Props) {
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-500">
                   Prix et aperçu
                 </p>
-                <div className="mt-3 flex flex-col gap-5 border-b border-neutral-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
-                  <div>
-                    <p className="text-3xl font-semibold tracking-[-0.04em] text-neutral-950">
-                      {property.price.toLocaleString("fr-FR")} FCFA
+                <div className="mt-3 flex min-w-0 flex-col gap-5 border-b border-neutral-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="break-words text-2xl font-semibold tracking-[-0.04em] text-neutral-950 sm:text-3xl">
+                      {formatPrice(property.price)} FCFA
                     </p>
                     <p className="mt-1 text-sm text-neutral-500">par {pricePeriodLabel}</p>
                   </div>
-                  <div className="grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-4">
-                    {detailStats.map((item) => (
-                      <div key={item.label}>
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
-                          {item.label}
-                        </p>
-                        <p className="mt-1 text-sm font-semibold text-neutral-900">{item.value}</p>
+                  <div className="w-full min-w-0 space-y-5 sm:w-[min(100%,36rem)]">
+                    <div>
+                      <p className="mb-3 text-sm font-semibold text-neutral-900">
+                        Modalités
+                      </p>
+                      <div className="hide-scrollbar flex w-full max-w-[calc(100vw-2rem)] gap-4 overflow-x-auto pb-1 sm:max-w-full">
+                        {paymentStats.map((item) => (
+                          <div
+                            key={item.label}
+                            className="w-[10.5rem] shrink-0 rounded-[1.25rem] border border-neutral-200 bg-white p-4"
+                          >
+                            <div className="mb-7 flex h-12 w-12 items-center justify-center rounded-2xl bg-neutral-50 text-neutral-700">
+                              <FiCreditCard />
+                            </div>
+                            <p className="text-base font-semibold text-neutral-900">{item.label}</p>
+                            <p className="mt-1 text-sm text-neutral-500">{item.value}</p>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
+                    <div>
+                      <p className="mb-3 text-sm font-semibold text-neutral-900">
+                        Espaces
+                      </p>
+                      <div className="hide-scrollbar flex w-full max-w-[calc(100vw-2rem)] gap-4 overflow-x-auto pb-1 sm:max-w-full">
+                        {spaceStats.map((item) => (
+                          <div
+                            key={item.label}
+                            className="w-[10.5rem] shrink-0 rounded-[1.25rem] border border-neutral-200 bg-white p-4"
+                          >
+                            <div className="mb-7 flex h-12 w-12 items-center justify-center rounded-2xl bg-neutral-50 text-neutral-700">
+                              <FiHome />
+                            </div>
+                            <p className="text-base font-semibold text-neutral-900">{item.label}</p>
+                            <p className="mt-1 text-sm text-neutral-500">{item.value}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </section>
@@ -965,7 +996,7 @@ export function LogementClient({ id }: Props) {
                         fallbackImageUrl="/property-fallback.svg"
                         title={property.title}
                         location={locationLabel || property.city}
-                        priceLabel={`${property.price.toLocaleString("fr-FR")} FCFA / ${pricePeriodLabel}`}
+                        priceLabel={`${formatPrice(property.price)} FCFA / ${pricePeriodLabel}`}
                         className="absolute inset-0"
                         points={[
                           {

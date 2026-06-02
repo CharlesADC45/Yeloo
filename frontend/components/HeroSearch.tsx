@@ -47,7 +47,7 @@ export function HeroSearch({ filters, onChange, isOpen, onClose, onSearch }: Pro
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 40, opacity: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 22 }}
-            className="max-h-[calc(100vh-2rem)] w-full max-w-[min(92vw,42rem)] overflow-y-auto rounded-3xl border border-white/70 bg-white/95 p-4 shadow-[0_28px_80px_rgba(15,23,42,0.26)] backdrop-blur-xl sm:p-6"
+            className="max-h-[calc(100vh-2rem)] w-full max-w-[min(92vw,42rem)] overflow-x-hidden overflow-y-auto rounded-3xl border border-white/70 bg-white/95 p-4 shadow-[0_28px_80px_rgba(15,23,42,0.26)] backdrop-blur-xl sm:p-6"
           >
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-[15px] font-semibold leading-tight sm:text-lg">
@@ -115,41 +115,39 @@ export function HeroSearch({ filters, onChange, isOpen, onClose, onSearch }: Pro
                     />
                   </div>
                 </div>
-                <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
-                  <div>
-                    <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500">
-                      Type de bien
-                    </label>
-                    <div className="mt-1 grid rounded-2xl bg-white p-1 shadow-inner ring-1 ring-neutral-200 sm:grid-cols-2">
-                      {propertyTypeOptions.map((option) => {
-                        const Icon = option.icon;
-                        const isActive = filters.propertyType === option.value;
-                        return (
-                          <button
-                            key={option.value || "all"}
-                            type="button"
-                            onClick={() => onChange({ ...filters, propertyType: option.value })}
-                            className={`flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition ${
-                              isActive
-                                ? "bg-neutral-950 text-white shadow-[0_10px_24px_rgba(15,23,42,0.16)]"
-                                : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900"
-                            }`}
-                          >
-                            <Icon className="h-4 w-4" />
-                            <span className="truncate">{option.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
+                <div className="min-w-0 md:col-span-2">
+                  <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500">
+                    Type de bien
+                  </label>
+                  <div className="hide-scrollbar mt-1 flex max-w-full gap-2 overflow-x-auto rounded-2xl bg-neutral-100 p-1">
+                    {propertyTypeOptions.map((option) => {
+                      const Icon = option.icon;
+                      const isActive = filters.propertyType === option.value;
+                      return (
+                        <button
+                          key={option.value || "all"}
+                          type="button"
+                          onClick={() => onChange({ ...filters, propertyType: option.value })}
+                          className={`flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                            isActive
+                              ? "bg-white text-neutral-950 shadow-[0_10px_24px_rgba(15,23,42,0.08)]"
+                              : "text-neutral-500 hover:text-neutral-900"
+                          }`}
+                        >
+                          <Icon className="h-4 w-4" />
+                          <span className="truncate">{option.label}</span>
+                        </button>
+                      );
+                    })}
                   </div>
-                  <button
-                    type="button"
-                    onClick={onSearch}
-                    className="inline-flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-soft hover:bg-blue-700 md:w-auto"
-                  >
-                    Rechercher
-                  </button>
                 </div>
+                <button
+                  type="button"
+                  onClick={onSearch}
+                  className="inline-flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-soft hover:bg-blue-700 md:col-span-2"
+                >
+                  Rechercher
+                </button>
               </div>
             </div>
             {/* <p className="mt-3 text-[11px] text-neutral-500 sm:text-xs">

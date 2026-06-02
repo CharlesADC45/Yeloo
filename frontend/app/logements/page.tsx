@@ -135,6 +135,7 @@ function LogementsPageContent() {
             onRetry={refetch}
             showHeader={false}
             borderlessCards
+            initialVisibleCount={10}
           />
         </div>
 
@@ -175,7 +176,7 @@ function LogementsPageContent() {
                     <div className="absolute bottom-4 left-4 right-4 text-white">
                       <p className="text-2xl font-semibold tracking-tight">{item.city}</p>
                       <p className="mt-1 text-sm text-white/85">
-                        À partir de {item.minPrice.toLocaleString("fr-FR")} FCFA
+                        À partir de {item.minPrice.toLocaleString("en-US")} FCFA
                       </p>
                     </div>
                   </div>

@@ -458,7 +458,7 @@ export function AppStatusNotifier() {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -14, scale: 0.96 }}
           transition={{ duration: 0.22 }}
-          className="fixed left-3 right-3 top-20 z-[1200] mx-auto max-w-sm rounded-[1.5rem] border border-blue-100 bg-[#f0f2ff] px-4 py-4 shadow-[0_24px_60px_rgba(15,23,42,0.16)] backdrop-blur sm:top-24"
+          className="yeloo-status-toast fixed left-3 right-3 top-20 z-[1200] mx-auto max-w-sm rounded-[1.5rem] border border-blue-100 bg-[#f0f2ff] px-4 py-4 shadow-[0_24px_60px_rgba(15,23,42,0.16)] backdrop-blur sm:top-24"
           role="status"
           aria-live="polite"
         >

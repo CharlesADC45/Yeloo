@@ -282,7 +282,7 @@ function HomePageContent() {
               </p>
               <p className="text-xs text-neutral-500">
                 {typeof property.rooms === "number" ? `${property.rooms} lits` : "— lits"} • {" "}
-                {property.price.toLocaleString("fr-FR")} FCFA
+                {property.price.toLocaleString("en-US")} FCFA
               </p>
             </div>
           </article>

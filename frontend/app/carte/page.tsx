@@ -461,7 +461,7 @@ function CartePageContent() {
           <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500">
             {t("propertyType")}
           </label>
-          <div className="mt-1 grid rounded-2xl bg-neutral-100 p-1 min-[360px]:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+          <div className="hide-scrollbar mt-1 flex gap-2 overflow-x-auto rounded-2xl bg-neutral-100 p-1">
             {[
               { value: "", label: t("all"), icon: FiGrid },
               { value: "studio", label: "Studio", icon: FiHome },
@@ -476,7 +476,7 @@ function CartePageContent() {
                   key={option.value || "all"}
                   type="button"
                   onClick={() => setFilters((current) => ({ ...current, propertyType: option.value }))}
-                  className={`flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                  className={`flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition ${
                     isActive
                       ? "bg-white text-neutral-950 shadow-[0_10px_24px_rgba(15,23,42,0.08)]"
                       : "text-neutral-500 hover:text-neutral-900"
@@ -600,7 +600,7 @@ function CartePageContent() {
           <p className="text-sm leading-4 text-neutral-600">{facts.join(" · ")}</p>
         )}
         <p className="text-[0.98rem] leading-5 text-neutral-900">
-          <span className="font-semibold">{property.price.toLocaleString("fr-FR")} F</span>
+          <span className="font-semibold">{property.price.toLocaleString("en-US")} FCFA</span>
           <span className="text-neutral-500"> / {formatPricePeriod(property.pricePeriod)}</span>
         </p>
         <div className="pt-2">
@@ -1598,7 +1598,7 @@ function CartePageContent() {
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
                               <p className="text-base font-semibold tracking-tight text-neutral-950">
-                                {property.price.toLocaleString("fr-FR")} F
+                                {property.price.toLocaleString("en-US")} FCFA
                                 <span className="font-normal text-neutral-500"> / {formatPricePeriod(property.pricePeriod)}</span>
                               </p>
                               <p className="mt-0.5 line-clamp-1 text-sm font-semibold text-neutral-900">
