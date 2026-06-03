@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FiArrowRight, FiArrowUp, FiCheckCircle, FiHeart } from "react-icons/fi";
+import { FiArrowRight, FiArrowUp, FiHeart } from "react-icons/fi";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
 import { HeroSearch } from "@/components/HeroSearch";
@@ -265,12 +265,6 @@ function HomePageContent() {
                   {property.badgeLabel}
                 </span>
               )}
-              {property.ownerIsVerified && (
-                <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full border border-blue-200 bg-white/95 px-3 py-1 text-[11px] font-semibold text-blue-700 shadow-soft">
-                  <FiCheckCircle className="text-sm text-blue-600" />
-                  Propriétaire vérifié
-                </span>
-              )}
             </div>
               <div className={`mt-3 ${options?.compactMeta ? "space-y-0.5" : "space-y-1"} text-sm`}>
               <p className="line-clamp-2 font-semibold leading-tight text-neutral-900">
@@ -281,7 +275,9 @@ function HomePageContent() {
                 {property.city}
               </p>
               <p className="text-xs text-neutral-500">
-                {typeof property.rooms === "number" ? `${property.rooms} lits` : "— lits"} • {" "}
+                {typeof property.rooms === "number" ? `${property.rooms} lits` : "— lits"}
+              </p>
+              <p className="text-xs text-neutral-500">
                 {property.price.toLocaleString("en-US")} FCFA
               </p>
             </div>

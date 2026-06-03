@@ -269,7 +269,7 @@ function PropertyMap({ latitude, longitude, title, imageUrl, isApproximate = fal
       <button
         type="button"
         onClick={() => setIsSatellite((value) => !value)}
-        className="absolute right-4 top-4 z-[500] inline-flex h-12 w-12 items-center justify-center rounded-full bg-white text-neutral-800 shadow-[0_14px_34px_rgba(15,23,42,0.18)]"
+        className="absolute right-4 top-4 z-20 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-neutral-800 shadow-[0_14px_34px_rgba(15,23,42,0.18)]"
         aria-label={isSatellite ? "Afficher le plan" : "Afficher en mode satellite"}
         title={isSatellite ? "Plan" : "Satellite"}
       >
@@ -278,7 +278,7 @@ function PropertyMap({ latitude, longitude, title, imageUrl, isApproximate = fal
       <button
         type="button"
         onClick={() => mapRef.current?.setView([latitude as number, longitude as number], 15)}
-        className="absolute right-4 top-[4.6rem] z-[500] inline-flex h-12 w-12 items-center justify-center rounded-full bg-white text-neutral-800 shadow-[0_14px_34px_rgba(15,23,42,0.18)]"
+        className="absolute right-4 top-[4rem] z-20 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-neutral-800 shadow-[0_14px_34px_rgba(15,23,42,0.18)]"
         aria-label="Recentrer sur la position"
         title="Position"
       >
@@ -693,16 +693,15 @@ export function LogementClient({ id }: Props) {
   return (
     <div ref={detailRootRef} className="min-h-screen overflow-x-hidden bg-transparent">
       <TopBar />
-      <main className="mx-auto w-full max-w-[1450px] overflow-x-hidden px-4 pb-32 pt-28 sm:px-8 lg:px-12">
+      <main className="mx-auto w-full max-w-[1450px] overflow-x-hidden px-4 pb-32 pt-20 sm:px-8 lg:px-12">
         <motion.section
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="space-y-8"
+          className="space-y-4"
         >
           <div
-            data-detail-reveal="true"
-            className="sticky top-[5rem] z-30 -mx-4 flex flex-wrap items-start justify-between gap-4 border-b border-neutral-100 bg-white/95 px-4 py-3 backdrop-blur sm:-mx-8 sm:px-8 lg:-mx-12 lg:px-12"
+            className="fixed inset-x-0 top-[5rem] z-30 mx-auto flex w-full max-w-[1450px] flex-wrap items-start justify-between gap-4 border-b border-neutral-100 bg-white/95 px-4 py-3 backdrop-blur sm:px-8 lg:px-12"
           >
             <div className="min-w-0 flex-1 space-y-3">
               <button
@@ -754,6 +753,7 @@ export function LogementClient({ id }: Props) {
               </button>
             </div>
           </div>
+          <div aria-hidden="true" className="h-[9.75rem] sm:h-[8.75rem]" />
 
           <div
             data-detail-reveal="true"
@@ -788,7 +788,7 @@ export function LogementClient({ id }: Props) {
 
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_380px]">
             <div className="space-y-6">
-              <section data-detail-reveal="true" className="bg-white py-6">
+              <section data-detail-reveal="true" className="bg-white py-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-500">
                   Prix et aperçu
                 </p>
@@ -808,12 +808,12 @@ export function LogementClient({ id }: Props) {
                         {paymentStats.map((item) => (
                           <div
                             key={item.label}
-                            className="w-[10.5rem] shrink-0 rounded-[1.25rem] border border-neutral-200 bg-white p-4"
+                            className="h-[132px] w-[142px] shrink-0 rounded-[1.25rem] border border-neutral-200 bg-white p-3"
                           >
-                            <div className="mb-7 flex h-12 w-12 items-center justify-center rounded-2xl bg-neutral-50 text-neutral-700">
+                            <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-2xl bg-neutral-50 text-neutral-700">
                               <FiCreditCard />
                             </div>
-                            <p className="text-base font-semibold text-neutral-900">{item.label}</p>
+                            <p className="text-[15px] font-semibold leading-tight text-neutral-900">{item.label}</p>
                             <p className="mt-1 text-sm text-neutral-500">{item.value}</p>
                           </div>
                         ))}
@@ -827,12 +827,12 @@ export function LogementClient({ id }: Props) {
                         {spaceStats.map((item) => (
                           <div
                             key={item.label}
-                            className="w-[10.5rem] shrink-0 rounded-[1.25rem] border border-neutral-200 bg-white p-4"
+                            className="h-[132px] w-[142px] shrink-0 rounded-[1.25rem] border border-neutral-200 bg-white p-3"
                           >
-                            <div className="mb-7 flex h-12 w-12 items-center justify-center rounded-2xl bg-neutral-50 text-neutral-700">
+                            <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-2xl bg-neutral-50 text-neutral-700">
                               <FiHome />
                             </div>
-                            <p className="text-base font-semibold text-neutral-900">{item.label}</p>
+                            <p className="text-[15px] font-semibold leading-tight text-neutral-900">{item.label}</p>
                             <p className="mt-1 text-sm text-neutral-500">{item.value}</p>
                           </div>
                         ))}

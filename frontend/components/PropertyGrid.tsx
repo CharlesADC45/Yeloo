@@ -1,7 +1,7 @@
 ﻿import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { FiCheckCircle, FiHeart } from "react-icons/fi";
+import { FiHeart } from "react-icons/fi";
 import { useFavoritesStore } from "@/stores/favoritesStore";
 import type { Property, PropertyFilters } from "@/lib/properties";
 import { applyPropertyFilters } from "@/lib/properties";
@@ -133,12 +133,19 @@ export function PropertyGrid({
                     </span>
                   </div>
                 )}
+                {p.availabilityStatus === "available" && (
+                  <div className={`absolute left-3 ${p.promoLabel ? "top-11" : "top-3"}`}>
+                    <span className="rounded-full bg-white/95 px-3 py-1 text-[11px] font-semibold text-blue-700 shadow-soft">
+                      {p.availabilityLabel}
+                    </span>
+                  </div>
+                )}
                 {p.isVerified && (
                   <div
                     className={`absolute left-3 ${
-                      p.promoLabel && p.availabilityStatus !== "available"
+                      p.promoLabel && p.availabilityStatus
                         ? "top-[4.75rem]"
-                        : p.promoLabel || p.availabilityStatus !== "available"
+                        : p.promoLabel || p.availabilityStatus
                           ? "top-11"
                           : "top-3"
                     }`}
@@ -174,24 +181,6 @@ export function PropertyGrid({
                       / {p.pricePeriod}
                     </span>
                   </p>
-                </div>
-                <div className="mt-auto flex min-h-[2.25rem] flex-wrap items-center gap-2 pt-2">
-                  {p.ownerIsVerified && (
-                    <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50/70 px-2.5 py-1 text-[11px] font-semibold text-blue-700">
-                      <FiCheckCircle className="text-xs text-blue-600" />
-                      Propriétaire vérifié
-                    </span>
-                  )}
-                  {p.badgeLabel && (
-                    <span className="rounded-full bg-teal-50 px-2.5 py-1 text-[11px] font-medium text-teal-700">
-                      {p.badgeLabel}
-                    </span>
-                  )}
-                  {p.availabilityStatus === "available" && (
-                    <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-700">
-                      {p.availabilityLabel}
-                    </span>
-                  )}
                 </div>
               </div>
             </Link>

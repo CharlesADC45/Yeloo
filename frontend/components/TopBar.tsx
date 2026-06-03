@@ -441,8 +441,8 @@ function TopBarContent({
           <div
             className={`bg-white/94 backdrop-blur-md shadow-[0_18px_45px_rgba(10,23,42,0.10)] ${
               compactHomeSearch
-                ? "rounded-full border border-neutral-200/70 px-1.5 py-1"
-                : "rounded-[2rem] p-1.5"
+                ? "rounded-full border border-neutral-200/70 p-0"
+                : "rounded-[2rem] p-0"
             }`}
           >
           <form
@@ -517,9 +517,7 @@ function TopBarContent({
 
             <button
               type="submit"
-              className={`shrink-0 inline-flex items-center justify-center rounded-full bg-blue-600 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 ${
-                compactHomeSearch ? "h-10 w-10" : "h-12 w-12"
-              }`}
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
               aria-label="Rechercher"
               title="Rechercher"
             >
