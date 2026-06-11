@@ -4,7 +4,6 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-  FiArrowLeft,
   FiAlertTriangle,
   FiCheck,
   FiDownload,
@@ -379,14 +378,7 @@ function MessageConversationPageContent() {
 
               <section className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-white">
                 <div className="relative flex h-16 max-w-full shrink-0 items-center justify-between gap-2 border-b border-neutral-200 bg-white px-2 shadow-sm sm:gap-3 sm:px-5">
-                  <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-                    <Link
-                      href={`/messages${messageHrefSuffix}`}
-                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-neutral-700 hover:bg-neutral-100"
-                      aria-label="Retour"
-                    >
-                      <FiArrowLeft />
-                    </Link>
+                <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
                     {counterpartAvatarUrl ? (
                       <img
                         src={counterpartAvatarUrl}

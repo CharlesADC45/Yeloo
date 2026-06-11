@@ -91,6 +91,28 @@ const parseCoordinates = (value: string) => {
   return { lat, lng };
 };
 
+const normalizeFetchError = (error: unknown, context: string) => {
+  const apiUrl = getApiBaseUrl();
+  const raw = error instanceof Error ? error.message : "Erreur inconnue.";
+  const normalized = raw.replace(/mini0/gi, "MinIO");
+
+  if (normalized.includes("Failed to fetch") || normalized.includes("NetworkError")) {
+    return `${context}: impossible de joindre l'API (${apiUrl}). Vérifiez la connexion du téléphone, que l'API Render est réveillée, et que l'origine de l'app est autorisée.`;
+  }
+
+  if (/minio non configur(e|é)/i.test(normalized)) {
+    return `${context}: stockage média non configuré côté serveur. Les textes peuvent être modifiés, mais l'upload vidéo/360 demande MinIO.`;
+  }
+
+  return `${context}: ${normalized}`;
+};
+
+const readApiError = async (response: Response, fallback: string) => {
+  const body = await response.json().catch(() => null);
+  const detail = body?.detail || body?.message || fallback;
+  return typeof detail === "string" ? detail : JSON.stringify(detail);
+};
+
 export default function EditPropertyPage() {
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
   const [isLoading, setIsLoading] = useState(true);
@@ -208,7 +230,7 @@ export default function EditPropertyPage() {
       })
       .catch((err: Error) => {
         if (err.name === "AbortError") return;
-        setError(err.message || "Impossible de charger l'annonce.");
+        setError(normalizeFetchError(err, "Chargement de l'annonce"));
         setIsLoading(false);
       });
 
@@ -353,6 +375,7 @@ export default function EditPropertyPage() {
       return;
     }
 
+    let submitContext = "Mise à jour des informations";
     try {
       const response = await fetch(
         `${getApiBaseUrl()}/api/properties/${propertyId}`,
@@ -367,13 +390,12 @@ export default function EditPropertyPage() {
       );
 
       if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        const detail =
-          body?.detail || body?.message || `Erreur API (${response.status})`;
+        const detail = await readApiError(response, `Erreur API (${response.status})`);
         throw new Error(detail);
       }
 
       if (photoFiles.length > 0) {
+        submitContext = "Upload des photos";
         const photoPayload = new FormData();
         photoFiles.forEach((file) => photoPayload.append("files", file));
         const photoResponse = await fetch(
@@ -385,16 +407,16 @@ export default function EditPropertyPage() {
           }
         );
         if (!photoResponse.ok) {
-          const detail = await photoResponse.json().catch(() => null);
-          const message =
-            detail?.detail ||
-            detail?.message ||
-            `Erreur upload (${photoResponse.status})`;
+          const message = await readApiError(
+            photoResponse,
+            `Erreur upload (${photoResponse.status})`
+          );
           throw new Error(message);
         }
       }
 
       if (videoFile || tourFile) {
+        submitContext = "Upload vidéo / visite 360";
         const mediaPayload = new FormData();
         if (videoFile) {
           mediaPayload.append("video", videoFile);
@@ -411,11 +433,10 @@ export default function EditPropertyPage() {
           }
         );
         if (!mediaResponse.ok) {
-          const detail = await mediaResponse.json().catch(() => null);
-          const message =
-            detail?.detail ||
-            detail?.message ||
-            `Erreur media (${mediaResponse.status})`;
+          const message = await readApiError(
+            mediaResponse,
+            `Erreur media (${mediaResponse.status})`
+          );
           throw new Error(message);
         }
         const mediaData = await mediaResponse.json();
@@ -429,8 +450,7 @@ export default function EditPropertyPage() {
       setSuccess("Annonce mise à jour. Redirection...");
       setShouldRedirect(true);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Modification impossible.";
-      setError(message);
+      setError(normalizeFetchError(err, submitContext));
     } finally {
       setIsSubmitting(false);
     }
@@ -740,11 +760,6 @@ export default function EditPropertyPage() {
                     {videoSource && (
                       <video className="h-56 w-full rounded-2xl bg-neutral-950 object-cover" src={videoSource} controls />
                     )}
-
-                    <label className={labelClass}>
-                      URL visite 360°
-                      <input value={form.tour360Url} onChange={handleChange("tour360Url")} placeholder="https://..." className={fieldClass} />
-                    </label>
 
                     <label className="flex cursor-pointer flex-col rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 transition hover:bg-white">
                       <span className="flex items-center gap-2 text-sm font-semibold text-neutral-900">

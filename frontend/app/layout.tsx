@@ -6,6 +6,7 @@ import { AppInteractionGuards } from "@/components/AppInteractionGuards";
 import { AppPreferences } from "@/components/AppPreferences";
 import { AppServiceWorkerUpdater } from "@/components/AppServiceWorkerUpdater";
 import { AppStatusNotifier } from "@/components/AppStatusNotifier";
+import { PwaInstallBanner } from "@/components/PwaInstallBanner";
 import { YelooSplash } from "@/components/YelooSplash";
 
 const poppins = Poppins({
@@ -73,6 +74,7 @@ export default function RootLayout({
         <AppInteractionGuards />
         <AppStatusNotifier />
         <YelooSplash />
+        <PwaInstallBanner />
         {children}
       </body>
     </html>

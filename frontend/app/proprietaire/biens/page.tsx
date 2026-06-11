@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { FiArchive, FiEdit3, FiEye, FiPlus, FiTrash2, FiUploadCloud } from "react-icons/fi";
 import { OwnerSidebar } from "@/components/OwnerSidebar";
 import { OwnerListSkeleton } from "@/components/Skeleton";
 import { TopBar } from "@/components/TopBar";
@@ -208,9 +209,11 @@ export default function ProprietaireBiensPage() {
             {isVerifiedOwner ? (
               <Link
                 href="/proprietaire/biens/nouveau"
-                className="rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white"
+                aria-label="Ajouter un bien"
+                title="Ajouter un bien"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white shadow-soft transition hover:bg-blue-700"
               >
-                Ajouter un bien
+                <FiPlus className="h-5 w-5" />
               </Link>
             ) : (
               <span className="rounded-full bg-neutral-100 px-4 py-2 text-xs font-semibold text-neutral-600">
@@ -261,33 +264,41 @@ export default function ProprietaireBiensPage() {
                           )
                         }
                         disabled={updatingId === property.id}
-                        className="rounded-full border border-neutral-200 px-3 py-1 text-[11px] font-semibold text-neutral-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        aria-label={property.status === "published" ? "Mettre en brouillon" : "Publier"}
+                        title={property.status === "published" ? "Mettre en brouillon" : "Publier"}
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {updatingId === property.id
-                          ? "Mise à jour..."
-                          : property.status === "published"
-                            ? "Mettre en brouillon"
-                            : "Publier"}
+                        {property.status === "published" ? (
+                          <FiArchive className="h-4 w-4" />
+                        ) : (
+                          <FiUploadCloud className="h-4 w-4" />
+                        )}
                       </button>
                       <Link
                         href={`/proprietaire/biens/${property.id}`}
-                        className="rounded-full border border-neutral-200 px-3 py-1 text-[11px] font-semibold text-neutral-700"
+                        aria-label="Modifier"
+                        title="Modifier"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50"
                       >
-                        Modifier
+                        <FiEdit3 className="h-4 w-4" />
                       </Link>
                       <Link
                         href={`/logements/${property.id}`}
-                        className="rounded-full border border-blue-100 px-3 py-1 text-[11px] font-semibold text-blue-700"
+                        aria-label="Voir la fiche"
+                        title="Voir la fiche"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-blue-100 text-blue-700 transition hover:border-blue-200 hover:bg-blue-50"
                       >
-                        Voir la fiche
+                        <FiEye className="h-4 w-4" />
                       </Link>
                       <button
                         type="button"
                         onClick={() => handleDelete(property.id)}
                         disabled={deletingId === property.id}
-                        className="rounded-full border border-red-200 px-3 py-1 text-[11px] font-semibold text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+                        aria-label="Supprimer"
+                        title={deletingId === property.id ? "Suppression..." : "Supprimer"}
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-red-200 text-red-600 transition hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {deletingId === property.id ? "Suppression..." : "Supprimer"}
+                        <FiTrash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </div>

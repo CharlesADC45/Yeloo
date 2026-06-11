@@ -33,27 +33,27 @@ type ViewerInstance = {
 
 const DEFAULT_POINTS: TourPoint[] = [
   {
-    id: "living-zone",
-    title: "Piece de vie",
-    description: "Vue principale pour evaluer la circulation et la lumiere.",
+    id: "view-front",
+    title: "Vue 1",
+    description: "Angle principal de la photo 360.",
     position: { yaw: -0.35, pitch: 0.02 },
   },
   {
-    id: "sleeping-zone",
-    title: "Zone nuit",
-    description: "Reperez la transition vers les chambres et les rangements.",
+    id: "view-left",
+    title: "Vue 2",
+    description: "Angle lateral pour explorer la meme photo.",
     position: { yaw: 1.1, pitch: -0.04 },
   },
   {
-    id: "kitchen-zone",
-    title: "Cuisine / service",
-    description: "Point de controle utile pour les finitions et les acces.",
+    id: "view-right",
+    title: "Vue 3",
+    description: "Autre point de vue dans la meme photo 360.",
     position: { yaw: 2.3, pitch: 0.03 },
   },
   {
-    id: "outside-zone",
-    title: "Ouverture exterieure",
-    description: "Mesurez la vue, l'ouverture et la respiration du logement.",
+    id: "view-back",
+    title: "Vue 4",
+    description: "Retour vers l'angle oppose de la photo.",
     position: { yaw: -2.35, pitch: -0.06 },
   },
 ];
@@ -63,10 +63,28 @@ function isSameOriginAsset(url: string) {
     return true;
   }
 
+  if (typeof window === "undefined") {
+    return false;
+  }
+
   try {
     return new URL(url).origin === window.location.origin;
   } catch {
     return false;
+  }
+}
+
+function getPanoramaRenderUrl(url: string) {
+  if (isSameOriginAsset(url)) {
+    return url;
+  }
+
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:") return url;
+    return `/api/tour-proxy?url=${encodeURIComponent(parsed.toString())}`;
+  } catch {
+    return url;
   }
 }
 
@@ -107,6 +125,7 @@ export function PhotoSphereViewer({
     [pointsKey]
   );
   const activePoint = tourPoints.find((point) => point.id === activePointId) ?? tourPoints[0] ?? null;
+  const panoramaUrl = useMemo(() => getPanoramaRenderUrl(imageUrl), [imageUrl]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -118,7 +137,7 @@ export function PhotoSphereViewer({
 
     const init = async () => {
       try {
-        const canLoad = await canLoadPanorama(imageUrl);
+        const canLoad = await canLoadPanorama(panoramaUrl);
         if (!isMounted) return;
 
         if (!canLoad) {
@@ -147,10 +166,11 @@ export function PhotoSphereViewer({
 
         viewer = new Viewer({
           container: containerRef.current,
-          panorama: imageUrl,
+          panorama: panoramaUrl,
           navbar: false,
           mousewheel: true,
           touchmoveTwoFingers: false,
+          defaultZoomLvl: 72,
           defaultYaw: tourPoints[0]?.position.yaw ?? 0,
           defaultPitch: tourPoints[0]?.position.pitch ?? 0,
           plugins: [
@@ -193,7 +213,7 @@ export function PhotoSphereViewer({
       viewer?.destroy();
       viewerRef.current = null;
     };
-  }, [imageUrl, tourPoints]);
+  }, [panoramaUrl, tourPoints]);
 
   const focusPoint = async (pointId: string) => {
     setActivePointId(pointId);
@@ -219,29 +239,17 @@ export function PhotoSphereViewer({
   }
 
   return (
-    <div className={`yeloo-tour-shell overflow-hidden rounded-[1.75rem] bg-neutral-950 ${className ?? ""}`}>
+    <div className={`yeloo-tour-shell relative h-full w-full overflow-hidden rounded-[1.75rem] bg-neutral-100 ${className ?? ""}`}>
       <div ref={containerRef} className="h-full min-h-[21rem] w-full" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 flex flex-wrap items-start justify-between gap-3 p-4">
-        <div className="pointer-events-auto max-w-[20rem] rounded-2xl bg-white/92 px-4 py-3 shadow-soft backdrop-blur">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-700">Visite immersive</p>
-          <p className="mt-1 text-sm font-semibold text-neutral-950">{title || "Visite 360 du logement"}</p>
-          {(location || priceLabel) && (
-            <p className="mt-1 text-xs text-neutral-500">{[location, priceLabel].filter(Boolean).join(" - ")}</p>
-          )}
-        </div>
-        <div className="pointer-events-auto rounded-full bg-white/92 px-3 py-2 text-[11px] font-semibold text-neutral-700 shadow-soft backdrop-blur">
-          Glissez pour explorer
-        </div>
-      </div>
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 p-4">
-        <div className="pointer-events-auto rounded-[1.5rem] border border-white/15 bg-neutral-950/72 p-3 text-white shadow-[0_20px_50px_rgba(15,23,42,0.34)] backdrop-blur">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 p-3 sm:p-4">
+        <div className="pointer-events-auto rounded-[1.35rem] border border-white/70 bg-white/82 p-2 text-neutral-950 shadow-[0_20px_50px_rgba(15,23,42,0.18)] backdrop-blur sm:rounded-[1.5rem] sm:p-3">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/60">Points d'interet</p>
+            <div className="hidden min-w-0 sm:block">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-neutral-400">Angles de vue</p>
               <p className="mt-1 text-sm font-semibold">{activePoint?.title || "Vue principale"}</p>
-              <p className="mt-1 text-xs leading-5 text-white/72">{activePoint?.description || "Explorez le logement sous tous les angles."}</p>
+              <p className="mt-1 text-xs leading-5 text-neutral-500">{activePoint?.description || "Explorez differents angles dans la meme photo 360."}</p>
             </div>
-            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="hide-scrollbar flex gap-2 overflow-x-auto sm:grid sm:grid-cols-2 xl:grid-cols-4">
               {tourPoints.map((point, index) => {
                 const isActive = point.id === activePointId;
                 return (
@@ -249,18 +257,18 @@ export function PhotoSphereViewer({
                     key={point.id}
                     type="button"
                     onClick={() => void focusPoint(point.id)}
-                    className={`rounded-2xl px-3 py-2 text-left transition ${
+                    className={`min-w-[5.25rem] rounded-2xl px-3 py-2 text-left transition sm:min-w-0 ${
                       isActive
-                        ? "bg-white text-neutral-950 shadow-soft"
-                        : "bg-white/8 text-white hover:bg-white/12"
+                        ? "bg-blue-600 text-white shadow-soft"
+                        : "bg-white text-neutral-700 hover:bg-neutral-50"
                     }`}
                   >
                     <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold ${
-                      isActive ? "bg-blue-600 text-white" : "bg-white/12 text-white"
+                      isActive ? "bg-white text-blue-700" : "bg-neutral-100 text-neutral-700"
                     }`}>
                       {index + 1}
                     </span>
-                    <p className="mt-2 text-xs font-semibold leading-4">{point.title}</p>
+                    <p className="mt-2 line-clamp-2 text-xs font-semibold leading-4">{point.title}</p>
                   </button>
                 );
               })}

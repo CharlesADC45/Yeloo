@@ -126,8 +126,22 @@ body {
   color: #f8fafc;
 }
 
-:root[data-theme="dark"] .yeloo-brand-wordmark {
+:root[data-theme="dark"] .yeloo-wordmark {
   color: #f8fafc !important;
+}
+
+:root[data-theme="dark"] .yeloo-wordmark .yeloo-wordmark-plus {
+  color: #60a5fa !important;
+}
+
+.yeloo-wordmark {
+  font-feature-settings: "liga" 1, "kern" 1;
+  text-rendering: geometricPrecision;
+}
+
+.yeloo-wordmark.text-white .yeloo-wordmark-plus,
+.yeloo-wordmark.\!text-white .yeloo-wordmark-plus {
+  color: #ffffff !important;
 }
 
 :root[data-theme="dark"] .yeloo-menu-button {

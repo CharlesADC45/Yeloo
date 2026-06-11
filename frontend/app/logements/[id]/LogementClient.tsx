@@ -25,7 +25,7 @@ import {
   FiTool,
 } from "react-icons/fi";
 import { BottomNav } from "@/components/BottomNav";
-import { PhotoSphereViewer } from "@/components/PhotoSphereViewer";
+import { ImmersiveTourViewer } from "@/components/ImmersiveTourViewer";
 import { DetailPageSkeleton } from "@/components/Skeleton";
 import { TopBar } from "@/components/TopBar";
 import { fetchPublicModules } from "@/lib/modules";
@@ -346,12 +346,10 @@ export function LogementClient({ id }: Props) {
     const videoImage = gallery[2] ?? gallery[0];
   const tourUrl = property?.tour360Url;
   const videoUrl = property?.videoUrl;
-  const isTourImage = Boolean(tourUrl && !/\.(mp4|webm|ogg|mov)$/i.test(tourUrl));
   const isOwnerViewer = user?.role === "proprietaire" || user?.role === "admin";
   const visitDateOptions = useMemo(() => buildVisitDateOptions(), []);
   const selectedVisitDay = visitDate.slice(0, 10);
   const selectedVisitTime = visitDate.slice(11, 16);
-  const selectedVisitLabel = visitDate ? formatVisitDate(visitDate) : "Choisissez un jour et une heure";
   const ownerName = property?.ownerName || "Hôte Yeloo";
   const ownerLabel = "Propriétaire Yeloo";
   const ownerInitials = ownerName
@@ -621,7 +619,7 @@ export function LogementClient({ id }: Props) {
   }, [isLoading, property]);
 
   const renderOwnerActions = () => (
-    <div className="mt-5 space-y-3">
+    <div className="space-y-3">
       {!isOwnerViewer && isChatEnabled && (
         <button
           type="button"
@@ -639,7 +637,7 @@ export function LogementClient({ id }: Props) {
       {!isAuthenticated && property && (
         <Link
           href={`/connexion?next=/logements/${property.id}`}
-          className="inline-flex w-full items-center justify-center rounded-full border border-neutral-200 px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50"
+          className="inline-flex w-full items-center justify-center rounded-full border border-[#1854e2] bg-[#1854e2] px-5 py-3 text-sm font-semibold text-white transition hover:border-blue-700 hover:bg-blue-700"
         >
           Se connecter pour continuer
         </Link>
@@ -950,9 +948,6 @@ export function LogementClient({ id }: Props) {
                   </div>
 
                   <div className="border-y border-neutral-200 py-5">
-                    <h3 className="text-base font-semibold text-neutral-950">
-                      Informations sur le propriétaire
-                    </h3>
                     {renderOwnerActions()}
                   </div>
                 </div>
@@ -987,66 +982,47 @@ export function LogementClient({ id }: Props) {
                <section data-detail-reveal="true" className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_0.95fr]">
                 <div className="border-t border-neutral-200 bg-white py-5">
                   <div className="flex items-center justify-between gap-3">
-                    <h2 className="text-base font-semibold text-neutral-900 sm:text-lg">Visite 360</h2>
+                    <h2 className="text-base font-semibold text-neutral-900 sm:text-lg">Tour virtuel 360</h2>
                   </div>
                   <div className="relative mt-4 h-[28rem] overflow-hidden rounded-[1.75rem] bg-neutral-100 sm:h-[34rem]">
-                    {tourUrl && isTourImage ? (
-                      <PhotoSphereViewer
-                        imageUrl={tourUrl}
-                        fallbackImageUrl="/property-fallback.svg"
-                        title={property.title}
-                        location={locationLabel || property.city}
-                        priceLabel={`${formatPrice(property.price)} FCFA / ${pricePeriodLabel}`}
-                        className="absolute inset-0"
-                        points={[
-                          {
-                            id: "main-room",
-                            title: "Piece principale",
-                            description: `Vue d'ensemble du ${property.propertyType || "logement"} pour juger les volumes.`,
-                            position: { yaw: -0.2, pitch: 0.02 },
-                          },
-                          {
-                            id: "sleeping-room",
-                            title: (property.rooms ?? 0) > 1 ? "Chambres" : "Espace nuit",
-                            description:
-                              (property.rooms ?? 0) > 1
-                                ? `${property.rooms} piece(s) a visualiser depuis la visite.`
-                                : "Reperez la zone nuit et l'organisation du logement.",
-                            position: { yaw: 1.05, pitch: -0.03 },
-                          },
-                          {
-                            id: "water-room",
-                            title: property.bathrooms ? "Salle d'eau" : "Services",
-                            description:
-                              property.bathrooms
-                                ? `${property.bathrooms} salle(s) d'eau mentionnee(s) dans l'annonce.`
-                                : "Point d'interet pour les zones techniques du logement.",
-                            position: { yaw: 2.12, pitch: 0.04 },
-                          },
-                          {
-                            id: "open-view",
-                            title: "Ouverture",
-                            description: hasExactLocation
-                              ? "Reperez la lumiere naturelle et l'ouverture exterieure."
-                              : "Visualisez la respiration du logement et ses ouvertures.",
-                            position: { yaw: -2.18, pitch: -0.05 },
-                          },
-                        ]}
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center bg-neutral-100">
-                        <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-neutral-600 shadow-soft">
-                          Aucune visite 360
-                        </span>
-                      </div>
-                    )}
+                    <ImmersiveTourViewer
+                      tourUrl={tourUrl}
+                      fallbackImageUrl="/property-fallback.svg"
+                      title={property.title}
+                      location={locationLabel || property.city}
+                      priceLabel={`${formatPrice(property.price)} FCFA / ${pricePeriodLabel}`}
+                      className="h-full w-full"
+                      points={[
+                        {
+                          id: "view-front",
+                          title: "Vue 1",
+                          description: "Angle principal de la photo 360.",
+                          position: { yaw: -0.2, pitch: 0.02 },
+                        },
+                        {
+                          id: "view-left",
+                          title: "Vue 2",
+                          description: "Angle lateral dans la meme photo 360.",
+                          position: { yaw: 1.05, pitch: -0.03 },
+                        },
+                        {
+                          id: "view-right",
+                          title: "Vue 3",
+                          description: "Autre point de vue dans le panorama.",
+                          position: { yaw: 2.12, pitch: 0.04 },
+                        },
+                        {
+                          id: "view-back",
+                          title: "Vue 4",
+                          description: "Angle oppose pour continuer l'exploration.",
+                          position: { yaw: -2.18, pitch: -0.05 },
+                        },
+                      ]}
+                    />
                   </div>
                 </div>
                 <div className="border-t border-neutral-200 bg-white py-5">
                   <h2 className="text-lg font-semibold text-neutral-900">Video</h2>
-                  <p className="mt-1 text-sm text-neutral-500">
-                    Un media court pour completer la visite 360 quand il est disponible.
-                  </p>
                   <div className="relative mt-4 h-52 overflow-hidden rounded-[1.4rem] bg-neutral-100 sm:h-60">
                     {videoUrl ? (
                       <video
@@ -1082,7 +1058,7 @@ export function LogementClient({ id }: Props) {
               </section>
             </div>
 
-            <aside className="space-y-5 xl:sticky xl:top-28 xl:self-start">
+            <aside className="space-y-5 xl:self-start">
               {!isOwnerViewer && isVisitEnabled && property.availabilityStatus !== "rented" && (
                 <div
                   data-detail-reveal="true"
@@ -1128,9 +1104,6 @@ export function LogementClient({ id }: Props) {
                           <div>
                             <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
                               Choisir une date
-                            </p>
-                            <p className="mt-1 text-xs text-neutral-500">
-                              Le propriétaire confirmera le créneau.
                             </p>
                           </div>
                           <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold text-blue-700">
@@ -1190,13 +1163,6 @@ export function LogementClient({ id }: Props) {
                         </div>
                       </div>
 
-                      <div className="rounded-[1.2rem] border border-blue-100 bg-white px-4 py-3">
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
-                          Votre sélection
-                        </p>
-                        <p className="mt-1 text-sm font-semibold text-neutral-950">{selectedVisitLabel}</p>
-                      </div>
-
                       <label className="block text-xs font-semibold uppercase tracking-wide text-neutral-500">
                         Message optionnel
                         <textarea
@@ -1228,7 +1194,7 @@ export function LogementClient({ id }: Props) {
 
                 <div
                   data-detail-reveal="true"
-                  className="rounded-[1.8rem] border border-neutral-200 bg-white p-6"
+                  className="rounded-[1.8rem] border border-neutral-200 bg-white p-6 xl:sticky xl:top-28 xl:z-10"
                >
                 <h2 className="text-xl font-semibold tracking-[-0.02em] text-neutral-950">
                   À savoir
@@ -1296,10 +1262,7 @@ export function LogementClient({ id }: Props) {
             </aside>
           </div>
 
-          <div className="flex justify-between text-xs text-neutral-500">
-            <Link href="/" className="hover:text-neutral-700">
-              Retour aux annonces
-            </Link>
+          <div className="flex items-center justify-end text-xs text-neutral-500">
             <span>ID annonce: {property.id}</span>
           </div>
         </motion.section>

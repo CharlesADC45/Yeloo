@@ -80,7 +80,7 @@ export async function updateVisitRequestStatus(
   visitRequestId: string,
   token: string,
   payload: {
-    status: "accepted" | "declined" | "rescheduled";
+    status: "accepted" | "rescheduled";
     proposed_at?: string;
     owner_message?: string;
   }

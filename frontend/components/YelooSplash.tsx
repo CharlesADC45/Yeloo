@@ -2,23 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-
-function SplashLogo() {
-  return (
-    <div className="relative flex h-32 w-32 items-center justify-center overflow-hidden rounded-[2.3rem] bg-[#2F57FF] shadow-[0_30px_80px_rgba(47,87,255,0.35)]">
-      <span className="absolute inset-x-6 top-9 h-8 rounded-full bg-white/10" />
-      <span className="flex items-center gap-4">
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-[0_4px_14px_rgba(255,255,255,0.26)]">
-          <span className="h-3.5 w-3.5 rounded-full bg-[#0F172A]" />
-        </span>
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-[0_4px_14px_rgba(255,255,255,0.26)]">
-          <span className="h-3.5 w-3.5 rounded-full bg-[#0F172A]" />
-        </span>
-      </span>
-      <span className="absolute bottom-8 h-5 w-14 rounded-b-full border-b-[5px] border-white/90" />
-    </div>
-  );
-}
+import { YelooWordmark } from "@/components/YelooWordmark";
 
 export function YelooSplash() {
   const [show, setShow] = useState(false);
@@ -43,7 +27,7 @@ export function YelooSplash() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.35 }}
-          className="fixed inset-0 z-[2000] flex items-center justify-center bg-[#2F57FF]"
+          className="fixed inset-0 z-[2000] flex items-center justify-center bg-[#1854e2]"
         >
           <motion.div
             initial={{ scale: 0.84, opacity: 0, y: 18 }}
@@ -52,22 +36,15 @@ export function YelooSplash() {
             transition={{ type: "spring", stiffness: 220, damping: 20 }}
             className="flex flex-col items-center"
           >
-            <SplashLogo />
-            {/* <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.28, duration: 0.35 }}
-              className="mt-5 flex items-end text-3xl font-extrabold tracking-[-0.05em] text-neutral-950"
-            >
-              <span>Yeloo</span>
-              <span className="ml-0.5 text-[2.2rem] font-black leading-none">+</span>
-            </motion.p>
+            <YelooWordmark
+              markClassName="!text-[3.8rem] !tracking-[-0.1em] !text-white sm:!text-[4.8rem]"
+            />
             <motion.div
               initial={{ scaleX: 0 }}
               animate={{ scaleX: 1 }}
               transition={{ delay: 0.45, duration: 0.9, ease: "easeInOut" }}
-              className="mt-5 h-1 w-32 origin-left rounded-full bg-[#2F57FF]"
-            /> */}
+              className="mt-7 h-1 w-28 origin-left rounded-full bg-white/70"
+            />
           </motion.div>
         </motion.div>
       )}

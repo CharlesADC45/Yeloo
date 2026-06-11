@@ -32,6 +32,7 @@ type FormState = {
   address: string;
   city: string;
   coordinates: string;
+  tour360Url: string;
   isFurnished: boolean;
 };
 
@@ -122,6 +123,7 @@ const DEFAULT_FORM: FormState = {
   address: "",
   city: "",
   coordinates: "",
+  tour360Url: "",
   isFurnished: false,
 };
 
@@ -406,13 +408,13 @@ export default function NouveauBienPage() {
       setTourFile(null);
       return;
     }
-    const isValid = isSupportedImage(file);
+    const isValid = isSupportedImage(file) || isSupportedVideo(file);
     if (!isValid) {
       setTourFile(null);
       event.target.value = "";
       setErrors((prev) => ({
         ...prev,
-        tour: buildUnsupportedFileMessage("Visite 360", file, "JPG, PNG, WEBP ou GIF"),
+        tour: buildUnsupportedFileMessage("Visite 360", file, "JPG, PNG, WEBP, GIF, MP4, WEBM, OGG ou MOV"),
       }));
       return;
     }
@@ -624,6 +626,7 @@ export default function NouveauBienPage() {
           latitude: latitudeValue,
           longitude: longitudeValue,
           is_furnished: form.isFurnished,
+          tour_360_url: form.tour360Url.trim() || null,
         };
 
         const response = await fetch(`${getApiBaseUrl()}/api/properties`, {
@@ -773,6 +776,10 @@ export default function NouveauBienPage() {
   const isLastStep = stepIndex === steps.length - 1;
   const videoDisplayUrl = uploadedVideoUrl ?? videoPreview;
   const tourDisplayUrl = uploadedTourUrl ?? tourPreview;
+  const tourDisplayIsVideo = Boolean(
+    (tourFile && isSupportedVideo(tourFile)) ||
+      (tourDisplayUrl && SUPPORTED_VIDEO_EXTENSIONS.test(tourDisplayUrl))
+  );
   const formattedPrice = form.price
     ? new Intl.NumberFormat("fr-FR").format(Number(form.price))
     : "-";
@@ -1382,11 +1389,21 @@ export default function NouveauBienPage() {
                         <p className="mt-3 text-[11px] text-neutral-600">{tourFile.name}</p>
                       )}
                       {tourDisplayUrl ? (
-                        <img
-                          src={tourDisplayUrl}
-                          alt="Aper?u visite 360"
-                          className="mt-4 h-28 w-full rounded-xl object-cover"
-                        />
+                        tourDisplayIsVideo ? (
+                          <video
+                            src={tourDisplayUrl}
+                            className="mt-4 h-28 w-full rounded-xl bg-neutral-950 object-cover"
+                            controls
+                            playsInline
+                            preload="metadata"
+                          />
+                        ) : (
+                          <img
+                            src={tourDisplayUrl}
+                            alt="Apercu visite 360"
+                            className="mt-4 h-28 w-full rounded-xl object-cover"
+                          />
+                        )
                       ) : null}
                       {errors.tour && (
                         <p className="mt-3 rounded-2xl bg-red-50 px-3 py-2 text-[11px] text-red-600">
@@ -1423,7 +1440,7 @@ export default function NouveauBienPage() {
                       <input
                         ref={tourInputRef}
                         type="file"
-                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/ogg,video/quicktime"
                         onChange={handleTourChange}
                         className="hidden"
                       />

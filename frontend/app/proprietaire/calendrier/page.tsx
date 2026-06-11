@@ -86,7 +86,7 @@ export default function ProprietaireCalendrierPage() {
 
   const handleVisitAction = async (
     visitRequest: VisitRequest,
-    status: "accepted" | "declined" | "rescheduled"
+    status: "accepted" | "rescheduled"
   ) => {
     if (!token) return;
     const proposedDate = rescheduleDates[visitRequest.id];
@@ -104,9 +104,7 @@ export default function ProprietaireCalendrierPage() {
         owner_message:
           status === "accepted"
             ? "La visite est confirmée. Merci de rester disponible à l'heure prévue."
-            : status === "declined"
-              ? "Le propriétaire n'est pas disponible pour cette visite."
-              : "Le propriétaire propose un autre horaire pour la visite.",
+            : "Le propriétaire propose un autre horaire pour la visite.",
       });
       setVisitRequests((current) =>
         current.map((item) => (item.id === updated.id ? updated : item))

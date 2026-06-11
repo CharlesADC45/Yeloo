@@ -31,6 +31,7 @@ import {
   useNotificationStore,
 } from "@/stores/notificationStore";
 import { PreferenceControls } from "@/components/PreferenceControls";
+import { YelooWordmark } from "@/components/YelooWordmark";
 import { useT } from "@/lib/i18n";
 
 const RECENT_DESTINATIONS_STORAGE_KEY = "yeloo-recent-destinations";
@@ -77,26 +78,7 @@ type ReverseGeocodeResponse = {
 };
 
 function YelooBrand() {
-  return (
-    <Link href="/" replace className="flex items-center gap-1.5" aria-label="Yeloo+ accueil">
-      <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[1.15rem] bg-[#2F57FF] shadow-soft sm:h-11 sm:w-11">
-        <span className="absolute inset-x-[7px] top-[11px] h-[11px] rounded-full bg-white/12" />
-        <span className="flex items-center gap-1.5">
-          <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-white shadow-[0_2px_8px_rgba(255,255,255,0.28)]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#2F57FF]" />
-          </span>
-          <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-white shadow-[0_2px_8px_rgba(255,255,255,0.28)]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#2F57FF]" />
-          </span>
-        </span>
-        <span className="absolute bottom-[8px] h-[8px] w-[18px] rounded-b-full border-b-2 border-white/90" />
-      </span>
-      <span className="yeloo-brand-wordmark flex items-end text-[1.65rem] font-extrabold tracking-[-0.045em] leading-none text-[#111827]">
-        <span>Yeloo</span>
-        <span className="ml-0.5 text-[1.95rem] font-black leading-none">+</span>
-      </span>
-    </Link>
-  );
+  return <YelooWordmark href="/" replace className="shrink-0" />;
 }
 
 function LocationBadgeIcon() {

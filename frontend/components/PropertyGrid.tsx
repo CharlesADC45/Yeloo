@@ -1,5 +1,5 @@
 ﻿import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { FiHeart } from "react-icons/fi";
 import { useFavoritesStore } from "@/stores/favoritesStore";
@@ -34,18 +34,41 @@ export function PropertyGrid({
 }: Props) {
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
   const favoriteIds = useFavoritesStore((s) => s.favoriteIds);
+  const showMoreTimerRef = useRef<number | null>(null);
 
   const filtered = applyPropertyFilters(properties, filters);
   const showEmpty = !isLoading && !error && filtered.length === 0;
   const formatPrice = (value: number) => value.toLocaleString("en-US");
   const [visibleCount, setVisibleCount] = useState(initialVisibleCount ?? Number.POSITIVE_INFINITY);
+  const [isShowingMore, setIsShowingMore] = useState(false);
   const limitedGrid = typeof initialVisibleCount === "number";
   const visibleProperties = limitedGrid ? filtered.slice(0, visibleCount) : filtered;
   const canShowMore = limitedGrid && visibleCount < filtered.length;
 
   useEffect(() => {
+    if (showMoreTimerRef.current) {
+      window.clearTimeout(showMoreTimerRef.current);
+    }
+    setIsShowingMore(false);
     setVisibleCount(initialVisibleCount ?? Number.POSITIVE_INFINITY);
   }, [filters.city, filters.maxPrice, filters.minPrice, filters.neighborhood, filters.propertyType, initialVisibleCount]);
+
+  useEffect(() => {
+    return () => {
+      if (showMoreTimerRef.current) {
+        window.clearTimeout(showMoreTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleShowMore = () => {
+    if (isShowingMore) return;
+    setIsShowingMore(true);
+    showMoreTimerRef.current = window.setTimeout(() => {
+      setVisibleCount((count) => count + (initialVisibleCount ?? 10));
+      setIsShowingMore(false);
+    }, 650);
+  };
 
   return (
     <div>
@@ -189,10 +212,18 @@ export function PropertyGrid({
             <div className="col-span-full flex justify-center pt-2">
               <button
                 type="button"
-                onClick={() => setVisibleCount((count) => count + (initialVisibleCount ?? 10))}
-                className="rounded-full bg-neutral-950 px-6 py-3 text-sm font-semibold text-white shadow-[0_16px_34px_rgba(15,23,42,0.18)] transition hover:bg-neutral-800"
+                onClick={handleShowMore}
+                disabled={isShowingMore}
+                className="inline-flex min-w-[7.5rem] items-center justify-center gap-2 rounded-full bg-neutral-950 px-6 py-3 text-sm font-semibold text-white shadow-[0_16px_34px_rgba(15,23,42,0.18)] transition hover:bg-neutral-800 disabled:cursor-wait disabled:bg-neutral-800"
               >
-                Voir plus
+                {isShowingMore ? (
+                  <>
+                    <span className="h-4 w-4 rounded-full border-2 border-white/35 border-t-white motion-safe:animate-spin" />
+                    Chargement
+                  </>
+                ) : (
+                  "Voir plus"
+                )}
               </button>
             </div>
           )}
