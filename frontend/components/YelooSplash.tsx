@@ -37,7 +37,8 @@ export function YelooSplash() {
             className="flex flex-col items-center"
           >
             <YelooWordmark
-              markClassName="!text-[3.8rem] !tracking-[-0.1em] !text-white sm:!text-[4.8rem]"
+              casing="upper"
+              markClassName="!text-[3.7rem] !font-extrabold !tracking-[-0.075em] !text-white sm:!text-[4.65rem]"
             />
             <motion.div
               initial={{ scaleX: 0 }}
