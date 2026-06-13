@@ -637,7 +637,7 @@ export function LogementClient({ id }: Props) {
       {!isAuthenticated && property && (
         <Link
           href={`/connexion?next=/logements/${property.id}`}
-          className="inline-flex w-full items-center justify-center rounded-full border border-[#1854e2] bg-[#1854e2] px-5 py-3 text-sm font-semibold text-white transition hover:border-blue-700 hover:bg-blue-700"
+          className="inline-flex w-full items-center justify-center rounded-full border border-[#2563eb] bg-[#2563eb] px-5 py-3 text-sm font-semibold text-white transition hover:border-blue-700 hover:bg-blue-700"
         >
           Se connecter pour continuer
         </Link>

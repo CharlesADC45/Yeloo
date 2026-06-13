@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { FiDownload, FiShare, FiX } from "react-icons/fi";
 import { YelooWordmark } from "@/components/YelooWordmark";
@@ -24,8 +24,23 @@ function isStandaloneDisplay() {
 export function PwaInstallBanner() {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
   const [isIos, setIsIos] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState(0);
+  const [sheetTop, setSheetTop] = useState<number | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const handleRef = useRef<HTMLButtonElement | null>(null);
+  const sheetTopRef = useRef(0);
+  const dragStartTopRef = useRef(0);
+
+  const sheetBounds = useMemo(() => {
+    if (!viewportHeight) return null;
+    const expanded = Math.round(viewportHeight * 0.5);
+    const collapsed = Math.max(expanded + 140, viewportHeight - 172);
+    return {
+      expanded,
+      collapsed,
+    };
+  }, [viewportHeight]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -53,6 +68,130 @@ export function PwaInstallBanner() {
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const syncViewport = () => setViewportHeight(window.innerHeight || 0);
+    syncViewport();
+    window.addEventListener("resize", syncViewport);
+    return () => window.removeEventListener("resize", syncViewport);
+  }, []);
+
+  useEffect(() => {
+    if (!sheetBounds) return;
+    setSheetTop((current) => {
+      if (current === null) return sheetBounds.collapsed;
+      return Math.min(sheetBounds.collapsed, Math.max(sheetBounds.expanded, current));
+    });
+  }, [sheetBounds]);
+
+  useEffect(() => {
+    if (sheetTop !== null) {
+      sheetTopRef.current = sheetTop;
+    }
+  }, [sheetTop]);
+
+  const clampSheetTop = (value: number) => {
+    if (!sheetBounds) return value;
+    return Math.min(sheetBounds.collapsed, Math.max(sheetBounds.expanded, value));
+  };
+
+  const snapSheet = (nextTop: number, dragOffset = 0) => {
+    if (!sheetBounds) return;
+
+    if (dragOffset > 44) {
+      setSheetTop(sheetBounds.collapsed);
+      return;
+    }
+
+    if (dragOffset < -44) {
+      setSheetTop(sheetBounds.expanded);
+      return;
+    }
+
+    const midpoint = (sheetBounds.expanded + sheetBounds.collapsed) / 2;
+    setSheetTop(nextTop <= midpoint ? sheetBounds.expanded : sheetBounds.collapsed);
+  };
+
+  useEffect(() => {
+    const handle = handleRef.current;
+    if (!handle || !sheetBounds) return;
+
+    let startY: number | null = null;
+    let lastY: number | null = null;
+    let startTop = sheetTopRef.current;
+
+    const beginDrag = (clientY: number) => {
+      startY = clientY;
+      lastY = clientY;
+      startTop = sheetTopRef.current || sheetBounds.collapsed;
+      dragStartTopRef.current = startTop;
+      setIsDragging(true);
+    };
+
+    const updateDrag = (clientY: number) => {
+      if (startY === null) return;
+      lastY = clientY;
+      setSheetTop(clampSheetTop(startTop + clientY - startY));
+    };
+
+    const finishDrag = () => {
+      if (startY !== null) {
+        const dragOffset = (lastY ?? startY) - startY;
+        snapSheet(clampSheetTop(startTop + dragOffset), dragOffset);
+      }
+      startY = null;
+      lastY = null;
+      setIsDragging(false);
+    };
+
+    const onPointerDown = (event: PointerEvent) => {
+      beginDrag(event.clientY);
+      handle.setPointerCapture?.(event.pointerId);
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      if (startY === null) return;
+      event.preventDefault();
+      updateDrag(event.clientY);
+    };
+
+    const onPointerUp = () => finishDrag();
+
+    const onTouchStart = (event: TouchEvent) => {
+      const firstTouch = event.touches[0];
+      if (!firstTouch) return;
+      beginDrag(firstTouch.clientY);
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      const firstTouch = event.touches[0];
+      if (!firstTouch || startY === null) return;
+      event.preventDefault();
+      updateDrag(firstTouch.clientY);
+    };
+
+    handle.addEventListener("pointerdown", onPointerDown);
+    handle.addEventListener("pointermove", onPointerMove);
+    handle.addEventListener("pointerup", onPointerUp);
+    handle.addEventListener("pointercancel", onPointerUp);
+    handle.addEventListener("touchstart", onTouchStart, { passive: true });
+    handle.addEventListener("touchmove", onTouchMove, { passive: false });
+    handle.addEventListener("touchend", onPointerUp);
+    handle.addEventListener("touchcancel", onPointerUp);
+
+    return () => {
+      handle.removeEventListener("pointerdown", onPointerDown);
+      handle.removeEventListener("pointermove", onPointerMove);
+      handle.removeEventListener("pointerup", onPointerUp);
+      handle.removeEventListener("pointercancel", onPointerUp);
+      handle.removeEventListener("touchstart", onTouchStart);
+      handle.removeEventListener("touchmove", onTouchMove);
+      handle.removeEventListener("touchend", onPointerUp);
+      handle.removeEventListener("touchcancel", onPointerUp);
+    };
+  }, [sheetBounds]);
+
   const helperText = useMemo(() => {
     if (installPrompt) {
       return "Ouvrez l'app plus vite, avec une experience plein ecran.";
@@ -79,7 +218,9 @@ export function PwaInstallBanner() {
           })
           .catch(() => null);
       }
-      setIsExpanded(true);
+      if (sheetBounds) {
+        setSheetTop(sheetBounds.expanded);
+      }
       return;
     }
 
@@ -94,28 +235,29 @@ export function PwaInstallBanner() {
       {isVisible && (
         <motion.div
           className="fixed inset-x-0 bottom-0 z-[1200] mx-auto max-w-md overflow-hidden rounded-t-[2rem] bg-white text-[#111827] shadow-[0_-24px_70px_rgba(15,23,42,0.24)] ring-1 ring-black/5"
-          initial={{ y: "100%" }}
-          animate={{ y: 0, height: isExpanded ? "min(70vh, 27rem)" : "10.6rem" }}
-          exit={{ y: "100%" }}
-          transition={{ type: "spring", stiffness: 260, damping: 28 }}
-          drag="y"
-          dragConstraints={{ top: 0, bottom: 0 }}
-          dragElastic={{ top: 0.08, bottom: 0.25 }}
-          onDragEnd={(_, info) => {
-            if (info.offset.y > 70) {
-              setIsExpanded(false);
-              return;
-            }
-            if (info.offset.y < -45) {
-              setIsExpanded(true);
-            }
-          }}
+          initial={{ top: "100%" }}
+          animate={{ top: sheetTop ?? "100%" }}
+          exit={{ top: "100%" }}
+          transition={
+            isDragging
+              ? { duration: 0 }
+              : { type: "spring", stiffness: 260, damping: 30 }
+          }
         >
           <button
+            ref={handleRef}
             type="button"
-            onClick={() => setIsExpanded((value) => !value)}
+            onClick={() => {
+              if (!sheetBounds) return;
+              const midpoint = (sheetBounds.expanded + sheetBounds.collapsed) / 2;
+              setSheetTop((current) =>
+                (current ?? sheetBounds.collapsed) <= midpoint
+                  ? sheetBounds.collapsed
+                  : sheetBounds.expanded
+              );
+            }}
             className="flex w-full justify-center bg-[#111827] pt-3"
-            aria-label={isExpanded ? "Reduire l'installation" : "Afficher l'installation"}
+            aria-label="Afficher ou reduire l'installation"
           >
             <span className="h-1 w-12 rounded-full bg-white/35" />
           </button>
@@ -151,27 +293,25 @@ export function PwaInstallBanner() {
           <div className="px-5 py-4">
             <p className="text-sm font-black">Ajoutez Yeloo+ a votre ecran d'accueil.</p>
             <p className="mt-1 max-w-[20rem] text-sm leading-5 text-neutral-600">{helperText}</p>
-            {isExpanded && (
-              <div className="mt-5 rounded-[1.5rem] bg-neutral-50 p-4">
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-neutral-500">
-                  Installation rapide
-                </p>
-                <div className="mt-4 space-y-3 text-sm text-neutral-700">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-50 text-blue-700">
-                      <FiDownload />
-                    </span>
-                    <span>Android/Chrome: appuyez sur Installer.</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-50 text-blue-700">
-                      <FiShare />
-                    </span>
-                    <span>iPhone/Safari: Partager, puis Ajouter a l'ecran d'accueil.</span>
-                  </div>
+            <div className="mt-5 rounded-[1.5rem] bg-neutral-50 p-4">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-neutral-500">
+                Installation rapide
+              </p>
+              <div className="mt-4 space-y-3 text-sm text-neutral-700">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-50 text-blue-700">
+                    <FiDownload />
+                  </span>
+                  <span>Android/Chrome: appuyez sur Installer.</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-50 text-blue-700">
+                    <FiShare />
+                  </span>
+                  <span>iPhone/Safari: Partager, puis Ajouter a l'ecran d'accueil.</span>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </motion.div>
       )}

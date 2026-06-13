@@ -21,7 +21,7 @@ export function YelooWordmark({
       className={`yeloo-wordmark inline-flex items-end text-[2rem] font-extrabold leading-none tracking-[-0.075em] text-neutral-950 ${markClassName}`}
     >
       <span>{label}</span>
-      <span className="yeloo-wordmark-plus ml-0.5 text-[2.12rem] font-extrabold leading-none text-[#1854e2]">+</span>
+      <span className="yeloo-wordmark-plus ml-0.5 text-[2.12rem] font-extrabold leading-none text-[#2563eb]">+</span>
     </span>
   );
 
