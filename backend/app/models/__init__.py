@@ -9,6 +9,7 @@ from app.models.push_subscription import PushSubscription
 from app.models.public_announcement import PublicAnnouncement
 from app.models.user import User
 from app.models.visit_request import VisitRequest
+from app.models.visit_access_payment import VisitAccessPayment
 
 __all__ = [
     "User",
@@ -22,5 +23,6 @@ __all__ = [
     "Message",
     "PublicAnnouncement",
     "VisitRequest",
+    "VisitAccessPayment",
 ]
 

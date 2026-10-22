@@ -5,15 +5,36 @@
 @tailwind utilities;
 
 :root {
+  /* YELOO+ brand system - the single source of truth for the product UI. */
+  --yeloo-brand-primary: #1d4ed8;
+  --yeloo-brand-primary-hover: #173ea5;
+  --yeloo-brand-primary-soft: #eaf0ff;
+  --yeloo-brand-sun: #ffc928;
+  --yeloo-brand-sun-soft: #fff7d6;
+  --yeloo-brand-ink: #111827;
+  --yeloo-brand-muted: #667085;
+  --yeloo-brand-line: #e4e9f2;
+  --yeloo-brand-canvas: #f6f8fc;
+  --yeloo-brand-success: #0f9f6e;
+  --yeloo-brand-danger: #dc3545;
+
+  --yeloo-radius-sm: 0.75rem;
+  --yeloo-radius-md: 1rem;
+  --yeloo-radius-lg: 1.5rem;
+  --yeloo-radius-xl: 2rem;
+  --yeloo-shadow-sm: 0 4px 14px rgba(17, 24, 39, 0.06);
+  --yeloo-shadow-md: 0 14px 40px rgba(17, 24, 39, 0.1);
+  --yeloo-shadow-focus: 0 0 0 4px rgba(29, 78, 216, 0.16);
+
   --yeloo-base: #ffffff;
   --yeloo-surface: #ffffff;
-  --yeloo-secondary: #2563eb;
-  --yeloo-secondary-soft: #eaf1ff;
-  --yeloo-accent: #14b8a6;
-  --yeloo-blue: #2563eb;
-  --yeloo-blue-hover: #2563eb;
-  --yeloo-blue-soft: rgba(37, 99, 235, 0.1);
-  --yeloo-blue-ring: rgba(37, 99, 235, 0.22);
+  --yeloo-secondary: var(--yeloo-brand-primary);
+  --yeloo-secondary-soft: var(--yeloo-brand-primary-soft);
+  --yeloo-accent: var(--yeloo-brand-sun);
+  --yeloo-blue: var(--yeloo-brand-primary);
+  --yeloo-blue-hover: var(--yeloo-brand-primary-hover);
+  --yeloo-blue-soft: rgba(29, 78, 216, 0.1);
+  --yeloo-blue-ring: rgba(29, 78, 216, 0.22);
 }
 
 .hide-scrollbar {
@@ -35,7 +56,9 @@ body {
   font-family: var(--font-yeloo), system-ui, -apple-system, BlinkMacSystemFont,
     'Segoe UI', sans-serif;
   background-color: var(--yeloo-base);
-  color: #171717;
+  color: var(--yeloo-brand-ink);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -245,8 +268,63 @@ button {
 }
 
 ::selection {
-  background: rgba(37, 99, 235, 0.16);
-  color: #171717;
+  background: rgba(255, 201, 40, 0.4);
+  color: var(--yeloo-brand-ink);
+}
+
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--yeloo-brand-primary);
+  outline-offset: 3px;
+}
+
+@layer components {
+  .yeloo-surface {
+    border: 1px solid var(--yeloo-brand-line);
+    border-radius: var(--yeloo-radius-lg);
+    background: var(--yeloo-surface);
+    box-shadow: var(--yeloo-shadow-sm);
+  }
+
+  .yeloo-button-primary {
+    display: inline-flex;
+    min-height: 3rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.625rem;
+    border-radius: 9999px;
+    background: var(--yeloo-brand-primary);
+    padding: 0.75rem 1.25rem;
+    color: #fff;
+    font-weight: 700;
+    transition: transform 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .yeloo-button-primary:hover {
+    background: var(--yeloo-brand-primary-hover);
+    box-shadow: var(--yeloo-shadow-sm);
+    transform: translateY(-1px);
+  }
+
+  .yeloo-button-accent {
+    display: inline-flex;
+    min-height: 3rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.625rem;
+    border-radius: 9999px;
+    background: var(--yeloo-brand-sun);
+    padding: 0.75rem 1.25rem;
+    color: var(--yeloo-brand-ink);
+    font-weight: 800;
+  }
+
+  .yeloo-eyebrow {
+    color: var(--yeloo-brand-primary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
 }
 
 .imc-skeleton-base,

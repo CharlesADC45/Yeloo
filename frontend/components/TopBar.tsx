@@ -46,7 +46,11 @@ type HomeSearchConfig = {
     title: string;
     subtitle: string;
     tone?: "blue" | "amber" | "emerald";
+    kind?: "nearby" | "place";
   }>;
+  nearbyRadiusOptions?: number[];
+  nearbySearching?: boolean;
+  nearbyRadiusKm?: number | null;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onFocus: () => void;
   onBlur: () => void;
@@ -54,6 +58,7 @@ type HomeSearchConfig = {
   onSubmit: () => void;
   onClear?: () => void;
   onSuggestionSelect?: (value: string) => void;
+  onNearbyRadiusSelect?: (radiusKm: number) => void;
 };
 
 type TopBarProps = {
@@ -561,43 +566,131 @@ function TopBarContent({
                         </p>
                         <div className="space-y-1">
                           {popularSuggestions.map((suggestion) => {
-                      const toneClass =
-                        suggestion.tone === "amber"
-                          ? "bg-amber-50 text-amber-600"
-                          : suggestion.tone === "emerald"
-                            ? "bg-emerald-50 text-emerald-600"
-                            : "bg-blue-50 text-blue-600";
-                      return (
-                        <button
-                          key={`${suggestion.value}-${suggestion.title}`}
-                          type="button"
-                          onMouseDown={(event) => {
-                            event.preventDefault();
-                            saveRecentDestination(suggestion.value);
-                            homeSearch.onSuggestionSelect?.(suggestion.value);
-                          }}
-                          className="flex w-full items-center gap-4 rounded-[1.4rem] px-3 py-3 text-left transition hover:bg-neutral-50"
-                        >
-                          <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-[1.2rem] ${toneClass}`}>
-                            {suggestion.tone === "amber" ? (
-                              <FiGrid className="h-5 w-5" />
-                            ) : suggestion.tone === "emerald" ? (
-                              <FiMapPin className="h-5 w-5" />
-                            ) : (
-                              <FiCompass className="h-5 w-5" />
-                            )}
-                          </span>
-                          <span className="min-w-0">
-                            <span className="block text-base font-semibold leading-tight text-neutral-900 sm:text-lg">
-                              {suggestion.title}
-                            </span>
-                            <span className="mt-1 block text-xs text-neutral-500 sm:text-sm">
-                              {suggestion.subtitle}
-                            </span>
-                          </span>
-                        </button>
-                      );
-                    })}
+                            const isNearbySuggestion = suggestion.kind === "nearby";
+                            const toneClass =
+                              suggestion.tone === "amber"
+                                ? "bg-amber-50 text-amber-600"
+                                : suggestion.tone === "emerald"
+                                  ? "bg-emerald-50 text-emerald-600"
+                                  : "bg-blue-50 text-blue-600";
+
+                            if (isNearbySuggestion) {
+                              return (
+                                <div
+                                  key={`${suggestion.value}-${suggestion.title}`}
+                                  className="overflow-hidden rounded-[1.5rem] bg-neutral-50 p-3"
+                                >
+                                  <button
+                                    type="button"
+                                    onMouseDown={(event) => {
+                                      event.preventDefault();
+                                      homeSearch.onNearbyRadiusSelect?.(
+                                        homeSearch.nearbyRadiusKm ||
+                                          homeSearch.nearbyRadiusOptions?.[0] ||
+                                          1
+                                      );
+                                    }}
+                                    className="flex w-full items-center gap-4 text-left"
+                                  >
+                                    <span className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-[1.2rem] bg-blue-50 text-blue-600">
+                                      {homeSearch.nearbySearching && (
+                                        <>
+                                          <motion.span
+                                            className="absolute inset-0 rounded-[1.2rem] border border-blue-600/35"
+                                            animate={{
+                                              scale: [0.82, 1.35, 1.65],
+                                              opacity: [0.8, 0.25, 0],
+                                            }}
+                                            transition={{
+                                              duration: 1.35,
+                                              repeat: Infinity,
+                                              ease: "easeOut",
+                                            }}
+                                          />
+                                          <motion.span
+                                            className="absolute inset-1 rounded-[1rem] bg-blue-600/10"
+                                            animate={{
+                                              scale: [0.8, 1.25, 1.5],
+                                              opacity: [0.75, 0.28, 0],
+                                            }}
+                                            transition={{
+                                              duration: 1.35,
+                                              repeat: Infinity,
+                                              delay: 0.42,
+                                              ease: "easeOut",
+                                            }}
+                                          />
+                                        </>
+                                      )}
+                                      <FiCompass className="relative h-5 w-5" />
+                                    </span>
+                                    <span className="min-w-0">
+                                      <span className="block text-base font-semibold leading-tight text-neutral-900 sm:text-lg">
+                                        {homeSearch.nearbySearching
+                                          ? `Recherche ${homeSearch.nearbyRadiusKm ?? ""} km`
+                                          : suggestion.title}
+                                      </span>
+                                      <span className="mt-1 block text-xs text-neutral-500 sm:text-sm">
+                                        {homeSearch.nearbySearching
+                                          ? "La carte se prépare avec les logements proches."
+                                          : suggestion.subtitle}
+                                      </span>
+                                    </span>
+                                  </button>
+                                  <div className="hide-scrollbar mt-3 flex gap-2 overflow-x-auto pb-0.5">
+                                    {(homeSearch.nearbyRadiusOptions ?? [1, 5, 15, 30]).map((radius) => (
+                                      <button
+                                        key={radius}
+                                        type="button"
+                                        onMouseDown={(event) => {
+                                          event.preventDefault();
+                                          homeSearch.onNearbyRadiusSelect?.(radius);
+                                        }}
+                                        className={`shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition ${
+                                          homeSearch.nearbyRadiusKm === radius
+                                            ? "bg-blue-600 text-white"
+                                            : "bg-white text-neutral-700 ring-1 ring-neutral-200 hover:bg-blue-50 hover:text-blue-700"
+                                        }`}
+                                      >
+                                        {radius} km
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <button
+                                key={`${suggestion.value}-${suggestion.title}`}
+                                type="button"
+                                onMouseDown={(event) => {
+                                  event.preventDefault();
+                                  saveRecentDestination(suggestion.value);
+                                  homeSearch.onSuggestionSelect?.(suggestion.value);
+                                }}
+                                className="flex w-full items-center gap-4 rounded-[1.4rem] px-3 py-3 text-left transition hover:bg-neutral-50"
+                              >
+                                <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-[1.2rem] ${toneClass}`}>
+                                  {suggestion.tone === "amber" ? (
+                                    <FiGrid className="h-5 w-5" />
+                                  ) : suggestion.tone === "emerald" ? (
+                                    <FiMapPin className="h-5 w-5" />
+                                  ) : (
+                                    <FiCompass className="h-5 w-5" />
+                                  )}
+                                </span>
+                                <span className="min-w-0">
+                                  <span className="block text-base font-semibold leading-tight text-neutral-900 sm:text-lg">
+                                    {suggestion.title}
+                                  </span>
+                                  <span className="mt-1 block text-xs text-neutral-500 sm:text-sm">
+                                    {suggestion.subtitle}
+                                  </span>
+                                </span>
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
                     ) : null}

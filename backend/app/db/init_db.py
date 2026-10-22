@@ -254,6 +254,32 @@ def _ensure_bootstrap_super_admin() -> None:
         db.close()
 
 
+def _ensure_visit_access_expiry_column() -> None:
+    inspector = inspect(engine)
+    if "visit_access_payments" not in inspector.get_table_names():
+        return
+
+    existing_columns = {column["name"] for column in inspector.get_columns("visit_access_payments")}
+    if "expires_at" in existing_columns:
+        return
+
+    with engine.begin() as connection:
+        connection.execute(
+            text("ALTER TABLE visit_access_payments ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP WITH TIME ZONE")
+        )
+        # Tickets paid before expiry existed get the standard window from their payment date.
+        connection.execute(
+            text(
+                "UPDATE visit_access_payments SET expires_at = paid_at + make_interval(days => :days) "
+                "WHERE payment_status = 'succeeded' AND paid_at IS NOT NULL AND expires_at IS NULL"
+            ),
+            {"days": settings.wave_visit_access_days},
+        )
+        connection.execute(
+            text("CREATE INDEX IF NOT EXISTS ix_visit_access_payments_expires_at ON visit_access_payments (expires_at)")
+        )
+
+
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
     _ensure_feature_modules_table()
@@ -262,5 +288,6 @@ def init_db() -> None:
     _ensure_owner_profile_kyc_columns()
     _ensure_property_payment_columns()
     _ensure_login_guard_columns()
+    _ensure_visit_access_expiry_column()
     _seed_default_feature_modules()
     _ensure_bootstrap_super_admin()

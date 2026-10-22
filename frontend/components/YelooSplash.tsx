@@ -39,6 +39,7 @@ export function YelooSplash() {
             <YelooWordmark
               casing="upper"
               markClassName="!text-[3.7rem] !font-extrabold !tracking-[-0.075em] !text-white sm:!text-[4.65rem]"
+              plusClassName="!text-white"
             />
             <motion.div
               initial={{ scaleX: 0 }}

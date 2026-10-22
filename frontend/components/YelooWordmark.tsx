@@ -4,6 +4,7 @@ type YelooWordmarkProps = {
   href?: string;
   className?: string;
   markClassName?: string;
+  plusClassName?: string;
   casing?: "title" | "upper";
   replace?: boolean;
 };
@@ -12,6 +13,7 @@ export function YelooWordmark({
   href,
   className = "",
   markClassName = "",
+  plusClassName = "",
   casing = "title",
   replace = false,
 }: YelooWordmarkProps) {
@@ -21,7 +23,11 @@ export function YelooWordmark({
       className={`yeloo-wordmark inline-flex items-end text-[2rem] font-extrabold leading-none tracking-[-0.075em] text-neutral-950 ${markClassName}`}
     >
       <span>{label}</span>
-      <span className="yeloo-wordmark-plus ml-0.5 text-[2.12rem] font-extrabold leading-none text-[#2563eb]">+</span>
+      <span
+        className={`yeloo-wordmark-plus ml-0.5 text-[2.12rem] font-extrabold leading-none text-[var(--yeloo-blue)] ${plusClassName}`}
+      >
+        +
+      </span>
     </span>
   );
 

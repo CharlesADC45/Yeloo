@@ -266,7 +266,8 @@ export function PwaInstallBanner() {
             <div className="min-w-0">
               <YelooWordmark
                 casing="upper"
-                markClassName="!text-[1.58rem] !font-extrabold !tracking-[-0.075em] !text-white"
+                markClassName="!text-[1.42rem] !font-extrabold !tracking-[-0.075em] !text-white"
+                plusClassName="!text-white"
               />
               <p className="mt-1 text-xs font-medium text-white/62">yeloo.app</p>
             </div>

@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.modules import is_feature_enabled
 from app.core.security import get_current_user
+from app.core.visit_access import ensure_paid_visit_access
 from app.db.deps import get_db
 from app.models.property import Property
 from app.models.user import User
@@ -94,6 +95,7 @@ def create_visit_request_for_property(
         raise HTTPException(status_code=404, detail="Logement introuvable.")
     if not property_obj.owner_id:
         raise HTTPException(status_code=400, detail="Proprietaire introuvable pour cette annonce.")
+    ensure_paid_visit_access(db, property_obj.id, current_user.id)
 
     existing = (
         db.query(VisitRequest)

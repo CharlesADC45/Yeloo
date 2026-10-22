@@ -22,6 +22,7 @@ const DEFAULT_FILTERS: PropertyFilters = {
   maxPrice: "",
   propertyType: "",
 };
+const NEARBY_RADIUS_OPTIONS = [1, 5, 15, 30];
 
 function HomePageContent() {
   const router = useRouter();
@@ -30,6 +31,8 @@ function HomePageContent() {
   const [isCompactSearch, setIsCompactSearch] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const [isSearchEngaged, setIsSearchEngaged] = useState(false);
+  const [homeNearbySearching, setHomeNearbySearching] = useState(false);
+  const [homeNearbyRadiusKm, setHomeNearbyRadiusKm] = useState<number | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const { properties, isLoading, error, refetch } = useProperties();
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
@@ -39,6 +42,7 @@ function HomePageContent() {
   const locationsSectionRef = useRef<HTMLElement | null>(null);
   const homeRootRef = useRef<HTMLDivElement | null>(null);
   const scrollTopTimerRef = useRef<number | null>(null);
+  const homeNearbyTimerRef = useRef<number | null>(null);
 
   const visibleProperties = useMemo(
     () => applyPropertyFilters(properties, filters),
@@ -95,6 +99,7 @@ function HomePageContent() {
         title: nearbyLabel,
         subtitle: "Découvrez les options proches de vous",
         tone: "blue" as const,
+        kind: "nearby" as const,
       },
       ...cities.map((city, index) => ({
         value: city,
@@ -146,6 +151,9 @@ function HomePageContent() {
       window.removeEventListener("scroll", handleScroll);
       if (scrollTopTimerRef.current) {
         window.clearTimeout(scrollTopTimerRef.current);
+      }
+      if (homeNearbyTimerRef.current) {
+        window.clearTimeout(homeNearbyTimerRef.current);
       }
     };
   }, []);
@@ -204,6 +212,21 @@ function HomePageContent() {
     setFilters((prev) => ({ ...prev, city: value }));
     setIsSearchEngaged(false);
     setIsSearchOpen(false);
+  };
+
+  const handleNearbyRadiusSelect = (radiusKm: number) => {
+    setHomeNearbyRadiusKm(radiusKm);
+    setHomeNearbySearching(true);
+    setIsSearchEngaged(true);
+    setIsSearchOpen(false);
+
+    if (homeNearbyTimerRef.current) {
+      window.clearTimeout(homeNearbyTimerRef.current);
+    }
+
+    homeNearbyTimerRef.current = window.setTimeout(() => {
+      router.push(`/carte?nearby=${radiusKm}`);
+    }, 1700);
   };
 
   const renderCarousel = (
@@ -301,6 +324,9 @@ function HomePageContent() {
           showFilterButton,
           showSuggestions: isSearchEngaged,
           suggestions: destinationSuggestions,
+          nearbyRadiusOptions: NEARBY_RADIUS_OPTIONS,
+          nearbySearching: homeNearbySearching,
+          nearbyRadiusKm: homeNearbyRadiusKm,
           onChange: handleQuickSearch,
           onSubmit: handleSearchSubmit,
           onFocus: () => setIsSearchEngaged(true),
@@ -316,8 +342,11 @@ function HomePageContent() {
           onClear: () => {
             setFilters((prev) => ({ ...prev, city: "" }));
             setIsSearchEngaged(false);
+            setHomeNearbySearching(false);
+            setHomeNearbyRadiusKm(null);
           },
           onSuggestionSelect: handleSuggestionSelect,
+          onNearbyRadiusSelect: handleNearbyRadiusSelect,
         }}
       />
 

@@ -36,6 +36,13 @@ class Settings(BaseSettings):
     vapid_public_key: str | None = None
     vapid_private_key: str | None = None
     vapid_subject: str = "mailto:admin@yeloo.ci"
+    wave_api_key: str | None = None
+    wave_api_base_url: str = "https://api.wave.com"
+    wave_checkout_currency: str = "XOF"
+    wave_visit_access_amount: int = 3000
+    wave_visit_access_days: int = 30
+    wave_webhook_secret: str | None = None
+    wave_webhook_tolerance_seconds: int = 300
 
     @field_validator("frontend_origins", mode="before")
     @classmethod

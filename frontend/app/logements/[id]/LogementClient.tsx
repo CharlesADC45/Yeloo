@@ -16,6 +16,7 @@ import {
   FiHeart,
   FiHome,
   FiLayers,
+  FiLock,
   FiMapPin,
   FiPhone,
   FiPlay,
@@ -31,6 +32,12 @@ import { TopBar } from "@/components/TopBar";
 import { fetchPublicModules } from "@/lib/modules";
 import { useProperty } from "@/hooks/useProperties";
 import { ensureConversation } from "@/lib/messages";
+import {
+  createVisitAccessCheckout,
+  getVisitAccessStatus,
+  verifyVisitAccessPayment,
+  type VisitAccessStatus,
+} from "@/lib/payments";
 import {
   createVisitRequestForProperty,
   getVisitRequestForProperty,
@@ -53,6 +60,7 @@ type MapProps = {
 
 const ABIDJAN_CENTER = { latitude: 5.3599517, longitude: -4.0082563 };
 const VISIT_TIME_SLOTS = ["09:00", "10:30", "12:00", "14:00", "15:30", "17:00", "18:30"];
+const VISIT_ACCESS_PRICE = 3000;
 
 function formatVisitDate(value?: string | null) {
   if (!value) return "";
@@ -313,6 +321,11 @@ export function LogementClient({ id }: Props) {
   const [visitMessage, setVisitMessage] = useState("");
   const [visitError, setVisitError] = useState<string | null>(null);
   const [isSendingVisit, setIsSendingVisit] = useState(false);
+  const [visitAccessNotice, setVisitAccessNotice] = useState<string | null>(null);
+  const [visitAccessStatus, setVisitAccessStatus] = useState<VisitAccessStatus | null>(null);
+  const [isCheckingVisitAccess, setIsCheckingVisitAccess] = useState(false);
+  const [isVerifyingWavePayment, setIsVerifyingWavePayment] = useState(false);
+  const [isStartingWavePayment, setIsStartingWavePayment] = useState(false);
   const [commentDraft, setCommentDraft] = useState("");
   const [commentSaved, setCommentSaved] = useState(false);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
@@ -362,6 +375,8 @@ export function LogementClient({ id }: Props) {
   const ownerProfileImageUrl = property?.ownerProfileImageUrl;
   const pricePeriodLabel = property?.pricePeriod || "mois";
   const formatPrice = (value: number) => value.toLocaleString("en-US");
+  const hasPaidVisitAccess = Boolean(visitAccessStatus?.has_access);
+  const visitAccessAmount = visitAccessStatus?.amount ?? VISIT_ACCESS_PRICE;
   const descriptionText =
     property?.description ||
     "Cette annonce n'a pas encore de description détaillée. Utilisez le flow de demande pour échanger avec le propriétaire et confirmer les derniers détails.";
@@ -449,6 +464,10 @@ export function LogementClient({ id }: Props) {
       router.push(`/connexion?next=/logements/${resolvedId}`);
       return;
     }
+    if (!hasPaidVisitAccess) {
+      setChatError("Réservez votre ticket de visite Wave pour débloquer la messagerie propriétaire.");
+      return;
+    }
     setIsOpeningChat(true);
     setChatError(null);
     try {
@@ -479,6 +498,10 @@ export function LogementClient({ id }: Props) {
       router.push(`/connexion?next=/logements/${resolvedId}`);
       return;
     }
+    if (!hasPaidVisitAccess) {
+      setVisitError("Réservez votre ticket de visite Wave pour débloquer les créneaux.");
+      return;
+    }
     if (!visitDate) {
       setVisitError("Choisissez une date et une heure pour la visite.");
       return;
@@ -500,6 +523,80 @@ export function LogementClient({ id }: Props) {
       setIsSendingVisit(false);
     }
   };
+
+  const handleStartWavePayment = async () => {
+    if (!resolvedId) return;
+    if (!isAuthenticated || !token) {
+      router.push(`/connexion?next=/logements/${resolvedId}`);
+      return;
+    }
+
+    setIsStartingWavePayment(true);
+    setVisitAccessNotice("Création du paiement Wave...");
+    try {
+      const returnUrl =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/logements/${resolvedId}`
+          : undefined;
+      const checkout = await createVisitAccessCheckout(token, resolvedId, {
+        success_url: returnUrl,
+        error_url: returnUrl,
+      });
+      setVisitAccessNotice("Ouverture Wave Business...");
+      window.location.href = checkout.wave_launch_url;
+    } catch (err) {
+      setIsStartingWavePayment(false);
+      setVisitAccessNotice(
+        err instanceof Error ? err.message : "Impossible de démarrer le paiement Wave."
+      );
+    }
+  };
+
+  const renderVisitAccessPaymentGate = () => (
+    <div className="rounded-[1.5rem] border border-neutral-200 bg-white p-4 shadow-sm">
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-700">
+          <FiLock />
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-neutral-950">
+            Ticket de rendez-vous Wave
+          </p>
+          <p className="mt-1 text-sm leading-6 text-neutral-600">
+            Les créneaux de visite et la messagerie propriétaire sont débloqués après paiement.
+          </p>
+        </div>
+      </div>
+      <div className="mt-4 rounded-2xl bg-neutral-50 px-4 py-3">
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
+            Montant
+          </span>
+          <span className="text-lg font-semibold text-neutral-950">
+            {formatPrice(visitAccessAmount)} F
+          </span>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={handleStartWavePayment}
+        disabled={isStartingWavePayment}
+        className="mt-4 inline-flex w-full items-center justify-center rounded-full bg-[#2563eb] px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-70"
+      >
+        {isStartingWavePayment ? "Ouverture Wave..." : "Payer avec Wave"}
+      </button>
+      {(isCheckingVisitAccess || isVerifyingWavePayment) && (
+        <p className="mt-3 rounded-2xl bg-neutral-50 px-4 py-3 text-xs leading-5 text-neutral-600">
+          Vérification du ticket de visite...
+        </p>
+      )}
+      {visitAccessNotice && (
+        <p className="mt-3 rounded-2xl bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-700">
+          {visitAccessNotice}
+        </p>
+      )}
+    </div>
+  );
 
   const handleSaveComment = () => {
     if (!resolvedId) return;
@@ -537,10 +634,23 @@ export function LogementClient({ id }: Props) {
 
   useEffect(() => {
     if (!resolvedId || !token || isOwnerViewer) {
+      setVisitAccessStatus(null);
       setVisitRequest(null);
       return;
     }
     let active = true;
+    setIsCheckingVisitAccess(true);
+    getVisitAccessStatus(token, resolvedId)
+      .then((status) => {
+        if (active) setVisitAccessStatus(status);
+      })
+      .catch(() => {
+        if (active) setVisitAccessStatus(null);
+      })
+      .finally(() => {
+        if (active) setIsCheckingVisitAccess(false);
+      });
+
     getVisitRequestForProperty(resolvedId, token)
       .then((request) => {
         if (active) setVisitRequest(request);
@@ -548,6 +658,51 @@ export function LogementClient({ id }: Props) {
       .catch(() => {
         if (active) setVisitRequest(null);
       });
+    return () => {
+      active = false;
+    };
+  }, [isOwnerViewer, resolvedId, token]);
+
+  useEffect(() => {
+    if (!resolvedId || !token || isOwnerViewer || typeof window === "undefined") return;
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const waveStatus = searchParams.get("wave_status");
+    const paymentId = searchParams.get("visit_payment_id");
+
+    if (waveStatus === "error") {
+      setVisitAccessNotice("Paiement Wave annulé ou impossible. Vous pouvez réessayer.");
+      window.history.replaceState({}, "", `/logements/${resolvedId}`);
+      return;
+    }
+
+    if (waveStatus !== "success" || !paymentId) return;
+
+    let active = true;
+    setIsVerifyingWavePayment(true);
+    setVisitAccessNotice("Vérification du paiement Wave...");
+    verifyVisitAccessPayment(token, paymentId)
+      .then((status) => {
+        if (!active) return;
+        setVisitAccessStatus(status);
+        setVisitAccessNotice(
+          status.has_access
+            ? "Ticket de visite confirmé. Vous pouvez choisir un créneau ou écrire au propriétaire."
+            : "Paiement en cours de traitement chez Wave. Réessayez dans quelques instants."
+        );
+      })
+      .catch((err) => {
+        if (!active) return;
+        setVisitAccessNotice(
+          err instanceof Error ? err.message : "Impossible de vérifier le paiement Wave."
+        );
+      })
+      .finally(() => {
+        if (!active) return;
+        setIsVerifyingWavePayment(false);
+        window.history.replaceState({}, "", `/logements/${resolvedId}`);
+      });
+
     return () => {
       active = false;
     };
@@ -620,7 +775,7 @@ export function LogementClient({ id }: Props) {
 
   const renderOwnerActions = () => (
     <div className="space-y-3">
-      {!isOwnerViewer && isChatEnabled && (
+      {!isOwnerViewer && isChatEnabled && hasPaidVisitAccess && (
         <button
           type="button"
           onClick={() => void handleOpenChat()}
@@ -632,6 +787,16 @@ export function LogementClient({ id }: Props) {
             : isOpeningChat
               ? "Ouverture..."
               : "Contacter le propriétaire"}
+        </button>
+      )}
+      {!isOwnerViewer && isChatEnabled && !hasPaidVisitAccess && isAuthenticated && (
+        <button
+          type="button"
+          onClick={() => setChatError("Payez le ticket Wave pour débloquer la messagerie propriétaire.")}
+          className="inline-flex w-full items-center justify-center rounded-full border border-neutral-200 bg-neutral-50 px-5 py-3 text-sm font-semibold text-neutral-500"
+        >
+          <FiLock className="mr-2" />
+          Message verrouillé
         </button>
       )}
       {!isAuthenticated && property && (
@@ -1095,6 +1260,15 @@ export function LogementClient({ id }: Props) {
                         <p className="mt-3 rounded-2xl bg-blue-50 px-3 py-2 text-xs leading-5 text-neutral-600">
                           {visitRequest.owner_message}
                         </p>
+                      )}
+                    </div>
+                  ) : !hasPaidVisitAccess ? (
+                    <div className="mt-5">
+                      {renderVisitAccessPaymentGate()}
+                      {visitError && (
+                        <div className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
+                          {visitError}
+                        </div>
                       )}
                     </div>
                   ) : (

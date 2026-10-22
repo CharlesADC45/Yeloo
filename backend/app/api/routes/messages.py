@@ -12,6 +12,7 @@ from app.core.modules import is_feature_enabled
 from app.core.security import get_current_user
 from app.core.storage import get_upload_dir
 from app.core.storage_minio import build_object_key, is_minio_configured, upload_file
+from app.core.visit_access import ensure_paid_visit_access
 from app.db.deps import get_db
 from app.models.conversation import Conversation
 from app.models.message import Message
@@ -182,6 +183,7 @@ def ensure_conversation_for_property(
         raise HTTPException(status_code=404, detail="Annonce introuvable.")
     if not property_obj.owner:
         raise HTTPException(status_code=400, detail="Proprietaire introuvable pour cette annonce.")
+    ensure_paid_visit_access(db, property_obj.id, current_user.id)
 
     conversation = _conversation_query(db).filter(
         Conversation.property_id == property_obj.id,
@@ -236,6 +238,8 @@ def send_message(
 ):
     _guard_chat_enabled(db)
     conversation = _get_accessible_conversation(db, conversation_id, current_user)
+    if current_user.id == conversation.tenant_id:
+        ensure_paid_visit_access(db, conversation.property_id, current_user.id)
     message = Message(
         conversation_id=conversation.id,
         sender_id=current_user.id,
@@ -260,6 +264,8 @@ def send_attachment(
 ):
     _guard_chat_enabled(db)
     conversation = _get_accessible_conversation(db, conversation_id, current_user)
+    if current_user.id == conversation.tenant_id:
+        ensure_paid_visit_access(db, conversation.property_id, current_user.id)
     attachment_url, attachment_type = _store_attachment(file, conversation.id)
     message = Message(
         conversation_id=conversation.id,

@@ -90,6 +90,7 @@ function CartePageContent() {
   const mobileSheetTopRef = useRef(0);
   const scrollTopTimerRef = useRef<number | null>(null);
   const nearbyZoomTimersRef = useRef<number[]>([]);
+  const nearbyUrlParamHandledRef = useRef(false);
   const { properties, isLoading, error, refetch } = useProperties();
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
   const favoriteIds = useFavoritesStore((s) => s.favoriteIds);
@@ -294,6 +295,20 @@ function CartePageContent() {
       { enableHighAccuracy: true, maximumAge: 1000 * 60 * 10, timeout: 7000 }
     );
   };
+
+  useEffect(() => {
+    if (nearbyUrlParamHandledRef.current || typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+    const radiusParam = Number(params.get("nearby"));
+    if (!NEARBY_RADIUS_OPTIONS.includes(radiusParam)) return;
+
+    nearbyUrlParamHandledRef.current = true;
+    const timer = window.setTimeout(() => {
+      handleNearbyRadiusSelect(radiusParam);
+    }, 320);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const clearNearbyFilter = () => {
     setNearbyFilter(null);
