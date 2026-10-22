@@ -21,6 +21,7 @@ import {
   updateLeaseRequestStatus,
 } from "@/lib/leaseRequests";
 import { useAuthStore } from "@/stores/authStore";
+import { formatPrice } from "@/lib/format";
 
 type Props = {
   leaseRequestId: string;
@@ -197,7 +198,7 @@ export function LeaseRequestOwnerClient({ leaseRequestId }: Props) {
                       <p className="mt-3 text-lg font-semibold text-neutral-950">{leaseRequest.property_title}</p>
                       <div className="mt-3 space-y-2 text-sm text-neutral-600">
                         <p className="flex items-center gap-2"><FiMapPin className="text-neutral-400" />{location}</p>
-                        <p className="flex items-center gap-2"><FiFileText className="text-neutral-400" />{leaseRequest.property_type} · {leaseRequest.property_price.toLocaleString("fr-FR")} FCFA / {leaseRequest.property_price_period}</p>
+                        <p className="flex items-center gap-2"><FiFileText className="text-neutral-400" />{leaseRequest.property_type} · {formatPrice(leaseRequest.property_price)} FCFA / {leaseRequest.property_price_period}</p>
                       </div>
                     </div>
                     <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-4">

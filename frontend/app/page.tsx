@@ -14,6 +14,7 @@ import { useProperties } from "@/hooks/useProperties";
 import { applyPropertyFilters } from "@/lib/properties";
 import type { Property, PropertyFilters } from "@/lib/properties";
 import { useFavoritesStore } from "@/stores/favoritesStore";
+import { formatPriceLabel } from "@/lib/format";
 
 const DEFAULT_FILTERS: PropertyFilters = {
   city: "",
@@ -301,7 +302,7 @@ function HomePageContent() {
                 {typeof property.rooms === "number" ? `${property.rooms} lits` : "— lits"}
               </p>
               <p className="text-xs text-neutral-500">
-                {property.price.toLocaleString("en-US")} FCFA
+                {formatPriceLabel(property.price, property.pricePeriod)}
               </p>
             </div>
           </article>
@@ -316,7 +317,7 @@ function HomePageContent() {
       className="yeloo-home-shell flex min-h-screen flex-col bg-[linear-gradient(180deg,#f8fafc_0%,#f3f8ff_44%,#f8fafc_100%)]"
     >
       <TopBar
-        homeTitle="Commence ta recherche"
+        homeTitle="Commencez votre recherche"
         homeSubtitle="Explore les logements populaires à Abidjan et dans toute la Côte d'Ivoire."
         homeSearch={{
           compact: compactInHeader,

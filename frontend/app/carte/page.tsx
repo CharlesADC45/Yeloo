@@ -29,6 +29,7 @@ import { useProperties } from "@/hooks/useProperties";
 import { useT } from "@/lib/i18n";
 import { applyPropertyFilters, PropertyFilters } from "@/lib/properties";
 import { useFavoritesStore } from "@/stores/favoritesStore";
+import { formatPrice } from "@/lib/format";
 
 const DEFAULT_FILTERS: PropertyFilters = {
   city: "",
@@ -615,7 +616,7 @@ function CartePageContent() {
           <p className="text-sm leading-4 text-neutral-600">{facts.join(" · ")}</p>
         )}
         <p className="text-[0.98rem] leading-5 text-neutral-900">
-          <span className="font-semibold">{property.price.toLocaleString("en-US")} FCFA</span>
+          <span className="font-semibold">{formatPrice(property.price)} FCFA</span>
           <span className="text-neutral-500"> / {formatPricePeriod(property.pricePeriod)}</span>
         </p>
         <div className="pt-2">
@@ -1613,7 +1614,7 @@ function CartePageContent() {
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
                               <p className="text-base font-semibold tracking-tight text-neutral-950">
-                                {property.price.toLocaleString("en-US")} FCFA
+                                {formatPrice(property.price)} FCFA
                                 <span className="font-normal text-neutral-500"> / {formatPricePeriod(property.pricePeriod)}</span>
                               </p>
                               <p className="mt-0.5 line-clamp-1 text-sm font-semibold text-neutral-900">

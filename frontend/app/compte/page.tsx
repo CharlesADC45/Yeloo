@@ -354,7 +354,7 @@ export default function ComptePage() {
                         {user?.role === "admin"
                           ? "Admin"
                           : user?.role === "proprietaire"
-                            ? "Bailleur"
+                            ? "Propriétaire"
                             : "Locataire"}
                       </p>
                     </div>

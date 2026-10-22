@@ -194,12 +194,12 @@ export function PwaInstallBanner() {
 
   const helperText = useMemo(() => {
     if (installPrompt) {
-      return "Ouvrez l'app plus vite, avec une experience plein ecran.";
+      return "Ouvrez l'app plus vite, avec une expérience plein écran.";
     }
     if (isIos) {
-      return "Sur iOS, appuyez sur Partager puis choisissez Ajouter a l'ecran d'accueil.";
+      return "Sur iOS, appuyez sur Partager puis choisissez Ajouter à l'écran d'accueil.";
     }
-    return "Ajoutez Yeloo+ a votre ecran d'accueil pour ouvrir l'app plus vite.";
+    return "Ajoutez Yeloo+ à votre écran d'accueil pour ouvrir l'app plus vite.";
   }, [installPrompt, isIos]);
 
   const dismiss = () => {
@@ -213,7 +213,7 @@ export function PwaInstallBanner() {
         await navigator
           .share({
             title: "Yeloo+",
-            text: "Installez Yeloo+ sur votre ecran d'accueil.",
+            text: "Installez Yeloo+ sur votre écran d'accueil.",
             url: window.location.origin,
           })
           .catch(() => null);
@@ -292,7 +292,7 @@ export function PwaInstallBanner() {
           </div>
 
           <div className="px-5 py-4">
-            <p className="text-sm font-black">Ajoutez Yeloo+ a votre ecran d'accueil.</p>
+            <p className="text-sm font-black">Ajoutez Yeloo+ à votre écran d'accueil.</p>
             <p className="mt-1 max-w-[20rem] text-sm leading-5 text-neutral-600">{helperText}</p>
             <div className="mt-5 rounded-[1.5rem] bg-neutral-50 p-4">
               <p className="text-xs font-black uppercase tracking-[0.16em] text-neutral-500">
@@ -309,7 +309,7 @@ export function PwaInstallBanner() {
                   <span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-50 text-blue-700">
                     <FiShare />
                   </span>
-                  <span>iPhone/Safari: Partager, puis Ajouter a l'ecran d'accueil.</span>
+                  <span>iPhone/Safari: Partager, puis Ajouter à l'écran d'accueil.</span>
                 </div>
               </div>
             </div>

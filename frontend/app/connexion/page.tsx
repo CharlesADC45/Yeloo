@@ -134,7 +134,7 @@ export default function ConnexionPage() {
             Connexion
           </h1>
           <p className="mt-4 text-sm font-semibold">
-            Accedez a votre compte Yeloo
+            Accédez à votre compte Yeloo
           </p>
 
           <form className="mt-4 space-y-3 text-xs text-neutral-600" onSubmit={handleSubmit}>
@@ -191,7 +191,7 @@ export default function ConnexionPage() {
           <p className="mt-4 text-center text-xs text-neutral-500">
             Pas encore de compte ?{" "}
             <Link href="/inscription" className="font-semibold text-blue-600">
-              Creer un compte
+              Créer un compte
             </Link>
           </p>
         </motion.section>

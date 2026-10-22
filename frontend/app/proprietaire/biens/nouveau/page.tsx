@@ -886,12 +886,12 @@ export default function NouveauBienPage() {
                         initial={false}
                         animate={{
                           scale: isActive ? 1.08 : 1,
-                          backgroundColor: isDone ? "#2563eb" : "#ffffff",
-                          borderColor: isDone || isActive ? "#2563eb" : "#d4d4d8",
+                          backgroundColor: isDone ? "#1d4ed8" : "#ffffff",
+                          borderColor: isDone || isActive ? "#1d4ed8" : "#d4d4d8",
                           color: isDone
                             ? "#ffffff"
                             : isActive
-                              ? "#2563eb"
+                              ? "#1d4ed8"
                               : "#a3a3a3",
                           boxShadow: isActive
                             ? "0 0 0 6px rgba(37, 99, 235, 0.10)"
@@ -1400,7 +1400,7 @@ export default function NouveauBienPage() {
                         ) : (
                           <img
                             src={tourDisplayUrl}
-                            alt="Apercu visite 360"
+                            alt="Aperçu visite 360"
                             className="mt-4 h-28 w-full rounded-xl object-cover"
                           />
                         )

@@ -1,23 +1,16 @@
 ﻿"use client";
 
-import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   FiBell,
-  FiBellOff,
   FiCheckCircle,
-  FiChevronRight,
   FiCompass,
   FiGrid,
-  FiHeart,
-  FiLogOut,
   FiMapPin,
-  FiMessageCircle,
   FiSearch,
-  FiSettings,
-  FiUser,
   FiX,
 } from "react-icons/fi";
 import { adminNavItems } from "@/lib/adminNav";
@@ -30,7 +23,7 @@ import {
   getUnreadNotifications,
   useNotificationStore,
 } from "@/stores/notificationStore";
-import { PreferenceControls } from "@/components/PreferenceControls";
+import { SiteMenu, SiteMenuButton, type SiteMenuEntry } from "@/components/SiteMenu";
 import { YelooWordmark } from "@/components/YelooWordmark";
 import { useT } from "@/lib/i18n";
 
@@ -142,31 +135,49 @@ function TopBarContent({
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [locationLabel, setLocationLabel] = useState("Localisation");
   const [recentDestinations, setRecentDestinations] = useState<string[]>([]);
-  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
-  const menuPanelRef = useRef<HTMLDivElement | null>(null);
   const notificationPrefs = getNotificationPrefs(prefsByUser, user?.id);
   const notificationsEnabled = notificationPrefs.ownerPostNotifications;
-  const isDesktopViewport = (viewportWidth ?? 0) >= 1024;
-  const publicMenuItems = [
-    { href: "/", label: t("explore"), matchLabel: "Explorer", icon: FiSearch },
-    { href: "/favoris", label: t("favorites"), matchLabel: "Favoris", icon: FiHeart },
-    { href: "/carte", label: t("map"), matchLabel: "Carte", icon: FiMapPin },
-    {
-      href: isAuthenticated ? "/messages" : "/connexion?next=/messages",
-      label: t("messages"),
-      matchLabel: "Messages",
-      icon: FiMessageCircle,
-    },
-    {
-      href: isAuthenticated ? "/compte" : "/connexion",
-      label: t("profile"),
-      matchLabel: "Profil",
-      icon: FiUser,
-    },
-  ].filter((item) => {
-    if (isAuthenticated) return true;
-    return item.matchLabel === "Explorer" || item.matchLabel === "Carte";
-  });
+  const closeMenu = useCallback(() => setIsMenuOpen(false), []);
+  const handleLogout = () => {
+    setIsMenuOpen(false);
+    logout();
+    router.replace("/connexion?logged_out=1");
+  };
+
+  const menuEntries: SiteMenuEntry[] = isAdminRoute
+    ? adminNavItems.map(({ href, label, isActive }) => ({ kind: "link", href, label, isActive }))
+    : isOwnerRoute
+      ? ownerNavItems.map(({ href, label, isActive }) => ({ kind: "link", href, label, isActive }))
+      : [
+          { kind: "link", href: "/", label: t("homeNav") },
+          { kind: "link", href: "/carte", label: t("map"), isActive: (path) => path.startsWith("/carte") },
+          isAuthenticated
+            ? {
+                kind: "group",
+                label: t("myYeloo"),
+                links: [
+                  { href: "/favoris", label: t("favorites") },
+                  { href: "/messages", label: t("messages"), isActive: (path) => path.startsWith("/messages") },
+                  { href: "/compte", label: t("profile") },
+                  { href: "/compte/parametres", label: t("settings") },
+                ],
+              }
+            : { kind: "link", href: "/connexion", label: t("loginOrRegister") },
+          {
+            kind: "group",
+            label: t("forOwners"),
+            links: [
+              { href: "/proprietaire/nouveau", label: t("publishListing") },
+              ...(isOwnerRole ? [{ href: "/proprietaire", label: t("ownerSpace") }] : []),
+              ...(isAdminRole ? [{ href: "/admin", label: "Super admin" }] : []),
+            ],
+          },
+        ];
+  const menuCta = isOwnerRoute
+    ? { href: "/proprietaire/nouveau", label: t("publishListing") }
+    : isAdminRoute
+      ? { href: "/", label: t("explore") }
+      : { href: actionHref, label: actionLabel };
 
   const visibleNotifications = useMemo(() => {
     if (!user?.id) return [];
@@ -199,7 +210,7 @@ function TopBarContent({
   const notificationPanelState = useMemo(() => {
     if (isOwnerRole) return `${unreadNotifications.length} non lue(s)`;
     if (unreadNotifications.length > 0) return `${unreadNotifications.length} non lue(s)`;
-    return notificationsEnabled ? "Aucune alerte non lue" : "Annonces desactivees";
+    return notificationsEnabled ? "Aucune alerte non lue" : "Annonces désactivées";
   }, [isOwnerRole, notificationsEnabled, unreadNotifications.length]);
 
   const showNotificationPreferenceNotice =
@@ -259,31 +270,8 @@ function TopBarContent({
   }, [setUser, token, user?.id]);
 
   useEffect(() => {
-    if (!isMenuOpen || isDesktopViewport) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previous;
-    };
-  }, [isDesktopViewport, isMenuOpen]);
-
-  useEffect(() => {
     setIsNotificationsOpen(false);
   }, [pathname]);
-
-  useEffect(() => {
-    if (!isMenuOpen || !isDesktopViewport) return;
-
-    const handlePointerDown = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (menuPanelRef.current?.contains(target)) return;
-      if (menuButtonRef.current?.contains(target)) return;
-      setIsMenuOpen(false);
-    };
-
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, [isDesktopViewport, isMenuOpen]);
 
   useEffect(() => {
     if (!isNotificationsOpen) return;
@@ -852,15 +840,7 @@ function TopBarContent({
                 </div>
               ) : null}
 
-              <button
-                ref={menuButtonRef}
-                type="button"
-                onClick={() => setIsMenuOpen(true)}
-                className="yeloo-menu-button flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white/90 shadow-soft"
-                aria-label="Menu"
-              >
-                <img src="/icons/menu.png" alt="" className="yeloo-menu-icon h-6 w-6 object-contain" />
-              </button>
+              <SiteMenuButton onClick={() => setIsMenuOpen(true)} />
             </div>
           </div>
 
@@ -879,7 +859,7 @@ function TopBarContent({
               >
                 <div className="mx-auto w-full max-w-3xl">
                   <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                    {homeTitle || "Commence ta recherche"}
+                    {homeTitle || "Commencez votre recherche"}
                   </h1>
                   {/* <p className="mt-2 text-sm text-neutral-600 sm:text-base">
                     {homeSubtitle || "Explore les logements populaires à Abidjan et dans toute la Côte d'Ivoire."}
@@ -903,288 +883,13 @@ function TopBarContent({
         </div>
       </header>
 
-      <AnimatePresence>
-        {isMenuOpen && (
-          <motion.div
-            className="fixed inset-0 z-[1001]"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            {!isDesktopViewport ? (
-              <>
-                <motion.button
-                  type="button"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="absolute inset-0 bg-black/30 backdrop-blur-sm"
-                  aria-label={t("closeMenu")}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                />
-                <motion.aside
-                  className="absolute right-0 top-0 flex h-full w-[85%] max-w-xs flex-col bg-white shadow-2xl"
-                  initial={{ x: "100%" }}
-                  animate={{ x: 0 }}
-                  exit={{ x: "100%" }}
-                  transition={{ type: "spring", stiffness: 260, damping: 26 }}
-                >
-              <div className="flex items-center justify-between border-b border-neutral-200 px-5 py-4">
-                <span className="text-lg font-semibold text-neutral-900">{t("menu")}</span>
-                <button
-                  type="button"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 text-neutral-700"
-                >
-                  <FiX />
-                </button>
-              </div>
-              <div className="flex flex-1 flex-col px-5 py-4 text-sm">
-                {isAdminRoute ? (
-                  <div className="flex flex-1 flex-col gap-2">
-                    <div className="rounded-2xl bg-blue-600 px-4 py-4 text-white shadow-soft">
-                      <p className="text-sm font-semibold">Super admin</p>
-                      <p className="mt-1 text-xs text-white/80">Pilotage global de Yeloo</p>
-                    </div>
-                    <nav className="mt-2 flex flex-col gap-2">
-                      {adminNavItems.map(({ href, label, Icon, isActive }) => {
-                        const active = pathname ? isActive(pathname) : false;
-                        return (
-                          <Link
-                            key={label}
-                            href={href}
-                            replace
-                            onClick={() => setIsMenuOpen(false)}
-                            className={`flex items-center gap-3 rounded-2xl px-4 py-3 transition ${
-                              active
-                                ? "bg-blue-50 text-blue-700 shadow-sm"
-                                : "text-neutral-600 hover:bg-neutral-50"
-                            }`}
-                          >
-                            <Icon />
-                            {label}
-                          </Link>
-                        );
-                      })}
-                    </nav>
-                    <div className="mt-3 rounded-2xl border border-neutral-200 bg-white p-3">
-                      <PreferenceControls compact />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        logout();
-                        router.replace("/connexion?logged_out=1");
-                      }}
-                      className="mt-3 flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-neutral-600 hover:bg-neutral-50"
-                    >
-                      <FiLogOut />
-                      {t("logout")}
-                    </button>
-                  </div>
-                ) : isOwnerRoute ? (
-                  <div className="flex flex-1 flex-col gap-2">
-                    <div className="rounded-2xl bg-blue-600 px-4 py-4 text-white shadow-soft">
-                      <p className="text-sm font-semibold">{t("ownerSpace")}</p>
-                      <p className="mt-1 text-xs text-white/80">{t("dashboardNavigation")}</p>
-                    </div>
-                    <nav className="mt-2 flex flex-col gap-2">
-                      {ownerNavItems.map(({ href, label, Icon, isActive }) => {
-                        const active = pathname ? isActive(pathname) : false;
-                        return (
-                          <Link
-                            key={label}
-                            href={href}
-                            replace
-                            onClick={() => setIsMenuOpen(false)}
-                            className={`flex items-center gap-3 rounded-2xl px-4 py-3 transition ${
-                              active
-                                ? "bg-blue-50 text-blue-700 shadow-sm"
-                                : "text-neutral-600 hover:bg-neutral-50"
-                            }`}
-                          >
-                            <Icon />
-                            {label}
-                          </Link>
-                        );
-                      })}
-                    </nav>
-                    <div className="mt-3 rounded-2xl border border-neutral-200 bg-white p-3">
-                      <PreferenceControls compact />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        logout();
-                        router.replace("/connexion?logged_out=1");
-                      }}
-                      className="mt-3 flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-neutral-600 hover:bg-neutral-50"
-                    >
-                      <FiLogOut />
-                      {t("logout")}
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex flex-1 flex-col gap-3">
-                    {!isAuthenticated ? (
-                      <nav className="flex flex-col gap-2">
-                        {publicMenuItems.map(({ href, label, icon: Icon }) => (
-                          <Link
-                            key={label}
-                            href={href}
-                            replace
-                            onClick={() => setIsMenuOpen(false)}
-                            className="flex items-center gap-3 rounded-2xl px-4 py-3 text-neutral-700 transition hover:bg-neutral-50"
-                          >
-                            <Icon />
-                            {label}
-                          </Link>
-                        ))}
-                      </nav>
-                    ) : null}
-                    {!isAuthenticated ? (
-                      <Link
-                        href="/connexion"
-                        replace
-                        onClick={() => setIsMenuOpen(false)}
-                        className="flex items-center justify-between gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-800 transition hover:bg-white"
-                      >
-                        <span>{t("loginOrRegister")}</span>
-                        <FiChevronRight />
-                      </Link>
-                    ) : null}
-                    <div className="my-2 h-px bg-neutral-200" />
-                    <Link
-                      href={actionHref}
-                      replace
-                      className="flex items-center justify-between gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <span className="flex items-center gap-3">
-                        <FiGrid />
-                        {actionLabel}
-                      </span>
-                      <FiCompass />
-                    </Link>
-                    {!isAuthenticated ? (
-                      <p className="px-1 text-xs leading-5 text-neutral-500">
-                        {t("publishHomes")}
-                      </p>
-                    ) : null}
-                    <div className="my-2 h-px bg-neutral-200" />
-                    <div className="rounded-2xl border border-neutral-200 bg-white p-3">
-                      <PreferenceControls compact />
-                    </div>
-                    {isAuthenticated ? (
-                      <>
-                        <div className="my-2 h-px bg-neutral-200" />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsMenuOpen(false);
-                            logout();
-                            router.replace("/connexion?logged_out=1");
-                          }}
-                          className="flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-neutral-600 hover:bg-neutral-50"
-                        >
-                          <FiLogOut />
-                          {t("logout")}
-                        </button>
-                      </>
-                    ) : null}
-                  </div>
-                )}
-              </div>
-                </motion.aside>
-              </>
-            ) : (
-              <motion.div
-                ref={menuPanelRef}
-                initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 6, scale: 0.98 }}
-                transition={{ duration: 0.18 }}
-                className="absolute right-6 top-[4.8rem] z-[1102] w-[23rem] overflow-hidden rounded-[1.6rem] border border-neutral-200 bg-white p-3 shadow-[0_24px_60px_rgba(15,23,42,0.12)]"
-              >
-                <div className="grid grid-cols-2 gap-2">
-                  {publicMenuItems.map(({ href, label, icon: Icon }) => (
-                    <Link
-                      key={label}
-                      href={href}
-                      replace
-                      onClick={() => setIsMenuOpen(false)}
-                      className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-700 transition hover:bg-white"
-                    >
-                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-blue-600 shadow-sm">
-                        <Icon />
-                      </span>
-                      {label}
-                    </Link>
-                  ))}
-                </div>
-                {!isAuthenticated ? (
-                  <Link
-                    href="/connexion"
-                    replace
-                    onClick={() => setIsMenuOpen(false)}
-                    className="mt-3 flex items-center justify-between gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-800 transition hover:bg-white"
-                  >
-                    <span>{t("loginOrRegister")}</span>
-                    <FiChevronRight />
-                  </Link>
-                ) : null}
-                <div className="my-3 h-px bg-neutral-200" />
-                <Link
-                  href={actionHref}
-                  replace
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex items-start justify-between gap-3 rounded-[1.4rem] bg-blue-600 px-4 py-4 text-white"
-                >
-                  <div>
-                    <p className="text-sm font-semibold">{actionLabel}</p>
-                    <p className="mt-1 text-xs text-white/80">
-                      {t("createOwnerSpace")}
-                    </p>
-                  </div>
-                  <span className="mt-1 flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
-                    <FiCompass />
-                  </span>
-                </Link>
-                <div className="mt-3 rounded-[1.4rem] border border-neutral-200 bg-neutral-50 p-3">
-                  <PreferenceControls compact />
-                </div>
-                {isAuthenticated ? (
-                  <div className="mt-3 flex items-center justify-between">
-                    <Link
-                      href="/compte/parametres"
-                      replace
-                      onClick={() => setIsMenuOpen(false)}
-                      className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50"
-                    >
-                      <FiSettings />
-                      {t("settings")}
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        logout();
-                        router.replace("/connexion?logged_out=1");
-                      }}
-                      className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50"
-                    >
-                      <FiLogOut />
-                      {t("logout")}
-                    </button>
-                  </div>
-                ) : null}
-              </motion.div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <SiteMenu
+        open={isMenuOpen}
+        onClose={closeMenu}
+        entries={menuEntries}
+        cta={menuCta}
+        onLogout={isAuthenticated ? handleLogout : undefined}
+      />
     </>
   );
 }

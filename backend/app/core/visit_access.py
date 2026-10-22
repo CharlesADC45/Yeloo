@@ -51,7 +51,7 @@ def ensure_paid_visit_access(db: Session, property_id: uuid.UUID, tenant_id: uui
     raise HTTPException(
         status_code=402,
         detail=(
-            f"Réservez une visite ({settings.wave_visit_access_amount:,} F) pour contacter le propriétaire. "
-            "Un ticket expiré doit être renouvelé."
-        ).replace(",", " ", 1),
+            f"Réservez une visite ({settings.wave_visit_access_amount:,} FCFA) pour contacter le propriétaire. "
+            "Si votre réservation a expiré, réservez à nouveau."
+        ).replace(",", " ", 1),
     )

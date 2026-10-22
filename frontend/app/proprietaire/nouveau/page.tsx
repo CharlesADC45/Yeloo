@@ -99,7 +99,7 @@ const COPY = {
     email: "Email",
     city: "Main city",
     identityDoc: "Identity document",
-    selfie: "Verification selfie",
+    selfie: "Vérification selfie",
     propertyProof: "Proof of ownership",
     address: "Main property address",
     mobileMoney: "Mobile money",
@@ -732,12 +732,12 @@ export default function NouveauBienPage() {
                         initial={false}
                         animate={{
                           scale: isActive ? 1.08 : 1,
-                          backgroundColor: isDone ? "#2563eb" : "#ffffff",
-                          borderColor: isDone || isActive ? "#2563eb" : "#d4d4d8",
+                          backgroundColor: isDone ? "#1d4ed8" : "#ffffff",
+                          borderColor: isDone || isActive ? "#1d4ed8" : "#d4d4d8",
                           color: isDone
                             ? "#ffffff"
                             : isActive
-                              ? "#2563eb"
+                              ? "#1d4ed8"
                               : "#a3a3a3",
                           boxShadow: isActive
                             ? "0 0 0 4px rgba(37, 99, 235, 0.10)"

@@ -68,7 +68,7 @@ export function ImmersiveTourViewer({
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="pointer-events-none absolute left-4 top-4 rounded-2xl bg-white/92 px-4 py-3 shadow-soft backdrop-blur">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-700">Video 360</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-700">Vidéo 360</p>
           <p className="mt-1 text-sm font-semibold text-neutral-950">{title}</p>
         </div>
         <div className="pointer-events-none absolute bottom-4 right-4 inline-flex items-center gap-2 rounded-full bg-neutral-950/72 px-4 py-2 text-xs font-semibold text-white backdrop-blur">

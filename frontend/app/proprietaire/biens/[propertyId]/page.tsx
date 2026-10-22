@@ -461,7 +461,7 @@ export default function EditPropertyPage() {
   }
 
   const fieldClass =
-    "min-h-12 rounded-2xl border border-neutral-200 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-[#174EA6] focus:ring-4 focus:ring-[#174EA6]/12";
+    "min-h-12 rounded-2xl border border-neutral-200 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-brand-700 focus:ring-4 focus:ring-brand-700/12";
   const labelClass =
     "flex flex-col gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500";
   const sectionClass = "rounded-[1.75rem] border border-neutral-200 bg-white p-5 shadow-soft sm:p-6";
@@ -500,7 +500,7 @@ export default function EditPropertyPage() {
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-2 rounded-full bg-[#EAF1FF] px-3 py-2 text-xs font-semibold text-[#123B8C]">
+                <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-800">
                   <FiCheckCircle />
                   {form.status === "published"
                     ? "Publié"
@@ -534,7 +534,7 @@ export default function EditPropertyPage() {
               <div className="space-y-5">
                 <section className={sectionClass}>
                   <div className="mb-5 flex items-start gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EAF1FF] text-[#123B8C]">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-800">
                       <FiHome />
                     </span>
                     <div>
@@ -611,7 +611,7 @@ export default function EditPropertyPage() {
                         type="checkbox"
                         checked={form.isFurnished}
                         onChange={handleChange("isFurnished")}
-                        className="h-4 w-4 rounded border-neutral-300 text-[#123B8C] focus:ring-[#174EA6]"
+                        className="h-4 w-4 rounded border-neutral-300 text-brand-800 focus:ring-brand-700"
                       />
                       Meublé
                     </label>
@@ -620,7 +620,7 @@ export default function EditPropertyPage() {
 
                 <section className={sectionClass}>
                   <div className="mb-5 flex items-start gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EAF1FF] text-[#123B8C]">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-800">
                       <FiMapPin />
                     </span>
                     <div>
@@ -664,7 +664,7 @@ export default function EditPropertyPage() {
 
                 <section className={sectionClass}>
                   <div className="mb-5 flex items-start gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EAF1FF] text-[#123B8C]">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-800">
                       <FiFileText />
                     </span>
                     <div>
@@ -679,14 +679,14 @@ export default function EditPropertyPage() {
                       rows={5}
                       value={form.description}
                       onChange={handleChange("description")}
-                      className="min-h-36 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-[#174EA6] focus:ring-4 focus:ring-[#174EA6]/12"
+                      className="min-h-36 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-brand-700 focus:ring-4 focus:ring-brand-700/12"
                     />
                   </label>
                 </section>
 
                 <section className={sectionClass}>
                   <div className="mb-5 flex items-start gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EAF1FF] text-[#123B8C]">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-800">
                       <FiImage />
                     </span>
                     <div>
@@ -695,8 +695,8 @@ export default function EditPropertyPage() {
                     </div>
                   </div>
 
-                  <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 px-4 py-8 text-center transition hover:border-[#174EA6] hover:bg-[#EAF1FF]/60">
-                    <FiUploadCloud className="text-2xl text-[#123B8C]" />
+                  <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 px-4 py-8 text-center transition hover:border-brand-700 hover:bg-brand-50/60">
+                    <FiUploadCloud className="text-2xl text-brand-800" />
                     <span className="mt-3 text-sm font-semibold text-neutral-900">
                       Choisir des photos
                     </span>
@@ -726,7 +726,7 @@ export default function EditPropertyPage() {
 
                 <section className={sectionClass}>
                   <div className="mb-5 flex items-start gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EAF1FF] text-[#123B8C]">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-800">
                       <FiVideo />
                     </span>
                     <div>
@@ -743,7 +743,7 @@ export default function EditPropertyPage() {
 
                     <label className="flex cursor-pointer flex-col rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 transition hover:bg-white">
                       <span className="flex items-center gap-2 text-sm font-semibold text-neutral-900">
-                        <FiUploadCloud className="text-[#123B8C]" />
+                        <FiUploadCloud className="text-brand-800" />
                         Télécharger une vidéo
                       </span>
                       <span className="mt-1 text-xs text-neutral-500">MP4, WEBM, OGG ou MOV. 150 Mo max.</span>
@@ -763,7 +763,7 @@ export default function EditPropertyPage() {
 
                     <label className="flex cursor-pointer flex-col rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 transition hover:bg-white">
                       <span className="flex items-center gap-2 text-sm font-semibold text-neutral-900">
-                        <FiUploadCloud className="text-[#123B8C]" />
+                        <FiUploadCloud className="text-brand-800" />
                         Télécharger une visite 360
                       </span>
                       <span className="mt-1 text-xs text-neutral-500">Image ou vidéo. 50 Mo max.</span>
@@ -797,14 +797,14 @@ export default function EditPropertyPage() {
                       <p className="mt-2 line-clamp-2 font-semibold text-neutral-900">{form.title || "Titre non renseigné"}</p>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <div className="rounded-2xl bg-[#EAF1FF] p-3 text-[#123B8C]">
+                      <div className="rounded-2xl bg-brand-50 p-3 text-brand-800">
                         <FiDollarSign />
-                        <p className="mt-2 text-xs text-[#123B8C]/70">Prix</p>
+                        <p className="mt-2 text-xs text-brand-800/70">Prix</p>
                         <p className="font-semibold">{form.price || "0"} FCFA</p>
                       </div>
-                      <div className="rounded-2xl bg-[#EAF1FF] p-3 text-[#123B8C]">
+                      <div className="rounded-2xl bg-brand-50 p-3 text-brand-800">
                         <FiMapPin />
-                        <p className="mt-2 text-xs text-[#123B8C]/70">Ville</p>
+                        <p className="mt-2 text-xs text-brand-800/70">Ville</p>
                         <p className="font-semibold">{form.city || "-"}</p>
                       </div>
                     </div>
@@ -831,7 +831,7 @@ export default function EditPropertyPage() {
                   </div>
                 )}
                 {success && (
-                  <div className="rounded-2xl border border-[#174EA6]/20 bg-[#EAF1FF] px-4 py-3 text-sm text-[#123B8C]">
+                  <div className="rounded-2xl border border-brand-700/20 bg-brand-50 px-4 py-3 text-sm text-brand-800">
                     {success}
                   </div>
                 )}
@@ -840,7 +840,7 @@ export default function EditPropertyPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex min-h-12 w-full items-center justify-center rounded-2xl bg-[#123B8C] px-5 text-sm font-semibold text-white transition hover:bg-[#0B2E6D] disabled:cursor-not-allowed disabled:opacity-70"
+                    className="flex min-h-12 w-full items-center justify-center rounded-2xl bg-brand-800 px-5 text-sm font-semibold text-white transition hover:bg-brand-900 disabled:cursor-not-allowed disabled:opacity-70"
                   >
                     {isSubmitting ? "Envoi..." : "Enregistrer les modifications"}
                   </button>

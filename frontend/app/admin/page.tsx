@@ -29,6 +29,7 @@ import {
   updateFeatureModule,
 } from "@/lib/admin";
 import { useAuthStore } from "@/stores/authStore";
+import { formatPrice } from "@/lib/format";
 
 function formatDate(value: string) {
   return new Date(value).toLocaleString("fr-FR", {
@@ -448,7 +449,7 @@ export default function AdminPage() {
                           </span>
                         </div>
                         <p className="mt-3 text-sm font-semibold text-neutral-950">
-                          {property.price.toLocaleString("fr-FR")} FCFA / {property.price_period}
+                          {formatPrice(property.price)} FCFA / {property.price_period}
                         </p>
                         <p className="mt-1 text-xs text-neutral-500">
                           {property.deposit_months ? `Caution : ${property.deposit_months} mois` : "Caution non renseignée"}

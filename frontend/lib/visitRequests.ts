@@ -90,5 +90,5 @@ export async function updateVisitRequestStatus(
     headers: authHeaders(token),
     body: JSON.stringify(payload),
   });
-  return handleResponse<VisitRequest>(response, "Impossible de mettre a jour la demande de visite.");
+  return handleResponse<VisitRequest>(response, "Impossible de mettre à jour la demande de visite.");
 }

@@ -6,6 +6,7 @@ import { FiFileText, FiMapPin } from "react-icons/fi";
 import { BottomNav } from "@/components/BottomNav";
 import { TopBar } from "@/components/TopBar";
 import { useProperty } from "@/hooks/useProperties";
+import { formatPrice } from "@/lib/format";
 
 type Props = {
   id: string;
@@ -84,7 +85,7 @@ export function ContractClient({ id }: Props) {
                 {location || property.city}
               </p>
               <p className="mt-3 text-xl font-semibold text-neutral-900">
-                {property.price.toLocaleString("fr-FR")} FCFA
+                {formatPrice(property.price)} FCFA
                 <span className="text-sm font-normal text-neutral-500"> / {property.pricePeriod}</span>
               </p>
             </div>

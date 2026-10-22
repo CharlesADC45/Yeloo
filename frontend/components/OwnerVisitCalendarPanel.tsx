@@ -206,7 +206,7 @@ export function OwnerVisitCalendarPanel({
                     {canEditSchedule && item.status !== "pending" && (
                       <div className="mt-4 rounded-[1.2rem] border border-blue-100 bg-blue-50/50 p-3">
                         <label className="block text-[11px] font-semibold uppercase tracking-wide text-blue-700">
-                          Modifier le creneau
+                          Modifier le créneau
                         </label>
                         <div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
                           <input

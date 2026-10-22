@@ -129,7 +129,7 @@ export const mapApiProperty = (api: ApiProperty): Property => {
   const status = (api.status || "").toLowerCase();
   const availabilityStatus = normalizeAvailability(api.availability_status);
   const badgeLabel = api.is_verified_listing
-    ? "Annonce verifiee"
+    ? "Annonce vérifiée"
     : STATUS_BADGES[status];
   const promoUntil = api.promo_until || undefined;
   const promoIsActive = Boolean(

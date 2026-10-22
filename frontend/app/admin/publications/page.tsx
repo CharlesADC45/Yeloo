@@ -35,6 +35,7 @@ import {
   updateAdminPropertyStatus,
 } from "@/lib/admin";
 import { useAuthStore } from "@/stores/authStore";
+import { formatPrice } from "@/lib/format";
 
 const statusFilters = [
   { key: "all", label: "Toutes" },
@@ -396,7 +397,7 @@ export default function AdminPublicationsPage() {
                         "Localisation non renseignée"}
                     </span>
                     <span className="mt-2 block text-sm font-semibold text-neutral-900">
-                      {property.price.toLocaleString("fr-FR")} FCFA / {property.price_period}
+                      {formatPrice(property.price)} FCFA / {property.price_period}
                     </span>
                   </span>
                   <span className="text-xs font-semibold uppercase tracking-wide text-blue-700">
@@ -498,7 +499,7 @@ export default function AdminPublicationsPage() {
 
             <section className="grid gap-3 sm:grid-cols-4">
               {[
-                ["Prix", `${property.price.toLocaleString("fr-FR")} FCFA`, `/${property.price_period}`],
+                ["Prix", `${formatPrice(property.price)} FCFA`, `/${property.price_period}`],
                 ["Pièces", property.rooms ?? "-", ""],
                 ["Bains", property.bathrooms ?? "-", ""],
                 ["Surface", property.surface_m2 ?? "-", property.surface_m2 ? "m²" : ""],

@@ -13,52 +13,13 @@ import { useAuthStore } from "@/stores/authStore";
 import { useFavoritesStore } from "@/stores/favoritesStore";
 import { useNotificationStore } from "@/stores/notificationStore";
 
-type ConnectionState = "online" | "offline" | "unstable";
+type ConnectionState = "online" | "offline";
 type ToastState = {
   id: string;
   type: ConnectionState | "message" | "visit" | "property";
   title: string;
   message: string;
 };
-
-const HEALTH_TIMEOUT_MS = 4500;
-const UNSTABLE_LATENCY_MS = 3000;
-
-async function checkApiHealth() {
-  const startedAt = performance.now();
-  const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), HEALTH_TIMEOUT_MS);
-
-  try {
-    const response = await fetch(`${getApiBaseUrl()}/health`, {
-      cache: "no-store",
-      signal: controller.signal,
-    });
-    const latency = performance.now() - startedAt;
-    return {
-      ok: response.ok,
-      unstable: latency > UNSTABLE_LATENCY_MS,
-    };
-  } finally {
-    window.clearTimeout(timeout);
-  }
-}
-
-function getConnectionHint() {
-  if (typeof navigator === "undefined") return false;
-  const connection = (
-    navigator as Navigator & {
-      connection?: { effectiveType?: string; rtt?: number; downlink?: number };
-    }
-  ).connection;
-  if (!connection) return false;
-  return (
-    connection.effectiveType === "slow-2g" ||
-    connection.effectiveType === "2g" ||
-    (typeof connection.rtt === "number" && connection.rtt > 1200) ||
-    (typeof connection.downlink === "number" && connection.downlink > 0 && connection.downlink < 0.7)
-  );
-}
 
 function getVisitStatusLabel(status: VisitRequest["status"]) {
   if (status === "accepted") return "acceptée";
@@ -132,7 +93,7 @@ export function AppStatusNotifier() {
     }
     if (typeof window === "undefined") return;
 
-    const updateState = (nextState: ConnectionState, detail?: string) => {
+    const updateState = (nextState: ConnectionState) => {
       setConnectionState(nextState);
       if (previousConnectionRef.current === nextState) return;
       previousConnectionRef.current = nextState;
@@ -142,23 +103,13 @@ export function AppStatusNotifier() {
           id: `network-offline-${Date.now()}`,
           type: "offline",
           title: "Connexion perdue",
-          message: "Yeloo reste ouvert, mais les nouvelles donnees attendront le retour du reseau.",
+          message: "Yeloo reste ouvert, mais les nouvelles données attendront le retour du réseau.",
         });
         void showDeviceNotification({
           title: "Connexion perdue",
-          body: "Certaines actions seront indisponibles jusqu'au retour du reseau.",
+          body: "Certaines actions seront indisponibles jusqu'au retour du réseau.",
           tag: "yeloo-network-offline",
           url: "/",
-        });
-        return;
-      }
-
-      if (nextState === "unstable") {
-        setToast({
-          id: `network-unstable-${Date.now()}`,
-          type: "unstable",
-          title: "Connexion instable",
-          message: detail || "Le reseau repond lentement. Les images et messages peuvent prendre plus de temps.",
         });
         return;
       }
@@ -166,46 +117,24 @@ export function AppStatusNotifier() {
       setToast({
         id: `network-online-${Date.now()}`,
         type: "online",
-        title: "Connexion retablie",
+        title: "Connexion rétablie",
         message: "Tout est revenu, on reprend normalement.",
       });
     };
 
-    const runCheck = async () => {
-      if (!navigator.onLine) {
-        updateState("offline");
-        return;
-      }
-
-      if (getConnectionHint()) {
-        updateState("unstable", "Le signal reseau semble faible.");
-        return;
-      }
-
-      try {
-        const health = await checkApiHealth();
-        if (!health.ok || health.unstable) {
-          updateState("unstable");
-          return;
-        }
-        updateState("online");
-      } catch {
-        updateState("unstable");
-      }
-    };
+    // Only real offline/online transitions are reported; slow-network guesses caused false alarms.
+    const runCheck = () => updateState(navigator.onLine ? "online" : "offline");
 
     const handleOffline = () => updateState("offline");
-    const handleOnline = () => void runCheck();
+    const handleOnline = () => runCheck();
 
     window.addEventListener("offline", handleOffline);
     window.addEventListener("online", handleOnline);
-    void runCheck();
-    const interval = window.setInterval(runCheck, 18000);
+    runCheck();
 
     return () => {
       window.removeEventListener("offline", handleOffline);
       window.removeEventListener("online", handleOnline);
-      window.clearInterval(interval);
     };
   }, [isStatusModuleEnabled]);
 
@@ -232,7 +161,7 @@ export function AppStatusNotifier() {
           preview:
             conversation.last_message_preview ||
             conversation.property_title ||
-            "Vous avez recu un nouveau message.",
+            "Vous avez reçu un nouveau message.",
           updatedAt: conversation.updated_at,
         });
       }
@@ -241,7 +170,7 @@ export function AppStatusNotifier() {
         const body =
           latest.last_message_preview ||
           latest.property_title ||
-          "Vous avez recu un nouveau message.";
+          "Vous avez reçu un nouveau message.";
         setToast({
           id: `message-${latest.id}-${latest.updated_at}`,
           type: "message",

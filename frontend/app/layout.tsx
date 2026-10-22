@@ -17,9 +17,9 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Yeloo+ - Logements en Cote d'Ivoire",
+  title: "Yeloo+ - Logements en Côte d'Ivoire",
   description:
-    "Trouvez un logement en Cote d'Ivoire, directement aupres des proprietaires, sans arnaques.",
+    "Trouvez un logement en Côte d'Ivoire, directement auprès des propriétaires, sans arnaques.",
   manifest: "/manifest.webmanifest",
   applicationName: "Yeloo+",
   appleWebApp: {
@@ -50,7 +50,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr" className={poppins.variable} suppressHydrationWarning>
+    <html
+      lang="fr"
+      className={poppins.variable}
+      // Set the variable inline too: the hashed class from next/font can differ between the
+      // server and client builds in dev, which silently dropped Poppins for the system font.
+      style={{ ["--font-yeloo" as string]: poppins.style.fontFamily }}
+      suppressHydrationWarning
+    >
       <body className="min-h-screen bg-white text-neutral-900">
         <script
           dangerouslySetInnerHTML={{

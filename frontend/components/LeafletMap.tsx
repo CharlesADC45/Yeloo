@@ -12,6 +12,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { FiLayers } from "react-icons/fi";
 import { useT } from "@/lib/i18n";
 import type { Property } from "@/lib/properties";
+import { formatPrice } from "@/lib/format";
 
 type Props = {
   properties: Property[];
@@ -61,7 +62,7 @@ type MarkerPreviewLabels = {
 function buildMarkerPreview(property: Property, labels: MarkerPreviewLabels) {
   const title = escapeHtml(property.title || "Villa contemporaine");
   const detailsUrl = escapeHtml(`/logements/${encodeURIComponent(property.id)}`);
-  const price = `${property.price.toLocaleString("en-US")} FCFA`;
+  const price = `${formatPrice(property.price)} FCFA`;
   const rooms = typeof property.rooms === "number" ? property.rooms : "—";
   const bathrooms = typeof property.bathrooms === "number" ? property.bathrooms : "—";
   const surface = typeof property.surfaceM2 === "number" ? property.surfaceM2 : "—";
@@ -305,7 +306,7 @@ export function LeafletMap({
               html: `<div class="imc-price-marker ${
                 isSelected ? "is-selected" : ""
               }">
-              <span class="imc-price-value">${p.price.toLocaleString("en-US")}</span>
+              <span class="imc-price-value">${formatPrice(p.price)}</span>
               <span class="imc-price-suffix">F</span>
             </div>`,
             }),
@@ -377,7 +378,7 @@ export function LeafletMap({
               html: `<div class="imc-price-marker ${
                 isSelected ? "is-selected" : ""
               }">
-              <span class="imc-price-value">${first.price.toLocaleString("en-US")}</span>
+              <span class="imc-price-value">${formatPrice(first.price)}</span>
               <span class="imc-price-suffix">F</span>
             </div>`,
             });

@@ -41,19 +41,19 @@ const DEFAULT_POINTS: TourPoint[] = [
   {
     id: "view-left",
     title: "Vue 2",
-    description: "Angle lateral pour explorer la meme photo.",
+    description: "Angle latéral pour explorer la même photo.",
     position: { yaw: 1.1, pitch: -0.04 },
   },
   {
     id: "view-right",
     title: "Vue 3",
-    description: "Autre point de vue dans la meme photo 360.",
+    description: "Autre point de vue dans la même photo 360.",
     position: { yaw: 2.3, pitch: 0.03 },
   },
   {
     id: "view-back",
     title: "Vue 4",
-    description: "Retour vers l'angle oppose de la photo.",
+    description: "Retour vers l'angle opposé de la photo.",
     position: { yaw: -2.35, pitch: -0.06 },
   },
 ];
@@ -232,7 +232,7 @@ export function PhotoSphereViewer({
         <img src={fallbackImageUrl || imageUrl} alt={title || "Visite 360"} className="h-full w-full object-cover" />
         <div className="absolute inset-x-4 bottom-4 rounded-2xl bg-white/92 px-4 py-3 shadow-soft backdrop-blur">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">Visite 360</p>
-          <p className="mt-1 text-sm font-semibold text-neutral-900">Apercu panoramique</p>
+          <p className="mt-1 text-sm font-semibold text-neutral-900">Aperçu panoramique</p>
         </div>
       </div>
     );
@@ -247,7 +247,7 @@ export function PhotoSphereViewer({
             <div className="hidden min-w-0 sm:block">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-neutral-400">Angles de vue</p>
               <p className="mt-1 text-sm font-semibold">{activePoint?.title || "Vue principale"}</p>
-              <p className="mt-1 text-xs leading-5 text-neutral-500">{activePoint?.description || "Explorez differents angles dans la meme photo 360."}</p>
+              <p className="mt-1 text-xs leading-5 text-neutral-500">{activePoint?.description || "Explorez différents angles dans la même photo 360."}</p>
             </div>
             <div className="hide-scrollbar flex gap-2 overflow-x-auto sm:grid sm:grid-cols-2 xl:grid-cols-4">
               {tourPoints.map((point, index) => {

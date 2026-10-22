@@ -25,6 +25,29 @@ YELOO+ exprime la confiance, la simplicite et la proximite. Le symbole associe u
 
 Le jaune ne doit pas servir pour du petit texte sur fond blanc. Utiliser du texte encre sur fond jaune.
 
+### Dégradé de marque (échelle tonale)
+
+Tous les bleus et jaunes de l'application viennent de ces paliers. Aucune autre teinte (turquoise, cyan, indigo…) ne doit être introduite.
+
+| Palier | Bleu | Usage |
+|---|---|---|
+| 50 | `#EEF3FF` | Fonds doux, cartes d'information |
+| 100–200 | `#DBE5FF` / `#B9CBFF` | Bordures actives, survols |
+| 400–500 | `#5F84F0` / `#3B63E3` | Illustrations, fin de dégradé |
+| **600** | **`#1D4ED8`** | **Couleur principale** : boutons, liens, navigation active |
+| 700 | `#173EA5` | Survol des boutons |
+| 800–900 | `#123B8C` / `#0B2E6D` | Titres sur fond clair, début de dégradé |
+| 950 | `#071A3F` | Fonds sombres (visite 360°, mode sombre) |
+
+Jaune : `#FFFBEA` (fond) · `#FFDD66` · **`#FFC928` (accent)** · `#E0A800` · `#7A5A00` (texte jaune lisible sur blanc).
+
+Dégradés officiels :
+- **Marque :** `#0B2E6D` → `#1D4ED8` → `#3B63E3` (135°), pour les boutons d'action forts et les bannières.
+- **Doux :** `#EEF3FF` → blanc (vertical), pour les fonds de section.
+- **Soleil :** `#FFDD66` → `#FFC928`, réservé aux badges (vérifié, premium).
+
+Dans le code, utiliser `var(--yeloo-blue-600)`, la classe Tailwind `brand-600` ou `bg-yeloo-brand`.
+
 ## Typographie
 
 La famille principale est Poppins, deja integree dans l application.

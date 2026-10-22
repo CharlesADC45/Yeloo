@@ -209,7 +209,7 @@ function MessageConversationPageContent() {
       const message = await sendConversationAttachment(token, conversationId, file);
       appendMessage(message);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Impossible d'envoyer la piece jointe.");
+      setError(err instanceof Error ? err.message : "Impossible d'envoyer la pièce jointe.");
     } finally {
       setIsUploadingAttachment(false);
       event.target.value = "";
@@ -408,7 +408,7 @@ function MessageConversationPageContent() {
                       type="button"
                       onClick={showComingSoon}
                       className="hidden h-10 w-10 items-center justify-center rounded-full hover:bg-neutral-100 sm:inline-flex"
-                      aria-label="Video"
+                      aria-label="Vidéo"
                     >
                       <FiVideo />
                     </button>
@@ -528,7 +528,7 @@ function MessageConversationPageContent() {
                               >
                                 <img
                                   src={attachmentUrl}
-                                  alt={message.attachment_name || "Image envoyee"}
+                                  alt={message.attachment_name || "Image envoyée"}
                                   className="max-h-80 w-full object-cover"
                                 />
                               </button>
@@ -602,7 +602,7 @@ function MessageConversationPageContent() {
                       onClick={() => attachmentInputRef.current?.click()}
                       disabled={isUploadingAttachment}
                       className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-2xl text-neutral-600 hover:bg-neutral-100 disabled:opacity-50"
-                      aria-label="Ajouter une piece jointe"
+                      aria-label="Ajouter une pièce jointe"
                     >
                       {isUploadingAttachment ? (
                         <FiPaperclip className="animate-pulse" />
@@ -693,7 +693,7 @@ function MessageConversationPageContent() {
                     href={imagePreview.url}
                     download={imagePreview.name}
                     className="inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-white/10"
-                    aria-label="Telecharger l'image"
+                    aria-label="Télécharger l'image"
                   >
                     <FiDownload />
                   </a>
@@ -751,7 +751,7 @@ function MessageConversationPageContent() {
                     type="button"
                     onClick={() => setIsDetailsOpen(false)}
                     className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-neutral-600"
-                    aria-label="Fermer les details"
+                    aria-label="Fermer les détails"
                   >
                     <FiX />
                   </button>

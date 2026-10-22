@@ -20,6 +20,7 @@ import {
 } from "@/lib/visitRequests";
 import { useAuthStore } from "@/stores/authStore";
 import { useNotificationStore } from "@/stores/notificationStore";
+import { formatPrice } from "@/lib/format";
 
 type OwnerProfile = {
   id: string;
@@ -276,7 +277,7 @@ export default function ProprietairePage() {
         current.map((item) => (item.id === updated.id ? updated : item))
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Mise a jour de la visite impossible.");
+      setError(err instanceof Error ? err.message : "Mise à jour de la visite impossible.");
     } finally {
       setVisitActionId(null);
     }
@@ -650,7 +651,7 @@ export default function ProprietairePage() {
                             {property.title}
                           </p>
                           <p className="mt-1 text-xs text-neutral-500">
-                            {Number(property.price).toLocaleString("fr-FR")} FCFA / {property.price_period}
+                            {formatPrice(Number(property.price))} FCFA / {property.price_period}
                           </p>
                           <p className="mt-1 text-[11px] font-semibold text-blue-700">
                             {getAvailabilityLabel(property.availability_status)}

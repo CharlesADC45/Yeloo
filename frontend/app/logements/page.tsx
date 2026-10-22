@@ -10,6 +10,7 @@ import { PropertyGrid } from "@/components/PropertyGrid";
 import { useProperties } from "@/hooks/useProperties";
 import { applyPropertyFilters } from "@/lib/properties";
 import type { PropertyFilters } from "@/lib/properties";
+import { formatPrice } from "@/lib/format";
 
 const DEFAULT_FILTERS: PropertyFilters = {
   city: "",
@@ -176,7 +177,7 @@ function LogementsPageContent() {
                     <div className="absolute bottom-4 left-4 right-4 text-white">
                       <p className="text-2xl font-semibold tracking-tight">{item.city}</p>
                       <p className="mt-1 text-sm text-white/85">
-                        À partir de {item.minPrice.toLocaleString("en-US")} FCFA
+                        À partir de {formatPrice(item.minPrice)} FCFA
                       </p>
                     </div>
                   </div>

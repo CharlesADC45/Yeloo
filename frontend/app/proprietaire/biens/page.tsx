@@ -10,6 +10,7 @@ import { OwnerListSkeleton } from "@/components/Skeleton";
 import { TopBar } from "@/components/TopBar";
 import { getApiBaseUrl } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
+import { formatPrice } from "@/lib/format";
 
 type OwnerProperty = {
   id: string;
@@ -251,7 +252,7 @@ export default function ProprietaireBiensPage() {
                       {STATUS_LABELS[property.status] || property.status}
                     </span>
                     <span className="text-neutral-600">
-                      {Number(property.price).toLocaleString("fr-FR")} FCFA /{" "}
+                      {formatPrice(Number(property.price))} FCFA /{" "}
                       {property.price_period}
                     </span>
                     <div className="flex items-center gap-2">

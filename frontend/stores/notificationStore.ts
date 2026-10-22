@@ -137,7 +137,7 @@ export const useNotificationStore = create<NotificationState>()(
           id,
           type: "message",
           title: title || "Nouveau message",
-          message: preview?.trim() || "Vous avez recu un nouveau message.",
+          message: preview?.trim() || "Vous avez reçu un nouveau message.",
           createdAt: updatedAt || new Date().toISOString(),
           targetUserId: userId,
           href: `/messages/${conversationId}`,

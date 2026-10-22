@@ -392,7 +392,7 @@ export default function ProprietaireProfilPage() {
                 </div>
                 <div className="min-w-0 flex-1 space-y-2 pt-1">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
-                    Profil bailleur
+                    Profil propriétaire
                   </p>
                   <h1 className="break-words text-[1.6rem] font-semibold leading-tight tracking-tight text-neutral-950 lg:text-2xl">
                     {fullName}

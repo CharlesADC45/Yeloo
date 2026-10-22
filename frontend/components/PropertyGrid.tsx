@@ -6,6 +6,7 @@ import { useFavoritesStore } from "@/stores/favoritesStore";
 import type { Property, PropertyFilters } from "@/lib/properties";
 import { applyPropertyFilters } from "@/lib/properties";
 import { PropertyGridSkeleton } from "@/components/Skeleton";
+import { formatPrice } from "@/lib/format";
 
 type Props = {
   filters: PropertyFilters;
@@ -38,7 +39,6 @@ export function PropertyGrid({
 
   const filtered = applyPropertyFilters(properties, filters);
   const showEmpty = !isLoading && !error && filtered.length === 0;
-  const formatPrice = (value: number) => value.toLocaleString("en-US");
   const [visibleCount, setVisibleCount] = useState(initialVisibleCount ?? Number.POSITIVE_INFINITY);
   const [isShowingMore, setIsShowingMore] = useState(false);
   const limitedGrid = typeof initialVisibleCount === "number";

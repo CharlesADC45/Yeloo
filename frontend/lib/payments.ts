@@ -41,7 +41,7 @@ export async function getVisitAccessStatus(token: string, propertyId: string) {
     headers: authHeaders(token),
     cache: "no-store",
   });
-  return handleResponse<VisitAccessStatus>(response, "Impossible de vérifier le ticket de visite.");
+  return handleResponse<VisitAccessStatus>(response, "Impossible de vérifier votre réservation de visite.");
 }
 
 export async function createVisitAccessCheckout(

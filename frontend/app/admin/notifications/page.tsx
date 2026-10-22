@@ -452,7 +452,7 @@ export default function AdminNotificationsPage() {
       });
       setAnnouncements((current) => [created, ...current]);
       setForm(DEFAULT_FORM);
-      setSuccess("Notification publique creee.");
+      setSuccess("Notification publique créée.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Creation impossible.");
     } finally {
@@ -472,7 +472,7 @@ export default function AdminNotificationsPage() {
         current.map((announcement) => (announcement.id === updated.id ? updated : announcement))
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Mise a jour impossible.");
+      setError(err instanceof Error ? err.message : "Mise à jour impossible.");
     } finally {
       setPending(null);
     }
@@ -530,9 +530,9 @@ export default function AdminNotificationsPage() {
         current.map((announcement) => (announcement.id === updated.id ? updated : announcement))
       );
       setEditingId(null);
-      setSuccess("Notification mise a jour.");
+      setSuccess("Notification mise à jour.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Mise a jour impossible.");
+      setError(err instanceof Error ? err.message : "Mise à jour impossible.");
     } finally {
       setPending(null);
     }
@@ -637,7 +637,7 @@ export default function AdminNotificationsPage() {
                   <FiBell />
                 </span>
                 <div>
-                  <h2 className="font-semibold text-neutral-950">Creer une notification</h2>
+                  <h2 className="font-semibold text-neutral-950">Créer une notification</h2>
                   <p className="text-xs text-neutral-500">Visible en carousel sur la page publique.</p>
                 </div>
               </div>
@@ -750,7 +750,7 @@ export default function AdminNotificationsPage() {
                 </div>
 
                 <div className="space-y-3">
-                  <p className="px-1 text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">Apercu live</p>
+                  <p className="px-1 text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">Aperçu en direct</p>
                   <PublicAnnouncementCard
                     preview
                     audienceLabel={getAudienceLabel(form.targetAudience)}
@@ -778,7 +778,7 @@ export default function AdminNotificationsPage() {
                   className="inline-flex items-center gap-2 rounded-full bg-neutral-50 px-4 py-2 text-sm font-semibold text-neutral-700"
                 >
                   {isActive ? <FiToggleRight className="text-blue-700" /> : <FiToggleLeft />}
-                  {isActive ? "Activee a la publication" : "Creer en pause"}
+                  {isActive ? "Activée à la publication" : "Créer en pause"}
                 </button>
                 <button
                   type="button"
@@ -965,7 +965,7 @@ export default function AdminNotificationsPage() {
                               onClick={() => void handleToggleAnnouncement(item)}
                               disabled={pending === item.id}
                               className="text-2xl text-blue-700 disabled:opacity-50"
-                              aria-label="Activer ou desactiver"
+                              aria-label="Activer ou désactiver"
                             >
                               {item.is_active ? <FiToggleRight /> : <FiToggleLeft />}
                             </button>

@@ -45,6 +45,7 @@ import {
 } from "@/lib/visitRequests";
 import { useAuthStore } from "@/stores/authStore";
 import { useFavoritesStore } from "@/stores/favoritesStore";
+import { formatPrice, formatPriceLabel } from "@/lib/format";
 
 type Props = {
   id: string;
@@ -312,6 +313,7 @@ export function LogementClient({ id }: Props) {
   const favoriteIds = useFavoritesStore((s) => s.favoriteIds);
   const sliderRef = useRef<HTMLDivElement | null>(null);
   const detailRootRef = useRef<HTMLDivElement | null>(null);
+  const detailBarRef = useRef<HTMLDivElement | null>(null);
   const [chatError, setChatError] = useState<string | null>(null);
   const [isOpeningChat, setIsOpeningChat] = useState(false);
   const [isChatEnabled, setIsChatEnabled] = useState(true);
@@ -363,7 +365,7 @@ export function LogementClient({ id }: Props) {
   const visitDateOptions = useMemo(() => buildVisitDateOptions(), []);
   const selectedVisitDay = visitDate.slice(0, 10);
   const selectedVisitTime = visitDate.slice(11, 16);
-  const ownerName = property?.ownerName || "Hôte Yeloo";
+  const ownerName = property?.ownerName || "Propriétaire Yeloo";
   const ownerLabel = "Propriétaire Yeloo";
   const ownerInitials = ownerName
     .split(/\s+/)
@@ -374,7 +376,6 @@ export function LogementClient({ id }: Props) {
     .toUpperCase() || "Y";
   const ownerProfileImageUrl = property?.ownerProfileImageUrl;
   const pricePeriodLabel = property?.pricePeriod || "mois";
-  const formatPrice = (value: number) => value.toLocaleString("en-US");
   const hasPaidVisitAccess = Boolean(visitAccessStatus?.has_access);
   const visitAccessAmount = visitAccessStatus?.amount ?? VISIT_ACCESS_PRICE;
   const descriptionText =
@@ -465,7 +466,7 @@ export function LogementClient({ id }: Props) {
       return;
     }
     if (!hasPaidVisitAccess) {
-      setChatError("Réservez votre ticket de visite Wave pour débloquer la messagerie propriétaire.");
+      setChatError("Réservez une visite pour écrire au propriétaire.");
       return;
     }
     setIsOpeningChat(true);
@@ -499,7 +500,7 @@ export function LogementClient({ id }: Props) {
       return;
     }
     if (!hasPaidVisitAccess) {
-      setVisitError("Réservez votre ticket de visite Wave pour débloquer les créneaux.");
+      setVisitError("Réservez une visite pour choisir un créneau.");
       return;
     }
     if (!visitDate) {
@@ -560,20 +561,20 @@ export function LogementClient({ id }: Props) {
         </span>
         <div className="min-w-0">
           <p className="text-sm font-semibold text-neutral-950">
-            Ticket de rendez-vous Wave
+            Votre visite, en toute sécurité
           </p>
           <p className="mt-1 text-sm leading-6 text-neutral-600">
-            Les créneaux de visite et la messagerie propriétaire sont débloqués après paiement.
+            Paiement Wave tracé. Vous pourrez ensuite écrire au propriétaire et choisir un créneau.
           </p>
         </div>
       </div>
       <div className="mt-4 rounded-2xl bg-neutral-50 px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           <span className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
-            Montant
+            Visite
           </span>
           <span className="text-lg font-semibold text-neutral-950">
-            {formatPrice(visitAccessAmount)} F
+            {formatPriceLabel(visitAccessAmount)}
           </span>
         </div>
       </div>
@@ -581,13 +582,13 @@ export function LogementClient({ id }: Props) {
         type="button"
         onClick={handleStartWavePayment}
         disabled={isStartingWavePayment}
-        className="mt-4 inline-flex w-full items-center justify-center rounded-full bg-[#2563eb] px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-70"
+        className="mt-4 inline-flex w-full items-center justify-center rounded-full bg-brand-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-70"
       >
-        {isStartingWavePayment ? "Ouverture Wave..." : "Payer avec Wave"}
+        {isStartingWavePayment ? "Ouverture de Wave..." : `Réserver une visite — ${formatPriceLabel(visitAccessAmount)}`}
       </button>
       {(isCheckingVisitAccess || isVerifyingWavePayment) && (
         <p className="mt-3 rounded-2xl bg-neutral-50 px-4 py-3 text-xs leading-5 text-neutral-600">
-          Vérification du ticket de visite...
+          Vérification de votre réservation...
         </p>
       )}
       {visitAccessNotice && (
@@ -687,7 +688,7 @@ export function LogementClient({ id }: Props) {
         setVisitAccessStatus(status);
         setVisitAccessNotice(
           status.has_access
-            ? "Ticket de visite confirmé. Vous pouvez choisir un créneau ou écrire au propriétaire."
+            ? "Visite réservée. Vous pouvez choisir un créneau ou écrire au propriétaire."
             : "Paiement en cours de traitement chez Wave. Réessayez dans quelques instants."
         );
       })
@@ -746,6 +747,19 @@ export function LogementClient({ id }: Props) {
     };
   }, [totalSlides]);
 
+  // The title bar is fixed and its height depends on the title length; expose it so the
+  // spacer below it and the pinned "À savoir" panel always start right under it.
+  useEffect(() => {
+    const bar = detailBarRef.current;
+    const root = detailRootRef.current;
+    if (!bar || !root) return;
+    const sync = () => root.style.setProperty("--yeloo-detail-bar-height", `${bar.offsetHeight}px`);
+    sync();
+    const observer = new ResizeObserver(sync);
+    observer.observe(bar);
+    return () => observer.disconnect();
+  }, [property]);
+
   useEffect(() => {
     if (isLoading || !property) return;
 
@@ -792,7 +806,7 @@ export function LogementClient({ id }: Props) {
       {!isOwnerViewer && isChatEnabled && !hasPaidVisitAccess && isAuthenticated && (
         <button
           type="button"
-          onClick={() => setChatError("Payez le ticket Wave pour débloquer la messagerie propriétaire.")}
+          onClick={() => setChatError("Réservez une visite pour écrire au propriétaire.")}
           className="inline-flex w-full items-center justify-center rounded-full border border-neutral-200 bg-neutral-50 px-5 py-3 text-sm font-semibold text-neutral-500"
         >
           <FiLock className="mr-2" />
@@ -802,7 +816,7 @@ export function LogementClient({ id }: Props) {
       {!isAuthenticated && property && (
         <Link
           href={`/connexion?next=/logements/${property.id}`}
-          className="inline-flex w-full items-center justify-center rounded-full border border-[#2563eb] bg-[#2563eb] px-5 py-3 text-sm font-semibold text-white transition hover:border-blue-700 hover:bg-blue-700"
+          className="inline-flex w-full items-center justify-center rounded-full border border-brand-600 bg-brand-600 px-5 py-3 text-sm font-semibold text-white transition hover:border-blue-700 hover:bg-blue-700"
         >
           Se connecter pour continuer
         </Link>
@@ -854,9 +868,9 @@ export function LogementClient({ id }: Props) {
   }
 
   return (
-    <div ref={detailRootRef} className="min-h-screen overflow-x-hidden bg-transparent">
+    <div ref={detailRootRef} className="min-h-screen overflow-x-clip bg-transparent">
       <TopBar />
-      <main className="mx-auto w-full max-w-[1450px] overflow-x-hidden px-4 pb-32 pt-20 sm:px-8 lg:px-12">
+      <main className="mx-auto w-full max-w-[1450px] overflow-x-clip px-4 pb-32 pt-20 sm:px-8 lg:px-12">
         <motion.section
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
@@ -864,6 +878,7 @@ export function LogementClient({ id }: Props) {
           className="space-y-4"
         >
           <div
+            ref={detailBarRef}
             className="fixed inset-x-0 top-[5rem] z-30 mx-auto flex w-full max-w-[1450px] flex-wrap items-start justify-between gap-4 border-b border-neutral-100 bg-white/95 px-4 py-3 backdrop-blur sm:px-8 lg:px-12"
           >
             <div className="min-w-0 flex-1 space-y-3">
@@ -916,7 +931,7 @@ export function LogementClient({ id }: Props) {
               </button>
             </div>
           </div>
-          <div aria-hidden="true" className="h-[9.75rem] sm:h-[8.75rem]" />
+          <div aria-hidden="true" className="yeloo-detail-bar-spacer" />
 
           <div
             data-detail-reveal="true"
@@ -1090,7 +1105,7 @@ export function LogementClient({ id }: Props) {
                           <p className="text-lg font-semibold text-neutral-950">{ownerName}</p>
                           <p className="mt-1 text-base font-semibold text-neutral-700">{ownerLabel}</p>
                         <p className="mt-1 text-sm text-neutral-500">
-                          Hôte sur Yeloo
+                          {property.ownerIsVerified ? "Identité vérifiée par Yeloo" : "Vérification en cours"}
                         </p>
                       </div>
                     </div>
@@ -1167,7 +1182,7 @@ export function LogementClient({ id }: Props) {
                         {
                           id: "view-left",
                           title: "Vue 2",
-                          description: "Angle lateral dans la meme photo 360.",
+                          description: "Angle latéral dans la même photo 360.",
                           position: { yaw: 1.05, pitch: -0.03 },
                         },
                         {
@@ -1179,7 +1194,7 @@ export function LogementClient({ id }: Props) {
                         {
                           id: "view-back",
                           title: "Vue 4",
-                          description: "Angle oppose pour continuer l'exploration.",
+                          description: "Angle opposé pour continuer l'exploration.",
                           position: { yaw: -2.18, pitch: -0.05 },
                         },
                       ]}
@@ -1187,7 +1202,7 @@ export function LogementClient({ id }: Props) {
                   </div>
                 </div>
                 <div className="border-t border-neutral-200 bg-white py-5">
-                  <h2 className="text-lg font-semibold text-neutral-900">Video</h2>
+                  <h2 className="text-lg font-semibold text-neutral-900">Vidéo</h2>
                   <div className="relative mt-4 h-52 overflow-hidden rounded-[1.4rem] bg-neutral-100 sm:h-60">
                     {videoUrl ? (
                       <video
@@ -1203,7 +1218,7 @@ export function LogementClient({ id }: Props) {
                         {videoImage && (
                           <img
                             src={videoImage}
-                            alt={`Video ${property.title}`}
+                            alt={`Vidéo ${property.title}`}
                             onError={(event) => {
                               event.currentTarget.src = "/property-fallback.svg";
                             }}
@@ -1213,7 +1228,7 @@ export function LogementClient({ id }: Props) {
                         <div className="absolute inset-0 flex items-center justify-center">
                           <span className="flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-xs font-semibold text-neutral-700 shadow-soft">
                             <FiPlay />
-                            Video de presentation bientot disponible
+                            Vidéo de présentation bientôt disponible
                           </span>
                         </div>
                       </>
@@ -1223,7 +1238,7 @@ export function LogementClient({ id }: Props) {
               </section>
             </div>
 
-            <aside className="space-y-5 xl:self-start">
+            <aside className="space-y-5">
               {!isOwnerViewer && isVisitEnabled && property.availabilityStatus !== "rented" && (
                 <div
                   data-detail-reveal="true"
@@ -1368,7 +1383,41 @@ export function LogementClient({ id }: Props) {
 
                 <div
                   data-detail-reveal="true"
-                  className="rounded-[1.8rem] border border-neutral-200 bg-white p-6 xl:sticky xl:top-28 xl:z-10"
+                  className="rounded-[1.8rem] border border-neutral-200 bg-white p-6"
+               >
+                <h2 className="text-xl font-semibold tracking-[-0.02em] text-neutral-950">
+                  Laisser un commentaire
+                </h2>
+                <textarea
+                  rows={4}
+                  value={commentDraft}
+                  onChange={(event) => {
+                    setCommentDraft(event.target.value);
+                    setCommentSaved(false);
+                  }}
+                  placeholder="Votre commentaire..."
+                  className="mt-4 w-full resize-none rounded-2xl border border-neutral-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveComment}
+                  disabled={!commentDraft.trim()}
+                  className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-neutral-950 px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Enregistrer le commentaire
+                </button>
+                {commentSaved && (
+                  <p className="mt-2 text-center text-xs font-medium text-emerald-600">
+                    Commentaire enregistré sur cet appareil.
+                  </p>
+                )}
+              </div>
+
+              {/* Stays pinned just below the fixed header while the left column scrolls. */}
+              <div className="yeloo-detail-sticky xl:sticky xl:z-10">
+                <div
+                  data-detail-reveal="true"
+                  className="rounded-[1.8rem] border border-neutral-200 bg-white p-6"
                >
                 <h2 className="text-xl font-semibold tracking-[-0.02em] text-neutral-950">
                   À savoir
@@ -1402,36 +1451,6 @@ export function LogementClient({ id }: Props) {
                 </div>
               </div>
 
-                <div
-                  data-detail-reveal="true"
-                  className="rounded-[1.8rem] border border-neutral-200 bg-white p-6"
-               >
-                <h2 className="text-xl font-semibold tracking-[-0.02em] text-neutral-950">
-                  Laisser un commentaire
-                </h2>
-                <textarea
-                  rows={4}
-                  value={commentDraft}
-                  onChange={(event) => {
-                    setCommentDraft(event.target.value);
-                    setCommentSaved(false);
-                  }}
-                  placeholder="Votre commentaire..."
-                  className="mt-4 w-full resize-none rounded-2xl border border-neutral-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                />
-                <button
-                  type="button"
-                  onClick={handleSaveComment}
-                  disabled={!commentDraft.trim()}
-                  className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-neutral-950 px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Enregistrer le commentaire
-                </button>
-                {commentSaved && (
-                  <p className="mt-2 text-center text-xs font-medium text-emerald-600">
-                    Commentaire enregistré sur cet appareil.
-                  </p>
-                )}
               </div>
             </aside>
           </div>

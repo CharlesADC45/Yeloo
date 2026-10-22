@@ -138,7 +138,7 @@ export default function InscriptionPage() {
               />
             </label>
             <CiPhoneField
-              label="Telephone"
+              label="Téléphone"
               required
               value={form.phone}
               onChange={(value) => setForm((prev) => ({ ...prev, phone: value }))}
